@@ -126,6 +126,15 @@ export const mockBackend: Backend = {
       mockDb.emit({ type: 'transaction', change: 'insert', tx });
     }
   },
+  // Mock mode never uses Bluetooth (see services/nearby.ts); these keep the interface whole.
+  async startTapSession() {
+    return { bleToken: '0'.repeat(24), expiresAt: new Date(Date.now() + 60_000).toISOString() };
+  },
+  async resolveTapToken() {
+    return null;
+  },
+  async endTapSession() {},
+
   async demoPeople() {
     return mockDb.people.slice(0, 3);
   },

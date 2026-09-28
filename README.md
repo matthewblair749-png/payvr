@@ -18,7 +18,9 @@ With no configuration the app runs on built-in **mock data**. To use a real back
 follow [docs/SUPABASE.md](docs/SUPABASE.md) (create a project, run one SQL file, add
 two keys to `.env`).
 
-Expo Go works for the current build. Bluetooth tap-to-pay (build step 5) will need a
+Expo Go works for everything except Bluetooth tapping. Tapping needs a development build
+(`npx expo run:ios --device` / `npx expo run:android --device`) because of the
+native module in `modules/payvr-nearby`. See [docs/TAP.md](docs/TAP.md). Bluetooth tap-to-pay (build step 5) will need a
 development build (`npx expo run:ios` / `eas build --profile development`).
 
 **Prototype PIN:** `1234`, unless you created your own PIN during sign-up. On web and on
@@ -33,7 +35,7 @@ a fingerprint, it asks for that first.
 | 2 | Every screen with mock data, full flow clickable | Done |
 | 3 | Supabase auth, tables, RLS, realtime, avatars | Done ([setup](docs/SUPABASE.md)) |
 | 4 | QR send / request | Done (see "QR codes" below) |
-| 5 | Bluetooth LE + Nearby Interaction (UWB) | Mocked in `src/services/nearby.ts` |
+| 5 | Bluetooth LE + Nearby Interaction (UWB) | Built ([how it works](docs/TAP.md)); needs a dev build + two phones to test |
 | 6 | Stripe test mode (Connect) | Next after BLE; plugs in behind `src/services/payments.ts` |
 | 7 | Push notifications, polish | In-app realtime banner done |
 
@@ -52,11 +54,15 @@ src/
     payments.ts         ALL money movement: Supabase RPCs (live) or the same rules in memory (mock)
     backend/            auth, profiles, data, realtime: live.ts (Supabase) and mock.ts
     supabase.ts         Supabase client (sessions stored in expo-secure-store)
-    nearby.ts           Tap discovery (mock) + QR payload format
+    nearby.ts           Tap discovery: live Bluetooth/UWB (tap/) or mock
+    tap/                Bluetooth scanning, proximity decisions, token encoding
+    qr.ts               QR code format
     biometrics.ts       Face ID / fingerprint
     storage.ts          expo-secure-store (localStorage on web)
   store/                App state, authorize() = Face ID or PIN before payments
   data/                 Types (mirror the Supabase schema) and mock seed data
+modules/
+  payvr-nearby/         Native module: BLE advertising (iOS + Android), Nearby Interaction (iOS)
 supabase/
   migrations/           Tables, row-level security, money functions, realtime, storage
   seed.sql              Demo people and "simulate" helpers (dev projects only)
@@ -68,7 +74,7 @@ supabase/
 ```bash
 npm run typecheck
 npm run lint
-npm test            # QR code format unit tests
+npm test            # QR format, tap token, proximity and tap-flow unit tests
 npm run test:db     # needs Postgres 15+ binaries installed locally
 ```
 
@@ -100,8 +106,10 @@ phones. Codes are plain deep links, so the phone's own camera app opens them in 
   balance count-up) and an incoming request. With Supabase they call the helpers in
   `supabase/seed.sql`.
 - The daily limit is a rolling 24 hours: $500 across payments and paid requests.
-- The Tap screen "finds" one of your contacts after ~3.5s (`MOCK_DISCOVERY_MS`). Sessions
-  expire after 60s with a retry message.
+- In mock mode the Tap screen "finds" one of your contacts after ~3.5s
+  (`MOCK_DISCOVERY_MS`). With Supabase it uses real Bluetooth. Where that isn't
+  available, it offers QR and a "simulate a tap" button. Sessions expire after 60s with a
+  retry message.
 - QR → Scan has buttons to "scan" Jake's code or Jake's $12 request, and a request
   code has "Jake pays this code", so one device (or the web preview) can walk every QR flow.
 

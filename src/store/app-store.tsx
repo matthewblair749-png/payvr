@@ -45,6 +45,8 @@ type AppState = {
   handleAvailable: (handle: string) => Promise<boolean>;
   /** People a single phone can "tap" until Bluetooth arrives in step 5. */
   tapCandidates: () => Promise<User[]>;
+  /** Remembers public profiles (e.g. someone just found by tapping). */
+  addPeople: (users: User[]) => void;
 
   sendCode: (phoneE164: string) => Promise<void>;
   /** Verifies the SMS code; resolves to whether a profile still has to be created. */
@@ -298,6 +300,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     lookupHandle,
     handleAvailable: backend.handleAvailable,
     tapCandidates,
+    addPeople,
     sendCode,
     verifyCode,
     completeSignUp,

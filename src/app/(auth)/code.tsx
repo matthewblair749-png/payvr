@@ -40,6 +40,7 @@ export default function CodeStep() {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'That code didn’t work.');
       setCode('');
+      input.current?.focus();
     } finally {
       setBusy(false);
     }

@@ -30,7 +30,8 @@ export type IconName =
   | 'request'
   | 'sparkle'
   | 'flash'
-  | 'image';
+  | 'image'
+  | 'bluetooth';
 
 type Props = { name: IconName; size?: number; color: string; strokeWidth?: number };
 
@@ -136,6 +137,8 @@ function render(name: IconName, p: object, color: string) {
       return <Path d="M12 5v14M6 13l6 6 6-6" {...p} />;
     case 'sparkle':
       return <Path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6" {...p} />;
+    case 'bluetooth':
+      return <Path d="m7 7 10 10-5 4V3l5 4L7 17" {...p} />;
     case 'flash':
       return <Path d="M13 2 4 14h7l-1 8 9-12h-7z" {...p} />;
     case 'image':

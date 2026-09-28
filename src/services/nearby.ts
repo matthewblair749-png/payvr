@@ -1,29 +1,51 @@
 /**
- * Nearby discovery for tap-to-pay.
+ * Tap-to-pay discovery. Only phones actively on the Tap screen are discoverable, and each
+ * tap session expires after 60 seconds.
  *
- * Build step 5 replaces the mock with:
- *  - Bluetooth LE (react-native-ble-plx): advertise a short-lived `ble_token` from the
- *    tap_sessions row while the Tap screen is open, scan for other Payvr tokens, and
- *    accept only very strong RSSI (phones touching).
- *  - Apple Nearby Interaction (UWB) on supported iPhones for precise distance.
- * Only phones actively on the Tap screen are discoverable, and sessions expire after 60s.
+ *  - Live (Supabase configured): Bluetooth LE + Nearby Interaction, see services/tap/live-tap.ts
+ *  - Mock (no backend): "finds" one of your contacts after a few seconds.
  */
+import type { User } from '@/data/types';
+import { backend } from '@/services/backend';
+
+import { startLiveTap, type TapCallbacks, type TapFound } from './tap/live-tap';
+import { liveTapDeps } from './tap/live-tap-deps';
+
+export type { TapFound, TapStatus } from './tap/live-tap';
+
 export const TAP_SESSION_MS = 60_000;
 
 /** How long the mock waits before "finding" a phone. */
 export const MOCK_DISCOVERY_MS = 3_500;
 
-export type NearbyPeer = { userId: string; distanceCm: number };
+export type TapHandle = { stop: () => void };
 
-export type DiscoveryHandle = { stop: () => void };
+/** A found phone from a list of people, for mock mode and the single-phone prototype button. */
+export function demoFound(user: User, mode: 'send' | 'request'): TapFound {
+  return { user, mode: mode === 'send' ? 'request' : 'send', amountCents: 0, niToken: null, via: 'demo', distanceCm: null };
+}
 
-export function startDiscovery(opts: {
-  candidates: string[];
-  onFound: (peer: NearbyPeer) => void;
-}): DiscoveryHandle {
-  const pick = opts.candidates[Math.floor(Math.random() * opts.candidates.length)];
-  const t = setTimeout(() => {
-    if (pick) opts.onFound({ userId: pick, distanceCm: 3 });
-  }, MOCK_DISCOVERY_MS);
-  return { stop: () => clearTimeout(t) };
+export function startTap(
+  input: { amountCents: number; mode: 'send' | 'request'; mockCandidates: () => Promise<User[]> },
+  cb: TapCallbacks,
+): TapHandle {
+  if (backend.mode === 'live') return startLiveTap(input, cb, liveTapDeps);
+
+  let stopped = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  cb.onStatus('searching');
+  input
+    .mockCandidates()
+    .catch(() => [])
+    .then((people) => {
+      if (stopped || !people.length) return;
+      const pick = people[Math.floor(Math.random() * people.length)];
+      timer = setTimeout(() => !stopped && cb.onFound(demoFound(pick, input.mode)), MOCK_DISCOVERY_MS);
+    });
+  return {
+    stop() {
+      stopped = true;
+      clearTimeout(timer);
+    },
+  };
 }

@@ -1,0 +1,4 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Android 12+: needed to advertise the tap token. Scan permissions come from react-native-ble-plx. -->
+  <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+</manifest>

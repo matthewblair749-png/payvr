@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,62 +10,71 @@ import { Icon } from '@/components/icon';
 import { LogoGlyph } from '@/components/logo';
 import { PulseRings } from '@/components/pulse-rings';
 import { Text } from '@/components/text';
-import type { User } from '@/data/types';
-import { startDiscovery, TAP_SESSION_MS } from '@/services/nearby';
+import type { Draft } from '@/data/types';
+import { demoFound, startTap, TAP_SESSION_MS, type TapFound, type TapStatus } from '@/services/nearby';
 import { useApp } from '@/store/app-store';
 import { useTheme } from '@/theme/theme-provider';
 import { MIN_TAP } from '@/theme/typography';
 import { haptics } from '@/utils/haptics';
 import { formatShort } from '@/utils/money';
 
-type Phase = 'searching' | 'found' | 'expired';
+type Phase = 'searching' | 'found' | 'expired' | 'blocked';
+type Blocked = { status: Exclude<TapStatus, 'starting' | 'searching'>; message?: string };
 
 export default function Tap() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { draft, setDraft, tapCandidates } = useApp();
+  const { draft, setDraft, tapCandidates, addPeople } = useApp();
   const [phase, setPhase] = useState<Phase>('searching');
-  const [peer, setPeer] = useState<User | null>(null);
+  const [starting, setStarting] = useState(true);
+  const [blocked, setBlocked] = useState<Blocked | null>(null);
+  const [found, setFound] = useState<TapFound | null>(null);
   const [remaining, setRemaining] = useState(TAP_SESSION_MS / 1000);
   const [attempt, setAttempt] = useState(0);
   const sheet = useSharedValue(400);
   const startedAt = useRef(0);
 
-  // Discovery + 60s session expiry. Only this screen advertises / scans.
-  // Each new `attempt` (retry / "not them") starts a fresh session.
-  useEffect(() => {
-    startedAt.current = Date.now();
+  const showFound = useCallback(
+    (f: TapFound) => {
+      addPeople([f.user]);
+      haptics.success();
+      setFound(f);
+      setPhase('found');
+      sheet.set(withSpring(0, { damping: 18, stiffness: 180 }));
+    },
+    [addPeople, sheet],
+  );
 
-    let discovery: { stop: () => void } = { stop: () => {} };
-    let cancelled = false;
-    tapCandidates()
-      .catch(() => [])
-      .then((people) => {
-        if (cancelled) return;
-        discovery = startDiscovery({
-          candidates: people.map((p) => p.id),
-          onFound: ({ userId }) => {
-            const u = people.find((p) => p.id === userId);
-            if (!u) return;
-            haptics.success();
-            setPeer(u);
-            setPhase('found');
-            sheet.set(withSpring(0, { damping: 18, stiffness: 180 }));
-          },
-        });
-      });
+  // One tap session per `attempt` (retry / "not them"). Only this screen advertises and
+  // scans; leaving the screen stops the radios and ends the session on the server.
+  useEffect(() => {
+    if (!draft) return;
+    startedAt.current = Date.now();
+    const tap = startTap(
+      { amountCents: draft.amountCents, mode: draft.mode, mockCandidates: tapCandidates },
+      {
+        onStatus: (status, message) => {
+          if (status === 'starting') return;
+          setStarting(false);
+          if (status !== 'searching') {
+            setBlocked({ status, message });
+            setPhase('blocked');
+          }
+        },
+        onFound: showFound,
+      },
+    );
     const tick = setInterval(() => {
       const left = Math.max(0, Math.ceil((TAP_SESSION_MS - (Date.now() - startedAt.current)) / 1000));
       setRemaining(left);
       if (left === 0) {
-        discovery.stop();
+        tap.stop();
         setPhase((p) => (p === 'searching' ? 'expired' : p));
         clearInterval(tick);
       }
     }, 500);
     return () => {
-      cancelled = true;
-      discovery.stop();
+      tap.stop();
       clearInterval(tick);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -77,15 +86,25 @@ export default function Tap() {
     sheet.set(withTiming(400, { duration: 200 }));
     setRemaining(TAP_SESSION_MS / 1000);
     setPhase('searching');
-    setPeer(null);
+    setStarting(true);
+    setBlocked(null);
+    setFound(null);
     setAttempt((a) => a + 1);
   }, [sheet]);
+
+  const simulateTap = useCallback(async () => {
+    if (!draft) return;
+    const people = await tapCandidates().catch(() => []);
+    const pick = people[0];
+    if (pick) showFound(demoFound(pick, draft.mode));
+  }, [draft, tapCandidates, showFound]);
 
   if (!draft) {
     return null;
   }
 
   const verb = draft.mode === 'send' ? 'Sending' : 'Requesting';
+  const showQr = () => router.push({ pathname: '/qr', params: { tab: draft.mode === 'send' ? 'scan' : 'mine' } });
 
   return (
     <View style={[styles.fill, { backgroundColor: colors.background, paddingTop: insets.top + 12, paddingBottom: Math.max(insets.bottom, 16) }]}>
@@ -94,7 +113,7 @@ export default function Tap() {
           {verb} {formatShort(draft.amountCents)}
           {draft.note ? ` · ${draft.note}` : ''}
         </Text>
-        {phase === 'searching' ? (
+        {phase === 'searching' && !starting ? (
           <Text variant="caption" color="textSecondary" accessibilityLabel={`Session expires in ${remaining} seconds`}>
             {`0:${String(remaining).padStart(2, '0')}`}
           </Text>
@@ -103,32 +122,24 @@ export default function Tap() {
 
       <View style={styles.center}>
         {phase === 'expired' ? (
-          <View style={styles.expired}>
-            <View style={[styles.expiredIcon, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <LogoGlyph size={56} color={colors.textSecondary} />
-            </View>
-            <Text variant="title" align="center">
-              Didn’t find anyone
-            </Text>
-            <Text color="textSecondary" align="center" style={styles.expiredBody}>
-              Tap sessions close after 60 seconds to keep you safe. Make sure their Payvr is open on the Tap screen, then try again.
-            </Text>
-            <Button label="Try again" onPress={restart} style={styles.retry} />
-          </View>
+          <Notice
+            title="Didn’t find anyone"
+            body="Tap sessions close after 60 seconds to keep you safe. Make sure their Payvr is open on the Tap screen, then try again."
+            actions={<Button label="Try again" onPress={restart} style={styles.stretch} />}
+          />
+        ) : phase === 'blocked' && blocked ? (
+          <BlockedNotice blocked={blocked} onRetry={restart} onQr={showQr} onSimulate={simulateTap} />
         ) : (
           <>
             <Text variant="title" align="center" style={styles.title} accessibilityRole="header">
-              {phase === 'found' ? 'Found them' : 'Hold your phone\nnear theirs'}
+              {phase === 'found' ? 'Found them' : starting ? 'Getting ready…' : 'Hold your phone\nnear theirs'}
             </Text>
-            <PulseRings size={132} active={phase === 'searching'}>
+            <PulseRings size={132} active={phase === 'searching' && !starting}>
               <View style={[styles.logo, { backgroundColor: colors.primary }]}>
                 <LogoGlyph size={84} color={colors.onPrimary} />
               </View>
             </PulseRings>
-            <Pressable
-              accessibilityRole="link"
-              onPress={() => router.push({ pathname: '/qr', params: { tab: draft.mode === 'send' ? 'scan' : 'mine' } })}
-              style={styles.qrLink}>
+            <Pressable accessibilityRole="link" onPress={showQr} style={styles.qrLink}>
               <Icon name="qr" size={18} color={colors.accent} />
               <Text variant="bodyMedium" color="accent">
                 Show QR code instead
@@ -148,7 +159,7 @@ export default function Tap() {
         style={styles.cancel}
       />
 
-      {peer ? (
+      {found ? (
         <Animated.View
           style={[
             styles.sheet,
@@ -158,16 +169,18 @@ export default function Tap() {
           accessibilityViewIsModal>
           <View style={[styles.grabber, { backgroundColor: colors.border }]} />
           <View style={styles.peerRow}>
-            <Avatar name={peer.name} uri={peer.avatarUrl} size={64} ring />
+            <Avatar name={found.user.name} uri={found.user.avatarUrl} size={64} ring />
             <View style={styles.flex}>
-              <Text variant="heading">{peer.name}</Text>
-              <Text color="textSecondary">@{peer.handle}</Text>
+              <Text variant="heading">{found.user.name}</Text>
+              <Text color="textSecondary">@{found.user.handle}</Text>
+              <HowFound found={found} />
             </View>
           </View>
+          <IntentHint found={found} draft={draft} />
           <Button
-            label={`Continue with ${peer.name.split(' ')[0]}`}
+            label={`Continue with ${found.user.name.split(' ')[0]}`}
             onPress={() => {
-              setDraft({ ...draft, peerId: peer.id });
+              setDraft({ ...draft, peerId: found.user.id });
               router.replace('/confirm');
             }}
           />
@@ -178,17 +191,152 @@ export default function Tap() {
   );
 }
 
+function HowFound({ found }: { found: TapFound }) {
+  const text =
+    found.via === 'uwb' && found.distanceCm !== null
+      ? `${Math.max(1, found.distanceCm)} cm away · Ultra Wideband`
+      : found.via === 'bluetooth'
+        ? 'Right next to you · Bluetooth'
+        : null;
+  return text ? (
+    <Text variant="caption" color="accent" style={styles.how}>
+      {text}
+    </Text>
+  ) : null;
+}
+
+/** What the other phone is doing, so mismatches are obvious before confirming. */
+function IntentHint({ found, draft }: { found: TapFound; draft: Draft }) {
+  if (found.via === 'demo') return null;
+  const first = found.user.name.split(' ')[0];
+  let text: string | null = null;
+  let warn = false;
+  if (draft.mode === 'send' && found.mode === 'request') {
+    warn = found.amountCents !== draft.amountCents;
+    text = warn
+      ? `${first} is requesting ${formatShort(found.amountCents)}, but you’re sending ${formatShort(draft.amountCents)}.`
+      : `${first} is requesting ${formatShort(found.amountCents)}.`;
+  } else if (draft.mode === found.mode) {
+    warn = true;
+    text = draft.mode === 'send' ? `${first} is also trying to send money.` : `${first} is also requesting money.`;
+  }
+  return text ? (
+    <Text variant="small" color={warn ? 'error' : 'textSecondary'} accessibilityLiveRegion="polite">
+      {text}
+    </Text>
+  ) : null;
+}
+
+function BlockedNotice({
+  blocked,
+  onRetry,
+  onQr,
+  onSimulate,
+}: {
+  blocked: Blocked;
+  onRetry: () => void;
+  onQr: () => void;
+  onSimulate: () => void;
+}) {
+  switch (blocked.status) {
+    case 'bluetooth_off':
+      return (
+        <Notice
+          icon="bluetooth"
+          title="Turn on Bluetooth"
+          body="Payvr uses Bluetooth to find the phone you’re tapping. Turn it on in Control Center or Settings."
+          actions={
+            <>
+              <Button label="Try again" onPress={onRetry} style={styles.stretch} />
+              <Button label="Show QR code instead" variant="ghost" onPress={onQr} style={styles.stretch} />
+            </>
+          }
+        />
+      );
+    case 'unauthorized':
+      return (
+        <Notice
+          icon="bluetooth"
+          title="Allow Bluetooth"
+          body="Bluetooth permission is off for Payvr, so it can’t find the phone you’re tapping."
+          actions={
+            <>
+              <Button label="Open Settings" onPress={() => Linking.openSettings()} style={styles.stretch} />
+              <Button label="Try again" variant="ghost" onPress={onRetry} style={styles.stretch} />
+            </>
+          }
+        />
+      );
+    case 'unsupported':
+      return (
+        <Notice
+          icon="qr"
+          title="Tap isn’t available here"
+          body="Tapping needs Bluetooth and the Payvr app build (not Expo Go or the web preview). Use a QR code instead."
+          actions={
+            <>
+              <Button label="Show QR code" onPress={onQr} style={styles.stretch} />
+              <Button label="Prototype: simulate a tap" variant="ghost" onPress={onSimulate} style={styles.stretch} />
+            </>
+          }
+        />
+      );
+    default:
+      return (
+        <Notice
+          title="Something went wrong"
+          body={blocked.message ?? 'Tapping stopped unexpectedly.'}
+          actions={
+            <>
+              <Button label="Try again" onPress={onRetry} style={styles.stretch} />
+              <Button label="Show QR code instead" variant="ghost" onPress={onQr} style={styles.stretch} />
+            </>
+          }
+        />
+      );
+  }
+}
+
+function Notice({
+  icon,
+  title,
+  body,
+  actions,
+}: {
+  icon?: 'bluetooth' | 'qr';
+  title: string;
+  body: string;
+  actions: React.ReactNode;
+}) {
+  const { colors } = useTheme();
+  return (
+    <View style={styles.notice}>
+      <View style={[styles.noticeIcon, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        {icon ? <Icon name={icon} size={44} color={colors.textSecondary} strokeWidth={1.6} /> : <LogoGlyph size={56} color={colors.textSecondary} />}
+      </View>
+      <Text variant="title" align="center" accessibilityRole="header">
+        {title}
+      </Text>
+      <Text color="textSecondary" align="center" style={styles.noticeBody}>
+        {body}
+      </Text>
+      <View style={styles.noticeActions}>{actions}</View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   flex: { flex: 1 },
+  stretch: { alignSelf: 'stretch' },
   top: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 24, minHeight: 24 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   title: { marginBottom: 8 },
   logo: { width: 132, height: 132, borderRadius: 66, alignItems: 'center', justifyContent: 'center' },
   qrLink: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: MIN_TAP, paddingHorizontal: 12 },
   cancel: { marginHorizontal: 24 },
-  expired: { alignItems: 'center', paddingHorizontal: 24, gap: 10 },
-  expiredIcon: {
+  notice: { alignItems: 'center', paddingHorizontal: 24, gap: 10, alignSelf: 'stretch' },
+  noticeIcon: {
     width: 112,
     height: 112,
     borderRadius: 56,
@@ -197,8 +345,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 16,
   },
-  expiredBody: { maxWidth: 320 },
-  retry: { marginTop: 18, alignSelf: 'stretch' },
+  noticeBody: { maxWidth: 320 },
+  noticeActions: { marginTop: 18, alignSelf: 'stretch', gap: 4 },
   sheet: {
     position: 'absolute',
     left: 0,
@@ -212,5 +360,6 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   grabber: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, marginBottom: 8 },
-  peerRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 8 },
+  peerRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 4 },
+  how: { marginTop: 4 },
 });

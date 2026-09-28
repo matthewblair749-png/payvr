@@ -99,9 +99,13 @@ export default function Home() {
           </Text>
         </Pressable>
       </View>
-      {recent.map((tx) => (
-        <TransactionRow key={tx.id} tx={tx} />
-      ))}
+      {recent.length ? (
+        recent.map((tx) => <TransactionRow key={tx.id} tx={tx} />)
+      ) : (
+        <Text color="textSecondary" style={styles.empty}>
+          No payments yet. Tap phones with a friend to send your first one.
+        </Text>
+      )}
     </ScrollView>
   );
 }
@@ -165,4 +169,5 @@ const styles = StyleSheet.create({
   },
   recentHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
   seeAll: { minHeight: MIN_TAP, justifyContent: 'center' },
+  empty: { marginTop: 8 },
 });

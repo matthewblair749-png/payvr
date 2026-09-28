@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["PayvrNearbyModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.payvrnearby.PayvrNearbyModule"]
+  }
+}

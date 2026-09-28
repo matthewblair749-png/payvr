@@ -192,6 +192,27 @@ export const liveBackend: Backend = {
     };
   },
 
+  async startTapSession({ amountCents, mode, niToken }) {
+    const { data, error } = await db().rpc('start_tap_session', {
+      p_amount_cents: amountCents,
+      p_mode: mode,
+      p_ni_token: niToken,
+    });
+    if (error || !data) fail(error, 'Could not start tapping.');
+    const row = data as { ble_token: string; expires_at: string };
+    return { bleToken: row.ble_token, expiresAt: row.expires_at };
+  },
+  async resolveTapToken(token) {
+    const { data, error } = await db().rpc('resolve_tap_token', { p_token: token });
+    if (error) fail(error, 'Could not check that phone.');
+    const row = (data as (UserRow & { mode: 'send' | 'request'; amount_cents: number; ni_token: string | null })[] | null)?.[0];
+    if (!row) return null;
+    return { user: toUser(row), mode: row.mode, amountCents: Number(row.amount_cents), niToken: row.ni_token };
+  },
+  async endTapSession() {
+    await db().rpc('end_tap_session');
+  },
+
   async simulateIncoming(kind, opts) {
     // Helpers from supabase/seed.sql (dev projects only).
     const { error } =

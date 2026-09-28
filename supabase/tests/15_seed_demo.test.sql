@@ -1,6 +1,7 @@
 -- Demo helpers from supabase/seed.sql.
 \set ON_ERROR_STOP 1
 \ir helpers.inc.sql
+set client_min_messages = warning;
 \ir ../seed.sql
 set client_min_messages = notice;
 insert into auth.users (id, phone) values ('00000000-0000-0000-0000-0000000000f1', '19995550000');

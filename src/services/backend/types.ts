@@ -20,6 +20,18 @@ export type LiveEvent =
 
 export type ProfileInput = { name: string; handle: string; avatarUri: string | null };
 
+/** A 60-second tap session: its token is advertised over Bluetooth while the Tap screen is open. */
+export type TapSession = { bleToken: string; expiresAt: string };
+
+/** The phone on the other side of a tap, as resolved by the server. */
+export type TapPeer = {
+  user: User;
+  mode: 'send' | 'request';
+  amountCents: number;
+  /** Their Nearby Interaction discovery token (UWB iPhones only). */
+  niToken: string | null;
+};
+
 /**
  * Everything the app needs from a server, except moving money (see services/payments.ts).
  * Implemented by the in-memory mock and by Supabase.
@@ -46,6 +58,12 @@ export interface Backend {
   loadSnapshot(userId: string): Promise<Snapshot>;
   saveSettings(userId: string, patch: Partial<RemoteSettings>): Promise<void>;
   subscribe(userId: string, onEvent: (e: LiveEvent) => void): () => void;
+
+  // Tap sessions (Bluetooth / Nearby Interaction)
+  startTapSession(input: { amountCents: number; mode: 'send' | 'request'; niToken: string | null }): Promise<TapSession>;
+  /** Null when the token is unknown, expired, or the other phone left the Tap screen. */
+  resolveTapToken(token: string): Promise<TapPeer | null>;
+  endTapSession(): Promise<void>;
 
   // Prototype helpers
   /** Pretend another phone just paid you / requested from you. */
