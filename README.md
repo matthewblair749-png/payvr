@@ -45,9 +45,9 @@ a fingerprint, it asks for that first.
 src/
   app/                  Expo Router screens
     (auth)/             phone → code → profile → Face ID → PIN → welcome
-    (tabs)/             home, activity, profile (+ raised Tap button in the tab bar)
-    amount, tap, confirm, success, request/[id], qr, person/[id],
-    transaction/[id], wallet/[action], settings/*, legal/[doc]
+    (tabs)/             home, feed, wallet, profile (+ raised Tap button in the tab bar)
+    amount, people, tap, confirm, success, request/[id], qr, person/[id], feed/[id],
+    transaction/[id], money/[action], settings/*, legal/[doc]
   components/           UI kit: logo (SVG), icons (SVG), buttons, keypad, pulse rings, check draw…
   theme/                colors (both palettes), typography, theme provider (200ms fade)
   services/
