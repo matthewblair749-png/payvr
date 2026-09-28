@@ -1,6 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
@@ -18,12 +18,27 @@ const HANDLE_RE = /^[a-z0-9_.]{3,20}$/;
 
 export default function ProfileSetup() {
   const { colors } = useTheme();
-  const { userByHandle } = useApp();
+  const { handleAvailable } = useApp();
   const [name, setName] = useState(signupDraft.name);
   const [handle, setHandle] = useState(signupDraft.handle);
   const [photo, setPhoto] = useState<string | null>(signupDraft.avatarUrl);
 
-  const taken = handle.length > 0 && userByHandle(handle) && handle !== 'matthew';
+  const [checked, setChecked] = useState<{ handle: string; available: boolean } | null>(null);
+  const taken = checked?.handle === handle && !checked.available;
+
+  // Check the handle with the server as you type (debounced).
+  useEffect(() => {
+    if (!HANDLE_RE.test(handle)) return;
+    let live = true;
+    const t = setTimeout(() => {
+      handleAvailable(handle).then((available) => live && setChecked({ handle, available }));
+    }, 350);
+    return () => {
+      live = false;
+      clearTimeout(t);
+    };
+  }, [handle, handleAvailable]);
+
   const handleError =
     handle.length === 0
       ? null

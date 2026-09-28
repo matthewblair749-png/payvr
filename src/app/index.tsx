@@ -15,7 +15,7 @@ export default function Splash() {
   useEffect(() => {
     if (status === 'loading') return;
     const t = setTimeout(() => {
-      router.replace(status === 'signedIn' ? '/home' : '/onboarding');
+      router.replace(status === 'signedIn' ? '/home' : status === 'needsProfile' ? '/profile-setup' : '/onboarding');
     }, 1300);
     return () => clearTimeout(t);
   }, [status]);

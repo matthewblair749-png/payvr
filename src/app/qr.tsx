@@ -64,20 +64,25 @@ function MyCode() {
 
 function Scanner() {
   const { colors } = useTheme();
-  const { userByHandle, draft, setDraft, rememberContact, me } = useApp();
+  const { lookupHandle, draft, setDraft, rememberContact, me, backendMode } = useApp();
   const [permission, requestPermission] = useCameraPermissions();
   const [error, setError] = useState<string | null>(null);
   const handled = useRef(false);
 
-  const onCode = (data: string) => {
+  const onCode = async (data: string) => {
     if (handled.current) return;
     const handle = parseQrPayload(data);
-    const user = handle ? userByHandle(handle) : undefined;
-    if (!user || user.id === me.id) {
+    if (!handle) {
       setError('That’s not a Payvr code.');
       return;
     }
     handled.current = true;
+    const user = await lookupHandle(handle).catch(() => null);
+    if (!user || user.id === me.id) {
+      handled.current = false;
+      setError(user ? 'That’s your own code.' : 'We couldn’t find that person.');
+      return;
+    }
     haptics.success();
     rememberContact(user.id);
     if (draft) {
@@ -116,7 +121,7 @@ function Scanner() {
       </Text>
       {/* Prototype helper: lets one phone (or the web preview) walk the flow. */}
       <Button
-        label={Platform.OS === 'web' ? 'Prototype: scan Jake’s code' : 'Prototype: simulate a scan'}
+        label={Platform.OS === 'web' || backendMode === 'live' ? 'Prototype: scan Jake’s code' : 'Prototype: simulate a scan'}
         variant="ghost"
         size="md"
         onPress={() => onCode(qrPayloadFor('jake'))}

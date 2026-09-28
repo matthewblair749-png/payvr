@@ -1,5 +1,6 @@
 // Renders the Payvr logo SVG to the PNG assets Expo needs.
 // Usage: node scripts/make-icons.mjs  (requires Playwright + Chromium)
+// eslint-disable-next-line import/no-unresolved -- Playwright is a one-off tool, not an app dependency.
 import { chromium } from 'playwright';
 import { mkdirSync } from 'node:fs';
 

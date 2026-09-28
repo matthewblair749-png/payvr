@@ -23,33 +23,37 @@ type Phase = 'searching' | 'found' | 'expired';
 export default function Tap() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { draft, setDraft, contacts, userById } = useApp();
+  const { draft, setDraft, tapCandidates } = useApp();
   const [phase, setPhase] = useState<Phase>('searching');
   const [peer, setPeer] = useState<User | null>(null);
   const [remaining, setRemaining] = useState(TAP_SESSION_MS / 1000);
   const [attempt, setAttempt] = useState(0);
   const sheet = useSharedValue(400);
-  const startedAt = useRef(Date.now());
+  const startedAt = useRef(0);
 
   // Discovery + 60s session expiry. Only this screen advertises / scans.
+  // Each new `attempt` (retry / "not them") starts a fresh session.
   useEffect(() => {
     startedAt.current = Date.now();
-    setRemaining(TAP_SESSION_MS / 1000);
-    setPhase('searching');
-    setPeer(null);
-    sheet.value = 400;
 
-    const discovery = startDiscovery({
-      candidates: contacts.map((c) => c.userId),
-      onFound: ({ userId }) => {
-        const u = userById(userId);
-        if (!u) return;
-        haptics.success();
-        setPeer(u);
-        setPhase('found');
-        sheet.value = withSpring(0, { damping: 18, stiffness: 180 });
-      },
-    });
+    let discovery: { stop: () => void } = { stop: () => {} };
+    let cancelled = false;
+    tapCandidates()
+      .catch(() => [])
+      .then((people) => {
+        if (cancelled) return;
+        discovery = startDiscovery({
+          candidates: people.map((p) => p.id),
+          onFound: ({ userId }) => {
+            const u = people.find((p) => p.id === userId);
+            if (!u) return;
+            haptics.success();
+            setPeer(u);
+            setPhase('found');
+            sheet.set(withSpring(0, { damping: 18, stiffness: 180 }));
+          },
+        });
+      });
     const tick = setInterval(() => {
       const left = Math.max(0, Math.ceil((TAP_SESSION_MS - (Date.now() - startedAt.current)) / 1000));
       setRemaining(left);
@@ -60,6 +64,7 @@ export default function Tap() {
       }
     }, 500);
     return () => {
+      cancelled = true;
       discovery.stop();
       clearInterval(tick);
     };
@@ -68,8 +73,11 @@ export default function Tap() {
 
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: sheet.value }] }));
 
-  const notThem = useCallback(() => {
-    sheet.value = withTiming(400, { duration: 200 });
+  const restart = useCallback(() => {
+    sheet.set(withTiming(400, { duration: 200 }));
+    setRemaining(TAP_SESSION_MS / 1000);
+    setPhase('searching');
+    setPeer(null);
     setAttempt((a) => a + 1);
   }, [sheet]);
 
@@ -105,7 +113,7 @@ export default function Tap() {
             <Text color="textSecondary" align="center" style={styles.expiredBody}>
               Tap sessions close after 60 seconds to keep you safe. Make sure their Payvr is open on the Tap screen, then try again.
             </Text>
-            <Button label="Try again" onPress={() => setAttempt((a) => a + 1)} style={styles.retry} />
+            <Button label="Try again" onPress={restart} style={styles.retry} />
           </View>
         ) : (
           <>
@@ -163,7 +171,7 @@ export default function Tap() {
               router.replace('/confirm');
             }}
           />
-          <Button label="Not them? Keep looking" variant="ghost" size="md" onPress={notThem} />
+          <Button label="Not them? Keep looking" variant="ghost" size="md" onPress={restart} />
         </Animated.View>
       ) : null}
     </View>

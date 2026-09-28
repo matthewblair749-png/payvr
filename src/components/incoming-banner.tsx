@@ -30,10 +30,13 @@ export function IncomingBanner() {
   const tx = incoming.transaction;
   const other = userById(tx.fromUser === me.id ? tx.toUser : tx.fromUser);
   const first = other?.name.split(' ')[0] ?? 'Someone';
+  const amount = formatShort(tx.amountCents);
   const title =
     incoming.kind === 'payment'
-      ? `${first} paid you ${formatShort(tx.amountCents)}`
-      : `${first} is requesting ${formatShort(tx.amountCents)}`;
+      ? `${first} paid you ${amount}`
+      : incoming.kind === 'requestPaid'
+        ? `${first} paid your ${amount} request`
+        : `${first} is requesting ${amount}`;
 
   return (
     <Animated.View
@@ -60,7 +63,7 @@ export function IncomingBanner() {
             </Text>
           ) : null}
         </View>
-        {incoming.kind === 'payment' ? (
+        {incoming.kind !== 'request' ? (
           <Text variant="amount" color="successText">
             +{formatShort(tx.amountCents)}
           </Text>

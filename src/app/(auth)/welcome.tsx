@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInUp, ZoomIn } from 'react-native-reanimated';
 
@@ -12,22 +13,36 @@ import { signupDraft } from '@/store/signup-draft';
 export default function Welcome() {
   const { completeSignUp } = useApp();
   const first = signupDraft.name.split(' ')[0] || 'there';
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const start = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await completeSignUp({
+        name: signupDraft.name || 'Matthew Cooper',
+        handle: signupDraft.handle || 'matthew',
+        avatarUri: signupDraft.avatarUrl,
+      });
+      router.replace('/home');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not create your account.');
+      setBusy(false);
+    }
+  };
 
   return (
     <Screen
       footer={
-        <Button
-          label="Start using Payvr"
-          onPress={async () => {
-            await completeSignUp({
-              name: signupDraft.name || 'Matthew Cooper',
-              handle: signupDraft.handle || 'matthew',
-              phone: signupDraft.phone,
-              avatarUrl: signupDraft.avatarUrl,
-            });
-            router.replace('/home');
-          }}
-        />
+        <>
+          {error ? (
+            <Text variant="small" color="error" align="center">
+              {error}
+            </Text>
+          ) : null}
+          <Button label="Start using Payvr" loading={busy} onPress={start} />
+        </>
       }>
       <View style={styles.center}>
         <Animated.View entering={ZoomIn.springify().damping(14)}>

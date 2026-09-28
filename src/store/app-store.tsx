@@ -1,24 +1,34 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
-import { ME, PEOPLE, SEED_BALANCE_CENTS, SEED_CONTACTS, SEED_TRANSACTIONS } from '@/data/mock';
 import type { Contact, Draft, Transaction, User } from '@/data/types';
-import { payments, type LedgerSnapshot } from '@/services/payments';
+import { backend, type LiveEvent, type ProfileInput } from '@/services/backend';
+import { payments } from '@/services/payments';
 import { storage, StorageKeys } from '@/services/storage';
-import { isToday } from '@/utils/dates';
+import type { ThemePreference } from '@/theme/colors';
 import { haptics } from '@/utils/haptics';
 
-type Status = 'loading' | 'signedOut' | 'signedIn';
+/**
+ * loading      → checking for a saved session
+ * signedOut    → show onboarding
+ * needsProfile → phone verified, but no name / @handle yet
+ * signedIn     → everything loaded
+ */
+type Status = 'loading' | 'signedOut' | 'needsProfile' | 'signedIn';
 
 export type IncomingEvent = {
   id: string;
-  kind: 'payment' | 'request';
+  kind: 'payment' | 'request' | 'requestPaid';
   transaction: Transaction;
 };
 
 type Settings = { notificationsOn: boolean; biometricsOn: boolean };
 
+const EMPTY_USER: User = { id: '', name: '', handle: '' };
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 type AppState = {
   status: Status;
+  backendMode: 'mock' | 'live';
   me: User;
   balanceCents: number;
   transactions: Transaction[];
@@ -26,15 +36,23 @@ type AppState = {
   draft: Draft | null;
   settings: Settings;
   incoming: IncomingEvent | null;
+  /** Sent in the last 24 hours (the daily limit is a rolling 24h window). */
   sentTodayCents: number;
 
   userById: (id: string) => User | undefined;
-  userByHandle: (handle: string) => User | undefined;
+  /** Finds someone by QR handle (and remembers their profile). */
+  lookupHandle: (handle: string) => Promise<User | null>;
+  handleAvailable: (handle: string) => Promise<boolean>;
+  /** People a single phone can "tap" until Bluetooth arrives in step 5. */
+  tapCandidates: () => Promise<User[]>;
 
-  completeSignUp: (profile: Pick<User, 'name' | 'handle' | 'phone' | 'avatarUrl'>) => Promise<void>;
-  logIn: () => Promise<void>;
+  sendCode: (phoneE164: string) => Promise<void>;
+  /** Verifies the SMS code; resolves to whether a profile still has to be created. */
+  verifyCode: (phoneE164: string, code: string) => Promise<{ needsProfile: boolean }>;
+  completeSignUp: (profile: ProfileInput) => Promise<void>;
   signOut: () => Promise<void>;
   updateSettings: (patch: Partial<Settings>) => void;
+  saveTheme: (theme: ThemePreference) => void;
 
   setDraft: (d: Draft | null) => void;
   /** Executes the current draft (send, request, or pay-a-request). */
@@ -46,7 +64,6 @@ type AppState = {
   rememberContact: (userId: string) => void;
 
   dismissIncoming: () => void;
-  /** Dev helpers standing in for realtime events from another phone. */
   simulateIncomingPayment: () => void;
   simulateIncomingRequest: () => void;
 };
@@ -55,155 +72,220 @@ const Ctx = createContext<AppState | null>(null);
 
 export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<Status>('loading');
-  const [me, setMe] = useState<User>(ME);
-  const [balanceCents, setBalance] = useState(SEED_BALANCE_CENTS);
-  const [transactions, setTransactions] = useState<Transaction[]>(SEED_TRANSACTIONS);
-  const [contacts, setContacts] = useState<Contact[]>(SEED_CONTACTS);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [me, setMe] = useState<User>(EMPTY_USER);
+  const [people, setPeople] = useState<Record<string, User>>({});
+  const [balanceCents, setBalance] = useState(0);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [settings, setSettings] = useState<Settings>({ notificationsOn: true, biometricsOn: true });
   const [incoming, setIncoming] = useState<IncomingEvent | null>(null);
 
-  useEffect(() => {
-    storage.get(StorageKeys.session).then((s) => setStatus(s ? 'signedIn' : 'signedOut'));
+  const addPeople = useCallback((users: User[]) => {
+    if (!users.length) return;
+    setPeople((p) => {
+      const next = { ...p };
+      users.forEach((u) => (next[u.id] = u));
+      return next;
+    });
   }, []);
 
-  const directory = useMemo(() => new Map([me, ...PEOPLE].map((u) => [u.id, u])), [me]);
-  const userById = useCallback((id: string) => directory.get(id), [directory]);
-  const userByHandle = useCallback(
-    (handle: string) => [...directory.values()].find((u) => u.handle === handle.toLowerCase()),
-    [directory],
+  /** Loads the account after sign-in (or on app start with a saved session). */
+  const load = useCallback(
+    async (uid: string) => {
+      const profile = await backend.getProfile(uid);
+      setUserId(uid);
+      if (!profile) {
+        setStatus('needsProfile');
+        return;
+      }
+      const snap = await backend.loadSnapshot(uid);
+      setMe(snap.me);
+      setBalance(snap.balanceCents);
+      setTransactions(snap.transactions);
+      setContacts(snap.contacts);
+      setPeople({});
+      addPeople(snap.people);
+      const bio = await storage.get(StorageKeys.biometrics);
+      setSettings({ notificationsOn: snap.settings.notificationsOn, biometricsOn: bio !== '0' });
+      setStatus('signedIn');
+    },
+    [addPeople],
   );
 
-  const sentTodayCents = useMemo(
-    () =>
-      transactions
-        .filter((t) => t.fromUser === me.id && t.status === 'completed' && isToday(t.createdAt))
-        .reduce((s, t) => s + t.amountCents, 0),
-    [transactions, me.id],
-  );
+  // Restore the session on launch.
+  useEffect(() => {
+    backend
+      .currentUserId()
+      .then((uid) => (uid ? load(uid) : setStatus('signedOut')))
+      .catch(() => setStatus('signedOut'));
+    return backend.onSignedOut(() => setStatus('signedOut'));
+  }, [load]);
 
-  // Refs so async actions always see the latest ledger.
-  const ledgerRef = useRef<LedgerSnapshot>({ balanceCents, sentTodayCents });
-  ledgerRef.current = { balanceCents, sentTodayCents };
+  const peopleRef = useRef(people);
+  useEffect(() => {
+    peopleRef.current = people;
+  }, [people]);
 
-  const upsert = (tx: Transaction) =>
-    setTransactions((list) => [tx, ...list.filter((t) => t.id !== tx.id)]);
+  // Clock for the rolling 24h limit window; ticks each minute.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(t);
+  }, []);
 
-  const rememberContact = useCallback((userId: string) => {
+  // Realtime: money and requests arriving from other phones.
+  useEffect(() => {
+    if (status !== 'signedIn' || !userId) return;
+    const onEvent = (e: LiveEvent) => {
+      if (e.type === 'balance') {
+        setBalance(e.balanceCents);
+        return;
+      }
+      const tx = e.tx;
+      setTransactions((list) => [tx, ...list.filter((t) => t.id !== tx.id)].sort(byNewest));
+      const otherId = tx.fromUser === userId ? tx.toUser : tx.fromUser;
+      if (!peopleRef.current[otherId]) backend.getUsers([otherId]).then(addPeople).catch(() => {});
+
+      let kind: IncomingEvent['kind'] | null = null;
+      if (e.change === 'insert' && tx.type === 'send' && tx.toUser === userId) kind = 'payment';
+      if (e.change === 'insert' && tx.type === 'request' && tx.fromUser === userId && tx.status === 'pending') kind = 'request';
+      if (e.change === 'update' && tx.type === 'request' && tx.toUser === userId && tx.status === 'completed') kind = 'requestPaid';
+      if (kind) {
+        if (kind === 'request') haptics.medium();
+        else haptics.success();
+        setIncoming({ id: tx.id, kind, transaction: tx });
+      }
+    };
+    return backend.subscribe(userId, onEvent);
+  }, [status, userId, addPeople]);
+
+  const userById = useCallback((id: string) => (id === me.id ? me : people[id]), [me, people]);
+
+  const sentTodayCents = useMemo(() => {
+    const since = now - DAY_MS;
+    return transactions
+      .filter((t) => t.fromUser === me.id && t.status === 'completed')
+      .filter((t) => new Date(t.completedAt ?? t.createdAt).getTime() > since)
+      .reduce((s, t) => s + t.amountCents, 0);
+  }, [transactions, me.id, now]);
+
+  const applyTx = useCallback((tx: Transaction, balance: number) => {
+    setTransactions((list) => [tx, ...list.filter((t) => t.id !== tx.id)].sort(byNewest));
+    setBalance(balance);
+  }, []);
+
+  const rememberContact = useCallback((id: string) => {
     setContacts((list) => [
-      { userId, lastTappedAt: new Date().toISOString() },
-      ...list.filter((c) => c.userId !== userId),
+      { userId: id, lastTappedAt: new Date().toISOString() },
+      ...list.filter((c) => c.userId !== id),
     ]);
   }, []);
 
-  const payRequest = useCallback(async (id: string) => {
-    const req = transactions.find((t) => t.id === id);
-    if (!req) throw new Error('Request not found');
-    const done = await payments.payRequest(req, ledgerRef.current);
-    upsert(done);
-    setBalance((b) => b - done.amountCents);
-    return done;
-  }, [transactions]);
+  const payRequest = useCallback(
+    async (id: string) => {
+      const { transaction, balanceCents: b } = await payments.payRequest(id);
+      applyTx(transaction, b);
+      rememberContact(transaction.toUser);
+      return transaction;
+    },
+    [applyTx, rememberContact],
+  );
 
   const submitDraft = useCallback(async () => {
     if (!draft?.peerId) throw new Error('No one to pay yet');
     if (draft.requestId) return payRequest(draft.requestId);
-    let tx: Transaction;
-    if (draft.mode === 'send') {
-      tx = await payments.send(
-        { fromUser: me.id, toUser: draft.peerId, amountCents: draft.amountCents, note: draft.note },
-        ledgerRef.current,
-      );
-      setBalance((b) => b - tx.amountCents);
-    } else {
-      tx = await payments.request({
-        requester: me.id,
-        payer: draft.peerId,
-        amountCents: draft.amountCents,
-        note: draft.note,
-      });
-    }
-    upsert(tx);
+    const input = { amountCents: draft.amountCents, note: draft.note };
+    const { transaction, balanceCents: b } =
+      draft.mode === 'send'
+        ? await payments.send({ ...input, to: draft.peerId })
+        : await payments.request({ ...input, from: draft.peerId });
+    applyTx(transaction, b);
     rememberContact(draft.peerId);
-    return tx;
-  }, [draft, me.id, payRequest, rememberContact]);
+    return transaction;
+  }, [draft, payRequest, applyTx, rememberContact]);
 
-  const declineRequest = useCallback(async (id: string) => {
-    const req = transactions.find((t) => t.id === id);
-    if (!req) return;
-    upsert(await payments.declineRequest(req));
-  }, [transactions]);
-
-  const addMoney = useCallback(async (cents: number) => {
-    await payments.addMoney(cents);
-    setBalance((b) => b + cents);
-  }, []);
-
-  const cashOut = useCallback(async (cents: number) => {
-    await payments.cashOut(cents, ledgerRef.current);
-    setBalance((b) => b - cents);
-  }, []);
-
-  const completeSignUp = useCallback(
-    async (profile: Pick<User, 'name' | 'handle' | 'phone' | 'avatarUrl'>) => {
-      setMe((m) => ({ ...m, ...profile }));
-      await storage.set(StorageKeys.session, 'mock-session-token');
-      setStatus('signedIn');
+  const declineRequest = useCallback(
+    async (id: string) => {
+      const { transaction, balanceCents: b } = await payments.declineRequest(id);
+      applyTx(transaction, b);
     },
-    [],
+    [applyTx],
   );
 
-  const logIn = useCallback(async () => {
-    await storage.set(StorageKeys.session, 'mock-session-token');
-    setStatus('signedIn');
-  }, []);
+  const addMoney = useCallback(async (cents: number) => setBalance(await payments.addMoney(cents)), []);
+  const cashOut = useCallback(async (cents: number) => setBalance(await payments.cashOut(cents)), []);
+
+  const sendCode = useCallback((phone: string) => backend.sendCode(phone), []);
+
+  const verifyCode = useCallback(
+    async (phone: string, code: string) => {
+      const uid = await backend.verifyCode(phone, code);
+      await load(uid);
+      return { needsProfile: !(await backend.getProfile(uid)) };
+    },
+    [load],
+  );
+
+  const completeSignUp = useCallback(
+    async (profile: ProfileInput) => {
+      const uid = userId ?? (await backend.currentUserId());
+      if (!uid) throw new Error('Your session expired. Please verify your number again.');
+      await backend.saveProfile(uid, profile);
+      await load(uid);
+    },
+    [userId, load],
+  );
 
   const signOut = useCallback(async () => {
-    await storage.remove(StorageKeys.session);
+    await backend.signOut();
+    setUserId(null);
+    setMe(EMPTY_USER);
+    setTransactions([]);
+    setContacts([]);
+    setDraft(null);
     setStatus('signedOut');
   }, []);
 
-  const updateSettings = useCallback((patch: Partial<Settings>) => {
-    setSettings((s) => ({ ...s, ...patch }));
-  }, []);
+  const updateSettings = useCallback(
+    (patch: Partial<Settings>) => {
+      setSettings((s) => ({ ...s, ...patch }));
+      if (patch.biometricsOn !== undefined) storage.set(StorageKeys.biometrics, patch.biometricsOn ? '1' : '0');
+      if (patch.notificationsOn !== undefined && userId) {
+        backend.saveSettings(userId, { notificationsOn: patch.notificationsOn }).catch(() => {});
+      }
+    },
+    [userId],
+  );
 
-  const simulateIncomingPayment = useCallback(() => {
-    const from = PEOPLE[0];
-    const tx: Transaction = {
-      id: `tx_${Date.now().toString(16)}`,
-      fromUser: from.id,
-      toUser: me.id,
-      amountCents: 2000,
-      note: 'Pizza',
-      type: 'send',
-      status: 'completed',
-      createdAt: new Date().toISOString(),
-    };
-    upsert(tx);
-    setBalance((b) => b + tx.amountCents);
-    haptics.success();
-    setIncoming({ id: tx.id, kind: 'payment', transaction: tx });
-  }, [me.id]);
+  const saveTheme = useCallback(
+    (theme: ThemePreference) => {
+      if (userId && status === 'signedIn') backend.saveSettings(userId, { theme }).catch(() => {});
+    },
+    [userId, status],
+  );
 
-  const simulateIncomingRequest = useCallback(() => {
-    const from = PEOPLE[3];
-    const tx: Transaction = {
-      id: `tx_${Date.now().toString(16)}`,
-      fromUser: me.id,
-      toUser: from.id,
-      amountCents: 1450,
-      note: 'Movie night',
-      type: 'request',
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    };
-    upsert(tx);
-    haptics.medium();
-    setIncoming({ id: tx.id, kind: 'request', transaction: tx });
-  }, [me.id]);
+  const lookupHandle = useCallback(
+    async (handle: string) => {
+      const u = await backend.lookupHandle(handle);
+      if (u) addPeople([u]);
+      return u;
+    },
+    [addPeople],
+  );
+
+  const tapCandidates = useCallback(async () => {
+    const known = contacts.map((c) => people[c.userId]).filter((u): u is User => !!u);
+    if (known.length) return known;
+    const demo = await backend.demoPeople();
+    addPeople(demo);
+    return demo;
+  }, [contacts, people, addPeople]);
 
   const value: AppState = {
     status,
+    backendMode: backend.mode,
     me,
     balanceCents,
     transactions,
@@ -213,11 +295,15 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     incoming,
     sentTodayCents,
     userById,
-    userByHandle,
+    lookupHandle,
+    handleAvailable: backend.handleAvailable,
+    tapCandidates,
+    sendCode,
+    verifyCode,
     completeSignUp,
-    logIn,
     signOut,
     updateSettings,
+    saveTheme,
     setDraft,
     submitDraft,
     payRequest,
@@ -226,11 +312,15 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     cashOut,
     rememberContact,
     dismissIncoming: () => setIncoming(null),
-    simulateIncomingPayment,
-    simulateIncomingRequest,
+    simulateIncomingPayment: () => void backend.simulateIncoming('payment').catch(() => haptics.error()),
+    simulateIncomingRequest: () => void backend.simulateIncoming('request').catch(() => haptics.error()),
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+}
+
+function byNewest(a: Transaction, b: Transaction) {
+  return b.createdAt.localeCompare(a.createdAt);
 }
 
 export function useApp() {

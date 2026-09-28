@@ -15,10 +15,11 @@ const LEN = 6;
 
 export default function CodeStep() {
   const { colors } = useTheme();
-  const { logIn } = useApp();
+  const { verifyCode, sendCode, backendMode } = useApp();
   const [code, setCode] = useState('');
   const [seconds, setSeconds] = useState(30);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const input = useRef<TextInput>(null);
   const login = signupDraft.mode === 'login';
 
@@ -30,14 +31,27 @@ export default function CodeStep() {
 
   const verify = async () => {
     setBusy(true);
-    // Supabase: supabase.auth.verifyOtp({ phone, token: code, type: 'sms' }) in build step 3.
-    await new Promise((r) => setTimeout(r, 500));
-    setBusy(false);
-    if (login) {
-      await logIn();
-      router.replace('/home');
-    } else {
-      router.push('/profile-setup');
+    setError(null);
+    try {
+      const { needsProfile } = await verifyCode(signupDraft.phoneE164, code);
+      // Mock mode always has the demo account, so "Get started" still walks the sign-up screens.
+      if (needsProfile || (backendMode === 'mock' && !login)) router.push('/profile-setup');
+      else router.replace('/home');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'That code didn’t work.');
+      setCode('');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resend = async () => {
+    setSeconds(30);
+    setError(null);
+    try {
+      await sendCode(signupDraft.phoneE164);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not send a code.');
     }
   };
 
@@ -80,12 +94,17 @@ export default function CodeStep() {
         maxLength={LEN}
         style={styles.hidden}
       />
+      {error ? (
+        <Text variant="small" color="error" style={styles.error} accessibilityLiveRegion="assertive">
+          {error}
+        </Text>
+      ) : null}
       <Button
         label={seconds > 0 ? `Resend code in ${seconds}s` : 'Resend code'}
         variant="ghost"
         size="md"
         disabled={seconds > 0}
-        onPress={() => setSeconds(30)}
+        onPress={resend}
         style={styles.resend}
       />
     </Screen>
@@ -104,6 +123,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   digit: { fontFamily: Fonts.bold, fontSize: 28, lineHeight: 34 },
+  error: { marginTop: 12 },
   hidden: { position: 'absolute', opacity: 0, height: 1, width: 1 },
   resend: { alignSelf: 'flex-start', marginTop: 16, paddingHorizontal: 0 },
 });

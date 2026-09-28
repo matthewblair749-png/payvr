@@ -23,6 +23,8 @@ export type Transaction = {
   type: TransactionType;
   status: TransactionStatus;
   createdAt: string;
+  /** When the money actually moved (payments, and requests once paid). */
+  completedAt?: string | null;
 };
 
 export type Contact = { userId: string; lastTappedAt: string };

@@ -14,7 +14,11 @@ npm install
 npx expo start            # press i / a for a simulator, or w for web
 ```
 
-Expo Go works for the current mock build. Bluetooth tap-to-pay (build step 5) will need a
+With no configuration the app runs on built-in **mock data**. To use a real backend,
+follow [docs/SUPABASE.md](docs/SUPABASE.md) (create a project, run one SQL file, add
+two keys to `.env`).
+
+Expo Go works for the current build. Bluetooth tap-to-pay (build step 5) will need a
 development build (`npx expo run:ios` / `eas build --profile development`).
 
 **Prototype PIN:** `1234`, unless you created your own PIN during sign-up. On web and on
@@ -27,10 +31,10 @@ a fingerprint, it asks for that first.
 | --- | --- | --- |
 | 1 | Setup, theme (dark / light / system), Space Grotesk, colors, logo SVG, tabs | Done |
 | 2 | Every screen with mock data, full flow clickable | Done |
-| 3 | Supabase auth, tables, RLS, realtime | Next |
-| 4 | QR send / request (UI + scanner built; needs real users) | Partly done |
+| 3 | Supabase auth, tables, RLS, realtime, avatars | Done ([setup](docs/SUPABASE.md)) |
+| 4 | QR send / request | Scanner + handle lookup built; next: polish and two-phone testing |
 | 5 | Bluetooth LE + Nearby Interaction (UWB) | Mocked in `src/services/nearby.ts` |
-| 6 | Stripe test mode (Connect) | Mocked in `src/services/payments.ts` |
+| 6 | Stripe test mode (Connect) | Next after BLE; plugs in behind `src/services/payments.ts` |
 | 7 | Push notifications, polish | In-app realtime banner done |
 
 ## Where things live
@@ -45,18 +49,34 @@ src/
   components/           UI kit: logo (SVG), icons (SVG), buttons, keypad, pulse rings, check draw…
   theme/                colors (both palettes), typography, theme provider (200ms fade)
   services/
-    payments.ts         ALL money movement. Mock ledger now; swap in Stripe here.
+    payments.ts         ALL money movement: Supabase RPCs (live) or the same rules in memory (mock)
+    backend/            auth, profiles, data, realtime: live.ts (Supabase) and mock.ts
+    supabase.ts         Supabase client (sessions stored in expo-secure-store)
     nearby.ts           Tap discovery (mock) + QR payload format
     biometrics.ts       Face ID / fingerprint
     storage.ts          expo-secure-store (localStorage on web)
-  store/                App state (mock data), authorize() = Face ID or PIN before payments
-  data/                 Types (mirror the Supabase schema) and seed data
+  store/                App state, authorize() = Face ID or PIN before payments
+  data/                 Types (mirror the Supabase schema) and mock seed data
+supabase/
+  migrations/           Tables, row-level security, money functions, realtime, storage
+  seed.sql              Demo people and "simulate" helpers (dev projects only)
+  tests/                SQL tests: npm run test:db
+```
+
+## Checks
+
+```bash
+npm run typecheck
+npm run lint
+npm run test:db     # needs Postgres 15+ binaries installed locally
 ```
 
 ## Prototype helpers
 
 - **Profile → Prototype** has buttons to simulate "Jake pays you $20" (realtime banner +
-  balance count-up) and an incoming request.
+  balance count-up) and an incoming request. With Supabase they call the helpers in
+  `supabase/seed.sql`.
+- The daily limit is a rolling 24 hours: $500 across payments and paid requests.
 - The Tap screen "finds" one of your contacts after ~3.5s (`MOCK_DISCOVERY_MS`). Sessions
   expire after 60s with a retry message.
 - QR → Scan has a "simulate a scan" button so one device can walk the flow.

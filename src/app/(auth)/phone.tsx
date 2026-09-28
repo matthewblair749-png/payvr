@@ -1,6 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
+import { useApp } from '@/store/app-store';
+
 import { Button } from '@/components/button';
 import { Field } from '@/components/field';
 import { Screen } from '@/components/screen';
@@ -18,8 +20,27 @@ function formatUS(digits: string) {
 export default function PhoneStep() {
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const login = mode === 'login';
+  const { sendCode, backendMode } = useApp();
   const [digits, setDigits] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const valid = digits.length === 10;
+
+  const submit = async () => {
+    signupDraft.mode = login ? 'login' : 'signup';
+    signupDraft.phone = `+1 ${formatUS(digits)}`;
+    signupDraft.phoneE164 = `+1${digits}`;
+    setBusy(true);
+    setError(null);
+    try {
+      await sendCode(signupDraft.phoneE164);
+      router.push('/code');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not send a code. Try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <Screen
@@ -27,16 +48,13 @@ export default function PhoneStep() {
       footer={
         <>
           <Text variant="small" color="textSecondary" align="center">
-            We’ll text you a 6-digit code. Prototype: any code works.
+            {backendMode === 'mock' ? 'We’ll text you a 6-digit code. Prototype: any code works.' : 'We’ll text you a 6-digit code.'}
           </Text>
           <Button
             label="Send code"
             disabled={!valid}
-            onPress={() => {
-              signupDraft.mode = login ? 'login' : 'signup';
-              signupDraft.phone = `+1 ${formatUS(digits)}`;
-              router.push('/code');
-            }}
+            loading={busy}
+            onPress={submit}
           />
         </>
       }>
@@ -56,6 +74,7 @@ export default function PhoneStep() {
         placeholder="(415) 555-0142"
         value={formatUS(digits)}
         onChangeText={(t) => setDigits(t.replace(/\D/g, '').slice(0, 10))}
+        error={error}
       />
     </Screen>
   );

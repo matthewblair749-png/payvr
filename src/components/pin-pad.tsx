@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 
@@ -25,21 +25,27 @@ export function PinPad({ title, subtitle, onComplete, error }: Props) {
   const shake = useSharedValue(0);
   const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shake.value }] }));
 
-  useEffect(() => {
-    if (pin.length !== PIN_LENGTH) return;
-    const ok = onComplete(pin);
-    if (ok === false) {
+  const press = (k: string) => {
+    setWrong(false);
+    if (k === 'back') return setPin((p) => p.slice(0, -1));
+    if (k === '.' || pin.length >= PIN_LENGTH) return;
+    const next = pin + k;
+    setPin(next);
+    if (next.length < PIN_LENGTH) return;
+    if (onComplete(next) === false) {
       haptics.error();
       setWrong(true);
-      shake.value = withSequence(
-        withTiming(-10, { duration: 50 }),
-        withTiming(10, { duration: 50 }),
-        withTiming(-6, { duration: 50 }),
-        withTiming(0, { duration: 50 }),
+      shake.set(
+        withSequence(
+          withTiming(-10, { duration: 50 }),
+          withTiming(10, { duration: 50 }),
+          withTiming(-6, { duration: 50 }),
+          withTiming(0, { duration: 50 }),
+        ),
       );
       setTimeout(() => setPin(''), 250);
     }
-  }, [pin, onComplete, shake]);
+  };
 
   return (
     <View style={styles.wrap}>
@@ -70,14 +76,7 @@ export function PinPad({ title, subtitle, onComplete, error }: Props) {
           {wrong ? 'That PIN is not right. Try again.' : (error ?? '')}
         </Text>
       </View>
-      <Keypad
-        integer
-        onKey={(k) => {
-          setWrong(false);
-          if (k === 'back') setPin((p) => p.slice(0, -1));
-          else if (k !== '.') setPin((p) => (p.length < PIN_LENGTH ? p + k : p));
-        }}
-      />
+      <Keypad integer onKey={press} />
     </View>
   );
 }

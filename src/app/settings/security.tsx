@@ -67,10 +67,10 @@ export default function Security() {
       <SectionLabel>Limits</SectionLabel>
       <Card>
         <ListRow label="Daily send limit" value={formatShort(DAILY_SEND_LIMIT_CENTS)} />
-        <ListRow label="Sent today" value={formatShort(sentTodayCents)} last />
+        <ListRow label="Sent in the last 24 hours" value={formatShort(sentTodayCents)} last />
       </Card>
       <Text variant="small" color="textSecondary" style={styles.note}>
-        The prototype caps sending at $500 a day. Every payment needs Face ID or your PIN, and tap sessions close after 60 seconds.
+        The prototype caps sending at $500 in any 24 hours. Every payment needs Face ID or your PIN, and tap sessions close after 60 seconds.
       </Text>
 
       <Modal visible={changing} animationType="slide" onRequestClose={() => setChanging(false)}>

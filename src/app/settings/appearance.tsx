@@ -5,6 +5,7 @@ import { Card } from '@/components/list-row';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import type { ThemePreference } from '@/theme/colors';
+import { useApp } from '@/store/app-store';
 import { useTheme } from '@/theme/theme-provider';
 import { haptics } from '@/utils/haptics';
 
@@ -16,6 +17,7 @@ const OPTIONS: { value: ThemePreference; label: string; hint: string }[] = [
 
 export default function Appearance() {
   const { colors, preference, setPreference } = useTheme();
+  const { saveTheme } = useApp();
   return (
     <Screen back="back" title="Appearance">
       <Card style={styles.card}>
@@ -29,6 +31,7 @@ export default function Appearance() {
               onPress={() => {
                 haptics.tap();
                 setPreference(o.value);
+                saveTheme(o.value);
               }}
               style={[
                 styles.row,

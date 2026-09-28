@@ -66,8 +66,11 @@ export default function TransactionDetail() {
         <ListRow label="Status" value={STATUS[tx.status]} />
         <ListRow label="Date" value={fullDateTime(tx.createdAt)} />
         <ListRow label="Type" value={tx.type === 'send' ? 'Payment' : 'Request'} />
-        <ListRow label="Transaction ID" value={tx.id} last />
+        <ListRow label="Transaction ID" value={tx.id.slice(0, 8).toUpperCase()} last />
       </Card>
+      <Text variant="caption" color="textSecondary" align="center" selectable style={styles.test}>
+        {tx.id}
+      </Text>
       <Text variant="caption" color="textSecondary" align="center" style={styles.test}>
         Test transaction · no real money moved
       </Text>

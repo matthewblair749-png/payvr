@@ -67,7 +67,7 @@ export default function Profile() {
       <SectionLabel>Prototype</SectionLabel>
       <Card>
         <ListRow icon="arrowDownLeft" label="Simulate: Jake pays you $20" onPress={() => { router.navigate('/home'); simulateIncomingPayment(); }} />
-        <ListRow icon="request" label="Simulate: Leo requests $14.50" onPress={simulateIncomingRequest} last />
+        <ListRow icon="request" label="Simulate: Priya requests $14.50" onPress={simulateIncomingRequest} last />
       </Card>
 
       <Card style={styles.logout}>
