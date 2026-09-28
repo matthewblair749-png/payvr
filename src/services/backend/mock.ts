@@ -17,7 +17,7 @@ export const mockDb = {
   balanceCents: SEED_BALANCE_CENTS,
   transactions: [...SEED_TRANSACTIONS] as Transaction[],
   contacts: [...SEED_CONTACTS] as Contact[],
-  settings: { theme: 'dark', notificationsOn: true } as RemoteSettings,
+  settings: { theme: 'dark', notificationsOn: true, notifyPayments: true, notifyRequests: true } as RemoteSettings,
   listeners: new Set<Listener>(),
   emit(e: LiveEvent) {
     this.listeners.forEach((l) => l(e));
@@ -101,6 +101,7 @@ export const mockBackend: Backend = {
         toUser: mockDb.me.id,
         amountCents: opts?.amountCents ?? 2000,
         note: opts?.note ?? 'Pizza',
+        ref: opts?.ref ?? null,
         type: 'send',
         status: 'completed',
         createdAt: now,
@@ -134,6 +135,9 @@ export const mockBackend: Backend = {
     return null;
   },
   async endTapSession() {},
+
+  async registerPushToken() {},
+  async unregisterPushToken() {},
 
   async demoPeople() {
     return mockDb.people.slice(0, 3);

@@ -27,7 +27,7 @@ export default function Appearance() {
             <Pressable
               key={o.value}
               accessibilityRole="radio"
-              accessibilityState={{ checked: active }}
+              aria-checked={active}
               onPress={() => {
                 haptics.tap();
                 setPreference(o.value);

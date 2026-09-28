@@ -4,6 +4,7 @@ import Animated, {
   cancelAnimation,
   Easing,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withDelay,
   withRepeat,
@@ -14,10 +15,16 @@ import { useTheme } from '@/theme/theme-provider';
 
 const DURATION = 2400;
 
-function Ring({ delay, size, active }: { delay: number; size: number; active: boolean }) {
+function Ring({ delay, size, active, index }: { delay: number; size: number; active: boolean; index: number }) {
   const { colors } = useTheme();
+  const reduceMotion = useReducedMotion();
   const t = useSharedValue(0);
   useEffect(() => {
+    if (reduceMotion) {
+      // Reduce Motion: still rings instead of ripples.
+      t.value = active ? (index + 1) / 3.5 : 0;
+      return;
+    }
     if (active) {
       t.value = 0;
       t.value = withDelay(delay, withRepeat(withTiming(1, { duration: DURATION, easing: Easing.out(Easing.cubic) }), -1, false));
@@ -26,7 +33,7 @@ function Ring({ delay, size, active }: { delay: number; size: number; active: bo
       t.value = withTiming(0, { duration: 300 });
     }
     return () => cancelAnimation(t);
-  }, [active, delay, t]);
+  }, [active, delay, t, reduceMotion, index]);
 
   const style = useAnimatedStyle(() => ({
     opacity: 0.55 * (1 - t.value),
@@ -48,8 +55,8 @@ function Ring({ delay, size, active }: { delay: number; size: number; active: bo
 export function PulseRings({ size, active = true, children }: { size: number; active?: boolean; children: React.ReactNode }) {
   return (
     <View style={[styles.wrap, { width: size * 2.8, height: size * 2.8 }]}>
-      {[0, DURATION / 3, (DURATION * 2) / 3].map((d) => (
-        <Ring key={d} delay={d} size={size} active={active} />
+      {[0, DURATION / 3, (DURATION * 2) / 3].map((d, i) => (
+        <Ring key={d} delay={d} size={size} active={active} index={i} />
       ))}
       {children}
     </View>

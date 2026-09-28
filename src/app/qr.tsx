@@ -12,7 +12,7 @@ import { Screen } from '@/components/screen';
 import { Segmented } from '@/components/segmented';
 import { Text } from '@/components/text';
 import { useOpenPayvrCode } from '@/hooks/use-open-payvr-code';
-import { buildQr, parseQr, REQUEST_CODE_REFRESH_S } from '@/services/qr';
+import { buildQr, newRequestRef, parseQr, REQUEST_CODE_REFRESH_S } from '@/services/qr';
 import { useApp } from '@/store/app-store';
 import { BRAND_BLUE } from '@/theme/colors';
 import { useTheme } from '@/theme/theme-provider';
@@ -49,7 +49,9 @@ function MyCode({ onScanInstead }: { onScanInstead: () => void }) {
   const request = draft?.mode === 'request' ? draft : null;
 
   // Request codes expire, so re-issue a fresh one every minute while it's on screen.
+  // The ref stays the same, so a payment made from any refresh of this code still matches.
   const [issuedAt, setIssuedAt] = useState(() => Date.now());
+  const [ref] = useState(newRequestRef);
   useEffect(() => {
     if (!request) return;
     const t = setInterval(() => setIssuedAt(Date.now()), REQUEST_CODE_REFRESH_S * 1000);
@@ -57,17 +59,17 @@ function MyCode({ onScanInstead }: { onScanInstead: () => void }) {
   }, [request]);
 
   const payload = request
-    ? buildQr(me.handle, { amountCents: request.amountCents, note: request.note }, issuedAt)
+    ? buildQr(me.handle, { amountCents: request.amountCents, note: request.note, ref }, issuedAt)
     : buildQr(me.handle);
 
-  // When the matching payment lands (realtime), jump straight to success.
+  // When the payment for THIS code lands (realtime, matched by ref), jump to success.
   useEffect(() => {
     if (!request || incoming?.kind !== 'payment') return;
     const tx = incoming.transaction;
-    if (tx.toUser !== me.id || tx.amountCents !== request.amountCents) return;
+    if (tx.toUser !== me.id || tx.ref !== ref) return;
     dismissIncoming();
     router.replace({ pathname: '/success', params: { id: tx.id } });
-  }, [incoming, request, me.id, dismissIncoming]);
+  }, [incoming, request, me.id, ref, dismissIncoming]);
 
   return (
     <View style={styles.center}>
@@ -109,7 +111,7 @@ function MyCode({ onScanInstead }: { onScanInstead: () => void }) {
             label="Prototype: Jake pays this code"
             variant="ghost"
             size="md"
-            onPress={() => simulateIncomingPayment({ amountCents: request.amountCents, note: request.note })}
+            onPress={() => simulateIncomingPayment({ amountCents: request.amountCents, note: request.note, ref })}
           />
         </>
       ) : (
@@ -220,7 +222,7 @@ function Scanner() {
           <Pressable
             accessibilityRole="switch"
             accessibilityLabel="Flashlight"
-            accessibilityState={{ checked: torch }}
+            aria-checked={torch}
             onPress={() => setTorch((t) => !t)}
             style={[styles.torch, { backgroundColor: torch ? '#FFFFFF' : 'rgba(0,0,0,0.55)' }]}>
             <Icon name="flash" size={20} color={torch ? '#0A0A0A' : '#FFFFFF'} />
@@ -249,7 +251,7 @@ function Scanner() {
           label="Jake’s $12 request"
           variant="ghost"
           size="md"
-          onPress={() => onData(buildQr('jake', { amountCents: 1200, note: 'Lunch' }))}
+          onPress={() => onData(buildQr('jake', { amountCents: 1200, note: 'Lunch', ref: newRequestRef() }))}
         />
       </View>
     </View>

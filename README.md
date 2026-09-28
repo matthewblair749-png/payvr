@@ -37,7 +37,7 @@ a fingerprint, it asks for that first.
 | 4 | QR send / request | Done (see "QR codes" below) |
 | 5 | Bluetooth LE + Nearby Interaction (UWB) | Built ([how it works](docs/TAP.md)); needs a dev build + two phones to test |
 | 6 | Stripe test mode: add money (PaymentSheet) + cash out (Connect) | Built ([setup](docs/STRIPE.md)) |
-| 7 | Push notifications, polish | In-app realtime banner done |
+| 7 | Push notifications, polish, accessibility | Done ([push setup](docs/PUSH.md)) |
 
 ## Where things live
 
@@ -58,6 +58,7 @@ src/
     nearby.ts           Tap discovery: live Bluetooth/UWB (tap/) or mock
     tap/                Bluetooth scanning, proximity decisions, token encoding
     qr.ts               QR code format
+    push.ts             Push registration + opening notifications
     biometrics.ts       Face ID / fingerprint
     storage.ts          expo-secure-store (localStorage on web)
   store/                App state, authorize() = Face ID or PIN before payments
@@ -66,7 +67,7 @@ modules/
   payvr-nearby/         Native module: BLE advertising (iOS + Android), Nearby Interaction (iOS)
 supabase/
   migrations/           Tables, row-level security, money functions, realtime, storage
-  functions/            Edge Functions (Deno): stripe-topup, -cashout, -connect, -webhook, -return
+  functions/            Edge Functions (Deno): stripe-topup, -cashout, -connect, -webhook, -return, push-send
   seed.sql              Demo people and "simulate" helpers (dev projects only)
   tests/                SQL tests: npm run test:db
 ```
@@ -116,12 +117,43 @@ phones. Codes are plain deep links, so the phone's own camera app opens them in 
 - QR → Scan has buttons to "scan" Jake's code or Jake's $12 request, and a request
   code has "Jake pays this code", so one device (or the web preview) can walk every QR flow.
 
+## Accessibility
+
+- **Contrast:** every text/background pairing is checked against WCAG AA in both themes
+  by `src/theme/__tests__/contrast.test.ts`, which runs with `npm test`. Two colors were
+  deepened slightly from the spec to pass:
+  - small green text in light mode: `#15803D`
+  - light-mode red: `#D82424` (the spec's `#DC2626` is 4.47:1 on cards; the minimum is 4.5)
+- **Tap targets:** every button, link, tab and switch is at least 44×44 (checked on every
+  screen). Settings switches use the whole row as the target.
+- **Reduce Motion:** the balance count-up jumps straight to the new value, tap rings are
+  static, and the other animations skip to their end state.
+- **Screen readers:** buttons, tabs and switches expose their state (selected, on/off,
+  disabled, busy) through `aria-*` props, which work on iOS, Android and web. Amounts and
+  people have spoken labels.
+
 ## Design notes
 
 - Brand blue `#2150FF`. Blue text on black uses `#5B82FF` so it stays readable.
-- In light mode, small green text uses `#15803D` (`successText`). `#16A34A` on white is
-  only about 3.3:1, which is below the WCAG AA minimum of 4.5:1 for small text. `#16A34A`
-  is still used for icons and large amounts.
+- In light mode, small green text uses `#15803D` (`successText`), because `#16A34A` on
+  white is only about 3.3:1. `#16A34A` is still used for icons and large amounts. See
+  Accessibility above for the red.
 - All tap targets are at least 44px.
 - App icons are generated from the logo with `node scripts/make-icons.mjs`
   (needs Playwright).
+
+## Not verified yet (needs real phones and real accounts)
+
+Everything above was built and tested in a cloud environment without Xcode, the Android
+SDK, or real Supabase, Stripe or Expo accounts. Still to verify:
+
+- **First native builds** (`expo run:ios` / `run:android`). The Swift/Kotlin module in
+  `modules/payvr-nearby` has never been compiled.
+- **Bluetooth tapping on two real phones,** and tuning `PROXIMITY.closeRssi`. Also UWB
+  distance on two iPhone 11+.
+- **Stripe's PaymentSheet and Connect onboarding** in a real Stripe test account.
+- **Push delivery** through Expo/APNs/FCM (needs an EAS project and push credentials).
+- **Hosted Supabase pieces:** Realtime, Storage (avatars) and phone OTP. The SQL, the Edge
+  Functions and the app's REST calls were tested locally with PostgREST.
+- **Real money:** would need money-transmission licensing and compliance (KYC) and
+  Stripe's approval for that use. Out of scope for this prototype.

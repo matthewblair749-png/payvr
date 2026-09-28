@@ -35,6 +35,7 @@ export function useOpenPayvrCode() {
           note: code.request.note,
           peerId: user.id,
           origin: 'qrRequest',
+          ref: code.request.ref,
         });
         router.replace('/confirm');
       } else if (draft) {

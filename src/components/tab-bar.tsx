@@ -33,7 +33,7 @@ export function TabBar({ state, navigation, insets }: BottomTabBarProps) {
         key={routeName}
         accessibilityRole="tab"
         accessibilityLabel={meta.label}
-        accessibilityState={{ selected: focused }}
+        aria-selected={focused}
         onPress={() => {
           const e = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
           if (!focused && !e.defaultPrevented) {

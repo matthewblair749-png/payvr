@@ -4,13 +4,15 @@ import {
   SpaceGrotesk_700Bold,
   useFonts,
 } from '@expo-google-fonts/space-grotesk';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { IncomingBanner } from '@/components/incoming-banner';
-import { AppStoreProvider } from '@/store/app-store';
+import { configurePush, onNotificationTap } from '@/services/push';
+import { AppStoreProvider, useApp } from '@/store/app-store';
 import { AuthorizeProvider } from '@/store/authorize';
 import { PayvrThemeProvider, useTheme } from '@/theme/theme-provider';
 
@@ -74,6 +76,57 @@ function Navigator() {
         <Stack.Screen name="wallet/[action]" options={{ presentation: 'modal' }} />
       </Stack>
       <IncomingBanner />
+      <NotificationRouter />
     </ThemeProvider>
   );
 }
+
+/** Opens the transaction / request a push notification is about, once the account is loaded. */
+function NotificationRouter() {
+  const { status } = useApp();
+  const pending = useRef<string | null>(null);
+  const signedIn = useRef(false);
+
+  useEffect(() => {
+    configurePush();
+    return onNotificationTap((url) => {
+      if (signedIn.current) router.push(url as never);
+      else pending.current = url;
+    });
+  }, []);
+
+  useEffect(() => {
+    signedIn.current = status === 'signedIn';
+    if (status === 'signedIn' && pending.current) {
+      router.push(pending.current as never);
+      pending.current = null;
+    }
+  }, [status]);
+
+  return null;
+}
+
+/** Shown if a screen crashes. Plain styles on purpose: the theme may be what broke. */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  return (
+    <View style={errorStyles.wrap}>
+      <Text style={errorStyles.title}>Something went wrong</Text>
+      <Text style={errorStyles.body}>
+        No money moved because of this. Try again, and if it keeps happening, restart Payvr.
+      </Text>
+      {__DEV__ ? <Text style={errorStyles.dev}>{error.message}</Text> : null}
+      <Pressable accessibilityRole="button" onPress={retry} style={errorStyles.button}>
+        <Text style={errorStyles.buttonText}>Try again</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+const errorStyles = StyleSheet.create({
+  wrap: { flex: 1, backgroundColor: '#000000', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
+  title: { color: '#FFFFFF', fontSize: 24, fontWeight: '700' },
+  body: { color: '#A1A1AA', fontSize: 16, textAlign: 'center', maxWidth: 320 },
+  dev: { color: '#EF4444', fontSize: 12, textAlign: 'center' },
+  button: { marginTop: 12, backgroundColor: '#2150FF', borderRadius: 16, minHeight: 48, paddingHorizontal: 28, justifyContent: 'center' },
+  buttonText: { color: '#FFFFFF', fontSize: 17, fontWeight: '600' },
+});

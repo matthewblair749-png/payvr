@@ -25,7 +25,7 @@ export function Segmented<T extends string>({ options, value, onChange, compact 
           <Pressable
             key={o.value}
             accessibilityRole="tab"
-            accessibilityState={{ selected: active }}
+            aria-selected={active}
             onPress={() => {
               if (!active) haptics.tap();
               onChange(o.value);

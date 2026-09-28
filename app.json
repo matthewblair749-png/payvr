@@ -80,6 +80,13 @@
         {
           "enableGooglePay": false
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#2150FF",
+          "icon": "./assets/images/android-icon-monochrome.png"
+        }
       ]
     ],
     "experiments": {

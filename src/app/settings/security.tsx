@@ -3,11 +3,10 @@ import { Modal, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconButton } from '@/components/icon-button';
-import { Card, ListRow, SectionLabel } from '@/components/list-row';
+import { Card, ListRow, SectionLabel, ToggleRow } from '@/components/list-row';
 import { PinPad } from '@/components/pin-pad';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
-import { Toggle } from '@/components/toggle';
 import { biometricKind, type BiometricKind } from '@/services/biometrics';
 import { DAILY_SEND_LIMIT_CENTS } from '@/services/payments';
 import { storage, StorageKeys } from '@/services/storage';
@@ -34,16 +33,11 @@ export default function Security() {
     <Screen back="back" title="Security" scroll>
       <SectionLabel>Payments</SectionLabel>
       <Card>
-        <ListRow
+        <ToggleRow
           icon="faceId"
           label={kind ?? 'Face ID'}
-          right={
-            <Toggle
-              label={kind ?? 'Face ID'}
-              value={settings.biometricsOn && !!kind}
-              onChange={(v) => updateSettings({ biometricsOn: v })}
-            />
-          }
+          value={settings.biometricsOn && !!kind}
+          onChange={(v) => updateSettings({ biometricsOn: v })}
         />
         <ListRow
           icon="lock"

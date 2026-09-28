@@ -1,14 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
+import { useReducedMotion } from 'react-native-reanimated';
 
-/** Animates a number upward when it increases (e.g. money received). Decreases jump instantly. */
+/**
+ * Animates a number upward when it increases (e.g. money received). Decreases jump instantly,
+ * and so does everything when the phone's Reduce Motion setting is on.
+ */
 export function useCountUp(value: number, duration = 900) {
+  const reduceMotion = useReducedMotion();
   const [shown, setShown] = useState(value);
   const prev = useRef(value);
 
   useEffect(() => {
     const from = prev.current;
     prev.current = value;
-    if (value <= from) {
+    if (value <= from || reduceMotion) {
       setShown(value);
       return;
     }
@@ -22,7 +27,7 @@ export function useCountUp(value: number, duration = 900) {
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [value, duration]);
+  }, [value, duration, reduceMotion]);
 
   return shown;
 }

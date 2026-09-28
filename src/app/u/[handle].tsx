@@ -15,7 +15,7 @@ import { useTheme } from '@/theme/theme-provider';
  * the phone's own camera app opens straight into the right Payvr screen.
  */
 export default function PayvrLink() {
-  const params = useLocalSearchParams<{ handle: string; amt?: string; note?: string; exp?: string }>();
+  const params = useLocalSearchParams<{ handle: string; amt?: string; note?: string; exp?: string; ref?: string }>();
   const { status } = useApp();
   const { colors } = useTheme();
   const open = useOpenPayvrCode();
@@ -25,7 +25,7 @@ export default function PayvrLink() {
   useEffect(() => {
     if (status !== 'signedIn' || started.current) return;
     started.current = true;
-    const parsed = fromParts(params.handle ?? '', { amt: params.amt, note: params.note, exp: params.exp });
+    const parsed = fromParts(params.handle ?? '', { amt: params.amt, note: params.note, exp: params.exp, ref: params.ref });
     open(parsed).then(setError);
   }, [status, params, open]);
 

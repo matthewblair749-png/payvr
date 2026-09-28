@@ -1,7 +1,12 @@
 import type { Contact, Transaction, User } from '@/data/types';
 import type { ThemePreference } from '@/theme/colors';
 
-export type RemoteSettings = { theme: ThemePreference; notificationsOn: boolean };
+export type RemoteSettings = {
+  theme: ThemePreference;
+  notificationsOn: boolean;
+  notifyPayments: boolean;
+  notifyRequests: boolean;
+};
 
 export type Snapshot = {
   me: User;
@@ -65,9 +70,13 @@ export interface Backend {
   resolveTapToken(token: string): Promise<TapPeer | null>;
   endTapSession(): Promise<void>;
 
+  // Push notifications
+  registerPushToken(token: string, platform: 'ios' | 'android'): Promise<void>;
+  unregisterPushToken(token: string): Promise<void>;
+
   // Prototype helpers
   /** Pretend another phone just paid you / requested from you. */
-  simulateIncoming(kind: 'payment' | 'request', opts?: { amountCents?: number; note?: string }): Promise<void>;
+  simulateIncoming(kind: 'payment' | 'request', opts?: { amountCents?: number; note?: string; ref?: string }): Promise<void>;
   /** Demo people a single phone can "tap" before step 5 adds real Bluetooth. */
   demoPeople(): Promise<User[]>;
 }

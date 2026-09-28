@@ -8,6 +8,8 @@ import { useTheme } from '@/theme/theme-provider';
 export default function TabsLayout() {
   const { colors } = useTheme();
   const { status } = useApp();
+  // Still restoring the saved session: wait (don't bounce a deep link to the start).
+  if (status === 'loading') return null;
   // Signed out (or session expired) → back through the splash to onboarding.
   if (status !== 'signedIn') return <Redirect href="/" />;
   return (

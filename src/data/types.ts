@@ -25,6 +25,8 @@ export type Transaction = {
   createdAt: string;
   /** When the money actually moved (payments, and requests once paid). */
   completedAt?: string | null;
+  /** Set when the payment was made for a specific request QR code. */
+  ref?: string | null;
 };
 
 export type Contact = { userId: string; lastTappedAt: string };
@@ -42,4 +44,6 @@ export type Draft = {
   requestId?: string;
   /** Set when the draft came from scanning someone's request QR code. */
   origin?: 'qrRequest';
+  /** The request code's ref, sent with the payment so the requester's phone can match it. */
+  ref?: string;
 };

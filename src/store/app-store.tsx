@@ -1,8 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 
 import type { Contact, Draft, Transaction, User } from '@/data/types';
 import { backend, type LiveEvent, type ProfileInput } from '@/services/backend';
 import { payments } from '@/services/payments';
+import { registerForPush, type PushRegistration } from '@/services/push';
 import { storage, StorageKeys } from '@/services/storage';
 import type { ThemePreference } from '@/theme/colors';
 import { haptics } from '@/utils/haptics';
@@ -21,7 +23,12 @@ export type IncomingEvent = {
   transaction: Transaction;
 };
 
-type Settings = { notificationsOn: boolean; biometricsOn: boolean };
+type Settings = {
+  notificationsOn: boolean;
+  notifyPayments: boolean;
+  notifyRequests: boolean;
+  biometricsOn: boolean;
+};
 
 const EMPTY_USER: User = { id: '', name: '', handle: '' };
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -66,7 +73,9 @@ type AppState = {
   rememberContact: (userId: string) => void;
 
   dismissIncoming: () => void;
-  simulateIncomingPayment: (opts?: { amountCents?: number; note?: string }) => void;
+  simulateIncomingPayment: (opts?: { amountCents?: number; note?: string; ref?: string }) => void;
+  /** Result of the last push registration (null until tried). */
+  push: PushRegistration | null;
   simulateIncomingRequest: () => void;
 };
 
@@ -81,7 +90,14 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [draft, setDraft] = useState<Draft | null>(null);
-  const [settings, setSettings] = useState<Settings>({ notificationsOn: true, biometricsOn: true });
+  const [settings, setSettings] = useState<Settings>({
+    notificationsOn: true,
+    notifyPayments: true,
+    notifyRequests: true,
+    biometricsOn: true,
+  });
+  const [push, setPush] = useState<PushRegistration | null>(null);
+  const pushToken = useRef<string | null>(null);
   const [incoming, setIncoming] = useState<IncomingEvent | null>(null);
 
   const addPeople = useCallback((users: User[]) => {
@@ -110,7 +126,12 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       setPeople({});
       addPeople(snap.people);
       const bio = await storage.get(StorageKeys.biometrics);
-      setSettings({ notificationsOn: snap.settings.notificationsOn, biometricsOn: bio !== '0' });
+      setSettings({
+        notificationsOn: snap.settings.notificationsOn,
+        notifyPayments: snap.settings.notifyPayments,
+        notifyRequests: snap.settings.notifyRequests,
+        biometricsOn: bio !== '0',
+      });
       setStatus('signedIn');
     },
     [addPeople],
@@ -163,6 +184,23 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     return backend.subscribe(userId, onEvent);
   }, [status, userId, addPeople]);
 
+  // Register this phone for push notifications once signed in (and when turned back on).
+  useEffect(() => {
+    if (status !== 'signedIn' || !settings.notificationsOn || backend.mode !== 'live') return;
+    let live = true;
+    registerForPush().then(async (result) => {
+      if (!live) return;
+      setPush(result);
+      if ('token' in result) {
+        pushToken.current = result.token;
+        await backend.registerPushToken(result.token, Platform.OS === 'ios' ? 'ios' : 'android').catch(() => {});
+      }
+    });
+    return () => {
+      live = false;
+    };
+  }, [status, settings.notificationsOn]);
+
   const userById = useCallback((id: string) => (id === me.id ? me : people[id]), [me, people]);
 
   const sentTodayCents = useMemo(() => {
@@ -201,7 +239,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     const input = { amountCents: draft.amountCents, note: draft.note };
     const { transaction, balanceCents: b } =
       draft.mode === 'send'
-        ? await payments.send({ ...input, to: draft.peerId })
+        ? await payments.send({ ...input, to: draft.peerId, ref: draft.ref })
         : await payments.request({ ...input, from: draft.peerId });
     applyTx(transaction, b);
     rememberContact(draft.peerId);
@@ -241,6 +279,9 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   );
 
   const signOut = useCallback(async () => {
+    // Stop pushes to this phone for the account that's leaving.
+    if (pushToken.current) await backend.unregisterPushToken(pushToken.current).catch(() => {});
+    pushToken.current = null;
     await backend.signOut();
     setUserId(null);
     setMe(EMPTY_USER);
@@ -254,8 +295,13 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     (patch: Partial<Settings>) => {
       setSettings((s) => ({ ...s, ...patch }));
       if (patch.biometricsOn !== undefined) storage.set(StorageKeys.biometrics, patch.biometricsOn ? '1' : '0');
-      if (patch.notificationsOn !== undefined && userId) {
-        backend.saveSettings(userId, { notificationsOn: patch.notificationsOn }).catch(() => {});
+      const remote = {
+        notificationsOn: patch.notificationsOn,
+        notifyPayments: patch.notifyPayments,
+        notifyRequests: patch.notifyRequests,
+      };
+      if (userId && Object.values(remote).some((v) => v !== undefined)) {
+        backend.saveSettings(userId, remote).catch(() => {});
       }
     },
     [userId],
@@ -316,6 +362,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     rememberContact,
     dismissIncoming: () => setIncoming(null),
     simulateIncomingPayment: (opts) => void backend.simulateIncoming('payment', opts).catch(() => haptics.error()),
+    push,
     simulateIncomingRequest: () => void backend.simulateIncoming('request').catch(() => haptics.error()),
   };
 

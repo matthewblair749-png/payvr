@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { useTheme } from '@/theme/theme-provider';
 
@@ -39,6 +39,49 @@ export function ListRow({ icon, label, value, onPress, right, danger, last }: Pr
   );
 }
 
+/**
+ * A settings row with an on/off switch. The whole 56px row is the tap target (the bare
+ * switch is smaller than 44px) and it's announced to screen readers as one switch.
+ */
+export function ToggleRow({
+  icon,
+  label,
+  value,
+  onChange,
+  last,
+}: {
+  icon?: IconName;
+  label: string;
+  value: boolean;
+  onChange: (v: boolean) => void;
+  last?: boolean;
+}) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="switch"
+      accessibilityLabel={label}
+      aria-checked={value}
+      onPress={() => onChange(!value)}
+      style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}>
+      {icon ? <Icon name={icon} size={22} color={colors.accent} /> : null}
+      <View style={[styles.main, !last && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
+        <Text variant="bodyMedium" style={{ color: colors.text, flex: 1 }}>
+          {label}
+        </Text>
+        <View importantForAccessibility="no-hide-descendants" accessibilityElementsHidden aria-hidden style={styles.noTouch}>
+          <Switch
+            value={value}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            thumbColor="#FFFFFF"
+            {...({ activeThumbColor: '#FFFFFF' } as object)}
+          />
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
 export function Card({ children, style }: { children: React.ReactNode; style?: object }) {
   const { colors } = useTheme();
   return (
@@ -68,4 +111,5 @@ const styles = StyleSheet.create({
   },
   card: { borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   section: { letterSpacing: 0.8, marginTop: 28, marginBottom: 10, marginLeft: 4 },
+  noTouch: { pointerEvents: 'none' },
 });

@@ -47,7 +47,8 @@ export const Colors: Record<ColorScheme, Palette> = {
     accent: '#2150FF',
     success: '#16A34A',
     successText: '#15803D',
-    error: '#DC2626',
+    // Spec #DC2626 is 4.47:1 on the light card color (needs 4.5); a hair deeper passes.
+    error: '#D82424',
     ring: '#2150FF',
   },
 };

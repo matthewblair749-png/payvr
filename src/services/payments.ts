@@ -78,7 +78,7 @@ function paymentError(code: string, hint?: string | null): PaymentError {
 export type MoneyResult = { transaction: Transaction; balanceCents: number };
 
 export interface PaymentsProvider {
-  send(input: { to: string; amountCents: number; note: string }): Promise<MoneyResult>;
+  send(input: { to: string; amountCents: number; note: string; ref?: string }): Promise<MoneyResult>;
   request(input: { from: string; amountCents: number; note: string }): Promise<MoneyResult>;
   payRequest(requestId: string): Promise<MoneyResult>;
   declineRequest(requestId: string): Promise<MoneyResult>;
@@ -103,8 +103,8 @@ const money = (r: RpcMoney): MoneyResult => ({
 });
 
 const supabaseProvider: PaymentsProvider = {
-  send: async ({ to, amountCents, note }) =>
-    money(await rpc('send_payment', { p_to: to, p_amount_cents: amountCents, p_note: note })),
+  send: async ({ to, amountCents, note, ref }) =>
+    money(await rpc('send_payment', { p_to: to, p_amount_cents: amountCents, p_note: note, p_ref: ref ?? null })),
   request: async ({ from, amountCents, note }) =>
     money(await rpc('create_request', { p_from: from, p_amount_cents: amountCents, p_note: note })),
   payRequest: async (id) => money(await rpc('pay_request', { p_request_id: id })),
@@ -142,7 +142,7 @@ function saveTx(tx: Transaction) {
 }
 
 const mockProvider: PaymentsProvider = {
-  async send({ to, amountCents, note }) {
+  async send({ to, amountCents, note, ref }) {
     await wait(700);
     if (to === mockDb.me.id) throw paymentError('invalid_recipient');
     moveOut(amountCents);
@@ -158,6 +158,7 @@ const mockProvider: PaymentsProvider = {
       status: 'completed',
       createdAt: now,
       completedAt: now,
+      ref: ref ?? null,
     });
   },
   async request({ from, amountCents, note }) {

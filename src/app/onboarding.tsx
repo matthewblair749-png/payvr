@@ -70,7 +70,7 @@ export default function Onboarding() {
             key={i}
             accessibilityRole="button"
             accessibilityLabel={`Slide ${i + 1} of ${SLIDES.length}`}
-            accessibilityState={{ selected: i === page }}
+            aria-selected={i === page}
             onPress={() => scroller.current?.scrollTo({ x: i * width, animated: true })}
             style={styles.dotHit}>
             <View
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   glyphOver: { position: 'absolute', top: 84, left: 109 },
   body: { marginTop: 14, maxWidth: 340 },
   dots: { flexDirection: 'row', justifyContent: 'center', marginVertical: 16 },
-  dotHit: { minWidth: MIN_TAP / 2 + 8, height: MIN_TAP, alignItems: 'center', justifyContent: 'center' },
+  dotHit: { minWidth: MIN_TAP, height: MIN_TAP, alignItems: 'center', justifyContent: 'center' },
   dot: { height: 8, borderRadius: 4 },
   actions: { paddingHorizontal: 24, gap: 4 },
   personCard: {

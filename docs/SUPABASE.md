@@ -7,7 +7,7 @@ Supabase for sign-in, data, realtime and photos. **Test money only.**
 
 1. Create a project at [supabase.com](https://supabase.com).
 2. **Apply the schema.** Either:
-   - **Dashboard:** SQL Editor → paste `supabase/migrations/20260928120000_payvr_init.sql` → Run.
+   - **Dashboard:** SQL Editor → run each file in `supabase/migrations/` **in filename order**.
    - **CLI:** `npx supabase init` (keep the existing `supabase/` folder),
      `npx supabase link --project-ref <ref>`, then `npx supabase db push`.
 3. **Optional, dev projects only:** run `supabase/seed.sql` in the SQL Editor. It adds
@@ -78,10 +78,10 @@ npm run test:db
 ```
 
 This spins up a throwaway local Postgres 15+ with stand-ins for Supabase's `auth` and
-`storage` schemas, applies the migrations, and runs `supabase/tests`: 66 checks covering
-RLS, payments, requests, limits, tap sessions, storage and the seed helpers. It also runs
-a double-spend test: 10 simultaneous $100 sends from a $500 wallet, where exactly 5 must
-succeed.
+`storage` schemas (including Supabase's default grants), applies the migrations, and runs
+`supabase/tests`: 135 checks covering RLS, payments, requests, limits, tap sessions,
+Stripe, push notifications, storage and the seed helpers. It also runs a double-spend
+test: 10 simultaneous $100 sends from a $500 wallet, where exactly 5 must succeed.
 
 The tests don't cover Supabase-hosted pieces (the Auth/SMS service, the Realtime server,
 the Storage API). Those need a real project; see the checklist below.

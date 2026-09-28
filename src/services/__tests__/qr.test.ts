@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { buildQr, parseQr, REQUEST_CODE_TTL_S } from '../qr.ts';
+import { buildQr, newRequestRef, parseQr, REQUEST_CODE_TTL_S } from '../qr.ts';
 
 const NOW = Date.UTC(2026, 8, 28, 12, 0, 0);
 
@@ -59,4 +59,21 @@ test('notes are capped at 60 characters when building', () => {
   const raw = buildQr('jake', { amountCents: 100, note: 'y'.repeat(80) }, NOW);
   const r = parseQr(raw, NOW);
   assert.ok(r.ok && r.code.request?.note.length === 60);
+});
+
+test('request codes carry a ref that round-trips; bad refs are rejected', () => {
+  const ref = newRequestRef();
+  assert.match(ref, /^[a-z0-9]{12}$/);
+  const r = parseQr(buildQr('jake', { amountCents: 1200, note: 'Lunch', ref }, NOW), NOW);
+  assert.ok(r.ok);
+  assert.equal(r.code.request?.ref, ref);
+  assert.deepEqual(parseQr(`payvr://u/jake?amt=100&exp=9999999999&ref=NOT%20OK`, NOW), { ok: false, reason: 'not_payvr' });
+  assert.deepEqual(parseQr(`payvr://u/jake?amt=100&exp=9999999999&ref=short`, NOW), { ok: false, reason: 'not_payvr' });
+  const noRef = parseQr(buildQr('jake', { amountCents: 100, note: '' }, NOW), NOW);
+  assert.ok(noRef.ok && noRef.code.request?.ref === undefined, 'older request codes without a ref still parse');
+});
+
+test('refs are different every time', () => {
+  const refs = new Set(Array.from({ length: 1000 }, newRequestRef));
+  assert.equal(refs.size, 1000);
 });

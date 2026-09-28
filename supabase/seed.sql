@@ -26,7 +26,8 @@ insert into public.users (id, name, handle) values
 on conflict do nothing;
 
 drop function if exists public.demo_incoming_payment();
-create or replace function public.demo_incoming_payment(p_amount_cents bigint default 2000, p_note text default 'Pizza')
+drop function if exists public.demo_incoming_payment(bigint, text);
+create or replace function public.demo_incoming_payment(p_amount_cents bigint default 2000, p_note text default 'Pizza', p_ref text default null)
 returns void
 language plpgsql
 security definer
@@ -41,8 +42,8 @@ begin
     raise exception 'invalid_amount' using errcode = 'P0001';
   end if;
   update public.wallets set balance_cents = balance_cents + p_amount_cents, updated_at = now() where user_id = me;
-  insert into public.transactions (from_user, to_user, amount_cents, note, type, status, completed_at)
-    values (jake, me, p_amount_cents, left(coalesce(p_note, ''), 60), 'send', 'completed', now());
+  insert into public.transactions (from_user, to_user, amount_cents, note, type, status, completed_at, ref)
+    values (jake, me, p_amount_cents, left(coalesce(p_note, ''), 60), 'send', 'completed', now(), nullif(p_ref, ''));
   perform public._remember(me, jake);
 end;
 $$;
@@ -64,5 +65,5 @@ begin
 end;
 $$;
 
-revoke execute on function public.demo_incoming_payment(bigint, text), public.demo_incoming_request() from public, anon;
-grant execute on function public.demo_incoming_payment(bigint, text), public.demo_incoming_request() to authenticated;
+revoke execute on function public.demo_incoming_payment(bigint, text, text), public.demo_incoming_request() from public, anon;
+grant execute on function public.demo_incoming_payment(bigint, text, text), public.demo_incoming_request() to authenticated;

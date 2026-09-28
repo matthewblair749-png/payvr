@@ -17,6 +17,7 @@ export type TransactionRow = {
   status: Transaction['status'];
   created_at: string;
   completed_at: string | null;
+  ref?: string | null;
 };
 type ContactRow = { contact_user_id: string; last_tapped_at: string };
 
@@ -38,6 +39,7 @@ export const toTransaction = (r: TransactionRow): Transaction => ({
   status: r.status,
   createdAt: r.created_at,
   completedAt: r.completed_at,
+  ref: r.ref ?? null,
 });
 
 const toContact = (r: ContactRow): Contact => ({ userId: r.contact_user_id, lastTappedAt: r.last_tapped_at });
@@ -140,7 +142,7 @@ export const liveBackend: Backend = {
       sb.from('wallets').select('balance_cents').eq('user_id', userId).single(),
       sb.from('transactions').select('*').order('created_at', { ascending: false }).limit(200),
       sb.from('contacts').select('contact_user_id, last_tapped_at').order('last_tapped_at', { ascending: false }),
-      sb.from('settings').select('theme, notifications_on').eq('user_id', userId).maybeSingle(),
+      sb.from('settings').select('theme, notifications_on, notify_payments, notify_requests').eq('user_id', userId).maybeSingle(),
     ]);
     for (const r of [me, wallet, txs, contacts, settings]) if (r.error) fail(r.error, 'Could not load your account.');
 
@@ -149,7 +151,12 @@ export const liveBackend: Backend = {
     const ids = new Set<string>();
     transactions.forEach((t) => ids.add(t.fromUser === userId ? t.toUser : t.fromUser));
     contactList.forEach((c) => ids.add(c.userId));
-    const s = settings.data as { theme: RemoteSettings['theme']; notifications_on: boolean } | null;
+    const s = settings.data as {
+      theme: RemoteSettings['theme'];
+      notifications_on: boolean;
+      notify_payments: boolean;
+      notify_requests: boolean;
+    } | null;
 
     return {
       me: toUser(me.data as UserRow),
@@ -157,13 +164,20 @@ export const liveBackend: Backend = {
       transactions,
       contacts: contactList,
       people: await this.getUsers([...ids]),
-      settings: { theme: s?.theme ?? 'dark', notificationsOn: s?.notifications_on ?? true },
+      settings: {
+        theme: s?.theme ?? 'dark',
+        notificationsOn: s?.notifications_on ?? true,
+        notifyPayments: s?.notify_payments ?? true,
+        notifyRequests: s?.notify_requests ?? true,
+      },
     };
   },
   async saveSettings(userId, patch) {
     const row: Record<string, unknown> = {};
     if (patch.theme) row.theme = patch.theme;
     if (patch.notificationsOn !== undefined) row.notifications_on = patch.notificationsOn;
+    if (patch.notifyPayments !== undefined) row.notify_payments = patch.notifyPayments;
+    if (patch.notifyRequests !== undefined) row.notify_requests = patch.notifyRequests;
     await db().from('settings').update(row).eq('user_id', userId);
   },
 
@@ -213,6 +227,14 @@ export const liveBackend: Backend = {
     await db().rpc('end_tap_session');
   },
 
+  async registerPushToken(token, platform) {
+    const { error } = await db().rpc('register_push_token', { p_token: token, p_platform: platform });
+    if (error) fail(error, 'Could not turn on notifications.');
+  },
+  async unregisterPushToken(token) {
+    await db().rpc('unregister_push_token', { p_token: token });
+  },
+
   async simulateIncoming(kind, opts) {
     // Helpers from supabase/seed.sql (dev projects only).
     const { error } =
@@ -220,6 +242,7 @@ export const liveBackend: Backend = {
         ? await db().rpc('demo_incoming_payment', {
             p_amount_cents: opts?.amountCents ?? 2000,
             p_note: opts?.note ?? 'Pizza',
+            p_ref: opts?.ref ?? null,
           })
         : await db().rpc('demo_incoming_request');
     if (error) fail(error, 'Demo helpers missing — run supabase/seed.sql on your dev project.');
