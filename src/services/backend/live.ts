@@ -192,9 +192,15 @@ export const liveBackend: Backend = {
     };
   },
 
-  async simulateIncoming(kind) {
+  async simulateIncoming(kind, opts) {
     // Helpers from supabase/seed.sql (dev projects only).
-    const { error } = await db().rpc(kind === 'payment' ? 'demo_incoming_payment' : 'demo_incoming_request');
+    const { error } =
+      kind === 'payment'
+        ? await db().rpc('demo_incoming_payment', {
+            p_amount_cents: opts?.amountCents ?? 2000,
+            p_note: opts?.note ?? 'Pizza',
+          })
+        : await db().rpc('demo_incoming_request');
     if (error) fail(error, 'Demo helpers missing — run supabase/seed.sql on your dev project.');
   },
   async demoPeople() {

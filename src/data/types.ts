@@ -40,4 +40,6 @@ export type Draft = {
   peerId?: string;
   /** Set when the draft is paying an incoming request. */
   requestId?: string;
+  /** Set when the draft came from scanning someone's request QR code. */
+  origin?: 'qrRequest';
 };

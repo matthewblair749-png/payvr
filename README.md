@@ -32,7 +32,7 @@ a fingerprint, it asks for that first.
 | 1 | Setup, theme (dark / light / system), Space Grotesk, colors, logo SVG, tabs | Done |
 | 2 | Every screen with mock data, full flow clickable | Done |
 | 3 | Supabase auth, tables, RLS, realtime, avatars | Done ([setup](docs/SUPABASE.md)) |
-| 4 | QR send / request | Scanner + handle lookup built; next: polish and two-phone testing |
+| 4 | QR send / request | Done (see "QR codes" below) |
 | 5 | Bluetooth LE + Nearby Interaction (UWB) | Mocked in `src/services/nearby.ts` |
 | 6 | Stripe test mode (Connect) | Next after BLE; plugs in behind `src/services/payments.ts` |
 | 7 | Push notifications, polish | In-app realtime banner done |
@@ -68,8 +68,31 @@ supabase/
 ```bash
 npm run typecheck
 npm run lint
+npm test            # QR code format unit tests
 npm run test:db     # needs Postgres 15+ binaries installed locally
 ```
+
+## QR codes
+
+QR is the fallback for phones without Bluetooth tap, and the easiest way to test with two
+phones. Codes are plain deep links, so the phone's own camera app opens them in Payvr.
+
+| Code | Payload | When it shows |
+| --- | --- | --- |
+| My code | `payvr://u/<handle>` | QR screen → My code (or the QR button on Home) |
+| Request | `payvr://u/<handle>?amt=2000&note=Pizza&exp=…` | Request an amount → Tap → "Show QR code instead" |
+
+- **Scanning a request code** opens "Pay $20 to Jake?" and needs Face ID or your PIN.
+  The requester's screen jumps to "Jake paid you $20" the moment the money lands (realtime).
+- **Scanning "My code"** while you're sending or requesting fills in the person. Otherwise
+  it opens the Amount screen for them.
+- **Request codes expire** after 2 minutes and the showing phone refreshes them every
+  minute, so screenshots stop working.
+- **Nothing in a code is trusted.** The handle is looked up on the server and you always see
+  the real name and photo before paying. Malformed codes are rejected.
+- **Scanner extras:** flashlight, "Choose from photos" (good for testing with a
+  screenshot), and a button to open Settings if camera access was denied.
+- The format lives in `src/services/qr.ts`; tests run with `npm test`.
 
 ## Prototype helpers
 
@@ -79,7 +102,8 @@ npm run test:db     # needs Postgres 15+ binaries installed locally
 - The daily limit is a rolling 24 hours: $500 across payments and paid requests.
 - The Tap screen "finds" one of your contacts after ~3.5s (`MOCK_DISCOVERY_MS`). Sessions
   expire after 60s with a retry message.
-- QR → Scan has a "simulate a scan" button so one device can walk the flow.
+- QR → Scan has buttons to "scan" Jake's code or Jake's $12 request, and a request
+  code has "Jake pays this code", so one device (or the web preview) can walk every QR flow.
 
 ## Design notes
 

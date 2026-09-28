@@ -127,7 +127,7 @@ export default function Tap() {
             </PulseRings>
             <Pressable
               accessibilityRole="link"
-              onPress={() => router.push('/qr')}
+              onPress={() => router.push({ pathname: '/qr', params: { tab: draft.mode === 'send' ? 'scan' : 'mine' } })}
               style={styles.qrLink}>
               <Icon name="qr" size={18} color={colors.accent} />
               <Text variant="bodyMedium" color="accent">

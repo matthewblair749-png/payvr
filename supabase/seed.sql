@@ -3,7 +3,7 @@
 -- Adds three demo people (Jake, Priya, Sofia) so a single phone can try the whole flow
 -- against a real Supabase backend, plus two helpers the app's
 -- Profile → Prototype buttons call to simulate the other phone:
---   demo_incoming_payment()  "Jake paid you $20 · Pizza"
+--   demo_incoming_payment()  "Jake paid you $20 · Pizza" (amount / note optional)
 --   demo_incoming_request()  "Priya is requesting $14.50 · Movie night"
 -- Both only ever move TEST money.
 
@@ -25,7 +25,8 @@ insert into public.users (id, name, handle) values
   ('d0000000-0000-4000-8000-00000000000c', 'Sofia Martins', 'sofia')
 on conflict do nothing;
 
-create or replace function public.demo_incoming_payment()
+drop function if exists public.demo_incoming_payment();
+create or replace function public.demo_incoming_payment(p_amount_cents bigint default 2000, p_note text default 'Pizza')
 returns void
 language plpgsql
 security definer
@@ -36,9 +37,12 @@ declare
   jake constant uuid := 'd0000000-0000-4000-8000-00000000000a';
 begin
   if me = jake then return; end if;
-  update public.wallets set balance_cents = balance_cents + 2000, updated_at = now() where user_id = me;
+  if p_amount_cents is null or p_amount_cents <= 0 or p_amount_cents > 100000 then
+    raise exception 'invalid_amount' using errcode = 'P0001';
+  end if;
+  update public.wallets set balance_cents = balance_cents + p_amount_cents, updated_at = now() where user_id = me;
   insert into public.transactions (from_user, to_user, amount_cents, note, type, status, completed_at)
-    values (jake, me, 2000, 'Pizza', 'send', 'completed', now());
+    values (jake, me, p_amount_cents, left(coalesce(p_note, ''), 60), 'send', 'completed', now());
   perform public._remember(me, jake);
 end;
 $$;
@@ -60,5 +64,5 @@ begin
 end;
 $$;
 
-revoke execute on function public.demo_incoming_payment(), public.demo_incoming_request() from public, anon;
-grant execute on function public.demo_incoming_payment(), public.demo_incoming_request() to authenticated;
+revoke execute on function public.demo_incoming_payment(bigint, text), public.demo_incoming_request() from public, anon;
+grant execute on function public.demo_incoming_payment(bigint, text), public.demo_incoming_request() to authenticated;

@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
+import { IconButton } from '@/components/icon-button';
 import { LogoGlyph } from '@/components/logo';
 import { Text } from '@/components/text';
 import { TransactionRow } from '@/components/transaction-row';
@@ -33,9 +34,12 @@ export default function Home() {
       showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <Text variant="heading">Hi, {first}</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="Your profile" onPress={() => router.navigate('/profile')} hitSlop={4}>
-          <Avatar name={me.name} uri={me.avatarUrl} size={MIN_TAP} />
-        </Pressable>
+        <View style={styles.headerRight}>
+          <IconButton icon="qr" label="QR code" filled onPress={() => router.push('/qr')} />
+          <Pressable accessibilityRole="button" accessibilityLabel="Your profile" onPress={() => router.navigate('/profile')} hitSlop={4}>
+            <Avatar name={me.name} uri={me.avatarUrl} size={MIN_TAP} />
+          </Pressable>
+        </View>
       </View>
 
       <View style={styles.balance}>
@@ -135,6 +139,7 @@ const TAP = 188;
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 24, paddingBottom: 32 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 52 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   balance: { marginTop: 24, gap: 2 },
   actions: { flexDirection: 'row', gap: 12, marginTop: 20 },
   flex: { flex: 1 },

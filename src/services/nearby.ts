@@ -27,13 +27,3 @@ export function startDiscovery(opts: {
   }, MOCK_DISCOVERY_MS);
   return { stop: () => clearTimeout(t) };
 }
-
-/** QR payloads: payvr://u/<handle> */
-export function qrPayloadFor(handle: string) {
-  return `payvr://u/${handle}`;
-}
-
-export function parseQrPayload(data: string): string | null {
-  const m = /^payvr:\/\/u\/([a-z0-9_.]{2,20})$/i.exec(data.trim());
-  return m ? m[1].toLowerCase() : null;
-}

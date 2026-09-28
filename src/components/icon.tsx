@@ -28,7 +28,9 @@ export type IconName =
   | 'delete'
   | 'send'
   | 'request'
-  | 'sparkle';
+  | 'sparkle'
+  | 'flash'
+  | 'image';
 
 type Props = { name: IconName; size?: number; color: string; strokeWidth?: number };
 
@@ -134,6 +136,16 @@ function render(name: IconName, p: object, color: string) {
       return <Path d="M12 5v14M6 13l6 6 6-6" {...p} />;
     case 'sparkle':
       return <Path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6" {...p} />;
+    case 'flash':
+      return <Path d="M13 2 4 14h7l-1 8 9-12h-7z" {...p} />;
+    case 'image':
+      return (
+        <>
+          <Rect x="3" y="4" width="18" height="16" rx="2.5" {...p} />
+          <Circle cx="9" cy="10" r="1.8" {...p} />
+          <Path d="m21 16-5-5-9 9" {...p} />
+        </>
+      );
     default:
       return <Circle cx="12" cy="12" r="2" fill={color} />;
   }

@@ -64,7 +64,7 @@ type AppState = {
   rememberContact: (userId: string) => void;
 
   dismissIncoming: () => void;
-  simulateIncomingPayment: () => void;
+  simulateIncomingPayment: (opts?: { amountCents?: number; note?: string }) => void;
   simulateIncomingRequest: () => void;
 };
 
@@ -312,7 +312,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     cashOut,
     rememberContact,
     dismissIncoming: () => setIncoming(null),
-    simulateIncomingPayment: () => void backend.simulateIncoming('payment').catch(() => haptics.error()),
+    simulateIncomingPayment: (opts) => void backend.simulateIncoming('payment', opts).catch(() => haptics.error()),
     simulateIncomingRequest: () => void backend.simulateIncoming('request').catch(() => haptics.error()),
   };
 

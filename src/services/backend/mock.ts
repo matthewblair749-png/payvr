@@ -92,15 +92,15 @@ export const mockBackend: Backend = {
     return () => mockDb.listeners.delete(onEvent);
   },
 
-  async simulateIncoming(kind) {
+  async simulateIncoming(kind, opts) {
     const now = new Date().toISOString();
     if (kind === 'payment') {
       const tx: Transaction = {
         id: mockDb.newId(),
         fromUser: 'u_jake',
         toUser: mockDb.me.id,
-        amountCents: 2000,
-        note: 'Pizza',
+        amountCents: opts?.amountCents ?? 2000,
+        note: opts?.note ?? 'Pizza',
         type: 'send',
         status: 'completed',
         createdAt: now,

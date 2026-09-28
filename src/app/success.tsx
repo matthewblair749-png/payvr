@@ -24,8 +24,9 @@ export default function Success() {
   const other = userById(d.otherId);
   const first = other?.name.split(' ')[0] ?? 'them';
   const amount = formatShort(tx.amountCents);
-  const headline =
-    tx.type === 'request' && tx.status === 'pending'
+  const headline = d.received
+    ? `${first} paid you ${amount}`
+    : tx.type === 'request' && tx.status === 'pending'
       ? `${amount} requested from ${first}`
       : tx.type === 'request'
         ? `${amount} paid to ${first}`

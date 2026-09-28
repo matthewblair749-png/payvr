@@ -25,7 +25,12 @@ export default function Confirm() {
   const first = peer.name.split(' ')[0];
   const amount = formatShort(draft.amountCents);
   const isSend = draft.mode === 'send';
-  const question = isSend ? `Send ${amount} to ${first}?` : `Request ${amount} from ${first}?`;
+  const fromQrRequest = draft.origin === 'qrRequest';
+  const question = fromQrRequest
+    ? `Pay ${amount} to ${first}?`
+    : isSend
+      ? `Send ${amount} to ${first}?`
+      : `Request ${amount} from ${first}?`;
 
   const go = async () => {
     setError(null);
@@ -55,7 +60,7 @@ export default function Confirm() {
             </Text>
           ) : null}
           <Button
-            label={isSend ? 'Send' : 'Request'}
+            label={fromQrRequest ? 'Pay' : isSend ? 'Send' : 'Request'}
             icon={isSend ? 'faceId' : undefined}
             loading={busy}
             onPress={go}
@@ -64,6 +69,11 @@ export default function Confirm() {
         </>
       }>
       <Animated.View entering={FadeInUp.duration(300)} style={styles.center}>
+        {fromQrRequest ? (
+          <Text variant="caption" color="accent" style={styles.badge}>
+            {first.toUpperCase()} IS REQUESTING
+          </Text>
+        ) : null}
         <Avatar name={peer.name} uri={peer.avatarUrl} size={120} ring />
         <View style={styles.who}>
           <Text variant="heading" align="center">
@@ -90,4 +100,5 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
   who: { gap: 2 },
   question: { marginTop: 16 },
+  badge: { letterSpacing: 0.8 },
 });

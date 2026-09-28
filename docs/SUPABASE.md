@@ -91,6 +91,10 @@ the Storage API). Those need a real project; see the checklist below.
 - [ ] Sign up with a test number → profile saved, wallet shows $500.
 - [ ] Second phone (or a second test number on another device) signs up.
 - [ ] Phone A: QR → My code. Phone B: QR → Scan → pay $5.
+- [ ] Phone A: Request $12 → Tap → "Show QR code instead". Phone B scans it → "Pay $12 to …?"
+      → pays. Phone A jumps to "… paid you $12".
+- [ ] Scan phone A's request code with phone B's **system camera app** → opens Payvr on Confirm.
+- [ ] Wait 3+ minutes and scan a screenshot of an old request code → "That code has expired".
 - [ ] Phone A shows the "paid you" banner instantly and the balance counts up.
 - [ ] Phone B requests from A; A sees the request banner; A pays with PIN / Face ID.
 - [ ] Try to send more than $500 in a day → friendly daily-limit message.
