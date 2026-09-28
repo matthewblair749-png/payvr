@@ -5,16 +5,19 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
+import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { PaymentError } from '@/services/payments';
 import { useApp } from '@/store/app-store';
 import { useAuthorize } from '@/store/authorize';
+import { useTheme } from '@/theme/theme-provider';
 import { haptics } from '@/utils/haptics';
-import { formatShort } from '@/utils/money';
+import { formatCents, formatShort } from '@/utils/money';
 
 export default function Confirm() {
-  const { draft, userById, submitDraft } = useApp();
+  const { colors } = useTheme();
+  const { draft, userById, submitDraft, balanceCents } = useApp();
   const authorize = useAuthorize();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +34,18 @@ export default function Confirm() {
     : isSend
       ? `Send ${amount} to ${first}?`
       : `Request ${amount} from ${first}?`;
+
+  const rows: [string, string][] = isSend
+    ? [
+        ['From', `Payvr balance · ${formatCents(balanceCents)}`],
+        ['Arrives', 'Instantly'],
+        ['Fee', 'Free'],
+      ]
+    : [
+        ['From', `${peer.name}`],
+        ['They’ll see', `${amount}${draft.note ? ` · ${draft.note}` : ''}`],
+        ['Fee', 'Free'],
+      ];
 
   const go = async () => {
     setError(null);
@@ -60,7 +75,7 @@ export default function Confirm() {
             </Text>
           ) : null}
           <Button
-            label={fromQrRequest ? 'Pay' : isSend ? 'Send' : 'Request'}
+            label={fromQrRequest ? `Pay ${amount}` : isSend ? `Send ${amount}` : `Request ${amount}`}
             icon={isSend ? 'faceId' : undefined}
             loading={busy}
             onPress={go}
@@ -74,7 +89,7 @@ export default function Confirm() {
             {first.toUpperCase()} IS REQUESTING
           </Text>
         ) : null}
-        <Avatar name={peer.name} uri={peer.avatarUrl} size={120} ring />
+        <Avatar name={peer.name} uri={peer.avatarUrl} size={104} ring />
         <View style={styles.who}>
           <Text variant="heading" align="center">
             {peer.name}
@@ -88,8 +103,31 @@ export default function Confirm() {
         </Text>
         {draft.note ? (
           <Text variant="bodyMedium" color="textSecondary" align="center">
-            {draft.note}
+            “{draft.note}”
           </Text>
+        ) : null}
+
+        <View style={[styles.summary, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          {rows.map(([k, v], i) => (
+            <View
+              key={k}
+              style={[styles.row, i < rows.length - 1 && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
+              <Text variant="small" color="textSecondary">
+                {k}
+              </Text>
+              <Text variant="bodyMedium" numberOfLines={1} style={styles.value}>
+                {v}
+              </Text>
+            </View>
+          ))}
+        </View>
+        {isSend ? (
+          <View style={styles.trust}>
+            <Icon name="shield" size={16} color={colors.textSecondary} />
+            <Text variant="caption" color="textSecondary">
+              Payments are instant. Only pay people you know.
+            </Text>
+          </View>
         ) : null}
       </Animated.View>
     </Screen>
@@ -97,8 +135,12 @@ export default function Confirm() {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   who: { gap: 2 },
-  question: { marginTop: 16 },
+  question: { marginTop: 10 },
   badge: { letterSpacing: 0.8 },
+  summary: { alignSelf: 'stretch', borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, marginTop: 14, paddingHorizontal: 16 },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 48, gap: 12 },
+  value: { flexShrink: 1, textAlign: 'right' },
+  trust: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
 });

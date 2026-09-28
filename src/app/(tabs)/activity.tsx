@@ -8,6 +8,7 @@ import { TransactionRow } from '@/components/transaction-row';
 import { describe, useApp } from '@/store/app-store';
 import { useTheme } from '@/theme/theme-provider';
 import { dayLabel } from '@/utils/dates';
+import { formatCents } from '@/utils/money';
 
 type Filter = 'all' | 'sent' | 'received' | 'requests';
 
@@ -33,12 +34,49 @@ export default function Activity() {
     return [...groups.entries()].map(([title, data]) => ({ title, data }));
   }, [transactions, me.id, filter]);
 
+  // This month at a glance: money in and money out.
+  const month = useMemo(() => {
+    const now = new Date();
+    const inMonth = (iso: string) => {
+      const d = new Date(iso);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    };
+    let inCents = 0;
+    let outCents = 0;
+    for (const t of transactions) {
+      const d = describe(t, me.id);
+      if (!inMonth(t.completedAt ?? t.createdAt)) continue;
+      if (d.received) inCents += t.amountCents;
+      if (d.sent) outCents += t.amountCents;
+    }
+    return { label: now.toLocaleDateString('en-US', { month: 'long' }), inCents, outCents };
+  }, [transactions, me.id]);
+
   return (
     <View style={[styles.fill, { backgroundColor: colors.background, paddingTop: insets.top + 8 }]}>
       <View style={styles.head}>
         <Text variant="title" accessibilityRole="header">
           Activity
         </Text>
+        <View style={[styles.summary, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.stat}>
+            <Text variant="caption" color="textSecondary">
+              In · {month.label}
+            </Text>
+            <Text variant="heading" color="successText" style={styles.num}>
+              +{formatCents(month.inCents)}
+            </Text>
+          </View>
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+          <View style={styles.stat}>
+            <Text variant="caption" color="textSecondary">
+              Out · {month.label}
+            </Text>
+            <Text variant="heading" style={styles.num}>
+              −{formatCents(month.outCents)}
+            </Text>
+          </View>
+        </View>
         <Segmented<Filter>
           value={filter}
           onChange={setFilter}
@@ -74,8 +112,18 @@ export default function Activity() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  head: { paddingHorizontal: 24, gap: 16, paddingBottom: 4 },
-  list: { paddingHorizontal: 24, paddingBottom: 32 },
+  head: { paddingHorizontal: 20, gap: 14, paddingBottom: 4 },
+  list: { paddingHorizontal: 20, paddingBottom: 32 },
+  summary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 22,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 14,
+  },
+  stat: { flex: 1, paddingHorizontal: 16, gap: 2 },
+  statDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch' },
+  num: { fontVariant: ['tabular-nums'] },
   section: { letterSpacing: 0.8, marginTop: 20, marginBottom: 4 },
   empty: { marginTop: 64 },
 });

@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
@@ -13,8 +14,11 @@ import type { TapMode } from '@/data/types';
 import { DAILY_SEND_LIMIT_CENTS } from '@/services/payments';
 import { useApp } from '@/store/app-store';
 import { useTheme } from '@/theme/theme-provider';
-import { Fonts } from '@/theme/typography';
+import { Fonts, MIN_TAP } from '@/theme/typography';
+import { haptics } from '@/utils/haptics';
 import { applyKey, displayTyped, formatShort, toCents } from '@/utils/money';
+
+const QUICK_AMOUNTS = [500, 1000, 2000, 5000];
 
 export default function Amount() {
   const insets = useSafeAreaInsets();
@@ -28,6 +32,7 @@ export default function Amount() {
 
   const cents = toCents(amount);
   const leftToday = DAILY_SEND_LIMIT_CENTS - sentTodayCents;
+  const overLimit = (c: number) => mode === 'send' && (c > balanceCents || c > leftToday);
   const error =
     mode === 'send' && cents > balanceCents
       ? 'That’s more than your balance.'
@@ -36,6 +41,41 @@ export default function Amount() {
         : null;
 
   const size = amount.length > 8 ? 56 : amount.length > 5 ? 68 : 84;
+
+  // The number bumps on every key, and shakes when it goes over the balance or daily limit.
+  const bump = useSharedValue(1);
+  const shake = useSharedValue(0);
+  const amountStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: bump.value }, { translateX: shake.value }],
+  }));
+
+  const react = (nextCents: number, key: string) => {
+    if (overLimit(nextCents) && key !== 'back') {
+      haptics.error();
+      shake.set(
+        withSequence(
+          withTiming(-9, { duration: 45 }),
+          withTiming(9, { duration: 45 }),
+          withTiming(-5, { duration: 45 }),
+          withTiming(0, { duration: 45 }),
+        ),
+      );
+    } else {
+      bump.set(withSequence(withTiming(1.04, { duration: 60 }), withSpring(1, { damping: 12, stiffness: 260 })));
+    }
+  };
+
+  const press = (key: string) => {
+    const nextAmount = applyKey(amount, key);
+    setAmount(nextAmount);
+    react(toCents(nextAmount), key);
+  };
+
+  const quick = (c: number) => {
+    haptics.tap();
+    setAmount(String(c / 100));
+    react(c, 'quick');
+  };
 
   const next = () => {
     setDraft({ mode, amountCents: cents, note: note.trim(), peerId: peer?.id });
@@ -70,23 +110,43 @@ export default function Amount() {
             </Text>
           </View>
         ) : null}
-        <Text
-          accessibilityLiveRegion="polite"
-          accessibilityLabel={`Amount ${displayTyped(amount)}`}
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          style={{
-            fontFamily: Fonts.bold,
-            fontSize: size,
-            lineHeight: size * 1.1,
-            letterSpacing: -size * 0.04,
-            color: cents === 0 ? colors.textSecondary : colors.text,
-          }}>
-          {displayTyped(amount)}
-        </Text>
+        <Animated.View style={amountStyle}>
+          <Text
+            accessibilityLiveRegion="polite"
+            accessibilityLabel={`Amount ${displayTyped(amount)}`}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            style={{
+              fontFamily: Fonts.bold,
+              fontSize: size,
+              lineHeight: size * 1.1,
+              letterSpacing: -size * 0.04,
+              fontVariant: ['tabular-nums'],
+              color: error ? colors.error : cents === 0 ? colors.textSecondary : colors.text,
+            }}>
+            {displayTyped(amount)}
+          </Text>
+        </Animated.View>
         <Text variant="small" color={error ? 'error' : 'textSecondary'} style={styles.hint}>
           {error ?? (mode === 'send' ? `Balance ${formatShort(balanceCents)}` : 'They’ll get a request to approve')}
         </Text>
+        {cents === 0 ? (
+          <View style={styles.quick}>
+            {QUICK_AMOUNTS.map((c) => (
+              <Pressable
+                key={c}
+                accessibilityRole="button"
+                accessibilityLabel={formatShort(c)}
+                onPress={() => quick(c)}
+                style={({ pressed }) => [
+                  styles.quickChip,
+                  { borderColor: colors.border, backgroundColor: pressed ? colors.surface : 'transparent' },
+                ]}>
+                <Text variant="bodyMedium">{formatShort(c)}</Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
         <TextInput
           value={note}
           onChangeText={setNote}
@@ -99,12 +159,8 @@ export default function Amount() {
       </View>
 
       <View style={styles.bottom}>
-        <Keypad onKey={(k) => setAmount((a) => applyKey(a, k))} />
-        <Button
-          label={peer ? (mode === 'send' ? 'Continue' : 'Continue') : 'Ready to tap'}
-          disabled={cents === 0 || !!error}
-          onPress={next}
-        />
+        <Keypad onKey={press} />
+        <Button label={peer ? 'Continue' : 'Ready to tap'} disabled={cents === 0 || !!error} onPress={next} />
       </View>
     </View>
   );
@@ -127,8 +183,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   hint: { minHeight: 20 },
+  quick: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  quickChip: {
+    minHeight: MIN_TAP,
+    minWidth: 60,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   note: {
-    marginTop: 18,
+    marginTop: 14,
     minHeight: 44,
     minWidth: 200,
     borderRadius: 999,

@@ -1,11 +1,11 @@
 import { router } from 'expo-router';
+import { useEffect, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, Easing } from 'react-native-reanimated';
-import { useEffect } from 'react';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
-import { Button } from '@/components/button';
+import { Icon, type IconName } from '@/components/icon';
 import { IconButton } from '@/components/icon-button';
 import { LogoGlyph } from '@/components/logo';
 import { Text } from '@/components/text';
@@ -14,18 +14,33 @@ import { useCountUp } from '@/hooks/use-count-up';
 import { describe, useApp } from '@/store/app-store';
 import { useTheme } from '@/theme/theme-provider';
 import { MIN_TAP } from '@/theme/typography';
+import { isToday } from '@/utils/dates';
 import { haptics } from '@/utils/haptics';
 import { formatCents, formatShort } from '@/utils/money';
 
 export default function Home() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { me, balanceCents, transactions, userById, setDraft } = useApp();
+  const { me, balanceCents, transactions, contacts, userById, setDraft } = useApp();
   const shown = useCountUp(balanceCents);
   const first = me.name.split(' ')[0];
 
   const pending = transactions.filter((t) => describe(t, me.id).needsMyAction);
   const recent = transactions.slice(0, 5);
+  const people = contacts.map((c) => userById(c.userId)).filter((u) => !!u).slice(0, 8);
+  const receivedToday = useMemo(
+    () =>
+      transactions
+        .filter((t) => describe(t, me.id).received && isToday(t.completedAt ?? t.createdAt))
+        .reduce((s, t) => s + t.amountCents, 0),
+    [transactions, me.id],
+  );
+
+  const startTap = () => {
+    haptics.medium();
+    setDraft(null);
+    router.push('/amount');
+  };
 
   return (
     <ScrollView
@@ -42,18 +57,30 @@ export default function Home() {
         </View>
       </View>
 
-      <View style={styles.balance}>
-        <Text variant="caption" color="textSecondary">
-          Balance · Test money
-        </Text>
+      {/* Balance card */}
+      <View style={[styles.balanceCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={styles.balanceTop}>
+          <Text variant="caption" color="textSecondary">
+            Payvr balance
+          </Text>
+          <View style={[styles.testChip, { borderColor: colors.border }]}>
+            <View style={[styles.testDot, { backgroundColor: colors.accent }]} />
+            <Text variant="caption" color="textSecondary">
+              Test money
+            </Text>
+          </View>
+        </View>
         <Text variant="hero" adjustsFontSizeToFit numberOfLines={1} accessibilityLabel={`Balance ${formatCents(balanceCents)}`}>
           {formatCents(shown)}
         </Text>
-      </View>
-
-      <View style={styles.actions}>
-        <Button label="Add money" icon="plus" variant="secondary" size="md" style={styles.flex} onPress={() => router.push({ pathname: '/wallet/[action]', params: { action: 'add' } })} />
-        <Button label="Cash out" icon="arrowDown" variant="secondary" size="md" style={styles.flex} onPress={() => router.push({ pathname: '/wallet/[action]', params: { action: 'cashout' } })} />
+        <Text variant="small" color={receivedToday ? 'successText' : 'textSecondary'} style={styles.delta}>
+          {receivedToday ? `+${formatShort(receivedToday)} received today` : 'Instant, free transfers'}
+        </Text>
+        <View style={styles.actions}>
+          <CardAction icon="plus" label="Add money" onPress={() => router.push({ pathname: '/wallet/[action]', params: { action: 'add' } })} />
+          <View style={[styles.actionDivider, { backgroundColor: colors.border }]} />
+          <CardAction icon="arrowDown" label="Cash out" onPress={() => router.push({ pathname: '/wallet/[action]', params: { action: 'cashout' } })} />
+        </View>
       </View>
 
       {pending.map((req) => {
@@ -64,34 +91,63 @@ export default function Home() {
             accessibilityRole="button"
             accessibilityLabel={`${who?.name} is requesting ${formatShort(req.amountCents)}. Review`}
             onPress={() => router.push({ pathname: '/request/[id]', params: { id: req.id } })}
-            style={[styles.request, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            style={({ pressed }) => [
+              styles.request,
+              { backgroundColor: colors.surface, borderColor: colors.accent, opacity: pressed ? 0.7 : 1 },
+            ]}>
             <Avatar name={who?.name ?? '?'} uri={who?.avatarUrl} size={40} />
             <View style={styles.flex}>
               <Text variant="bodyMedium">
                 {who?.name.split(' ')[0]} is requesting {formatShort(req.amountCents)}
               </Text>
               <Text variant="small" color="textSecondary">
-                {req.note}
+                {req.note || 'No note'}
               </Text>
             </View>
-            <Text variant="bodyMedium" color="accent">
-              Review
-            </Text>
+            <View style={[styles.reviewPill, { backgroundColor: colors.primary }]}>
+              <Text variant="caption" style={{ color: colors.onPrimary }}>
+                Review
+              </Text>
+            </View>
           </Pressable>
         );
       })}
 
+      {/* The one big action */}
       <View style={styles.tapWrap}>
-        <TapButton
-          onPress={() => {
-            haptics.medium();
-            setDraft(null);
-            router.push('/amount');
-          }}
-        />
+        <TapButton onPress={startTap} />
+        <Text variant="small" color="textSecondary" align="center" style={styles.tapHint}>
+          Hold your phone near a friend’s to pay
+        </Text>
       </View>
 
-      <View style={styles.recentHeader}>
+      {people.length ? (
+        <>
+          <View style={styles.sectionHeader}>
+            <Text variant="heading">People</Text>
+            <Text variant="caption" color="textSecondary">
+              Pay remotely
+            </Text>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.people} style={styles.peopleScroll}>
+            {people.map((u) => (
+              <Pressable
+                key={u!.id}
+                accessibilityRole="button"
+                accessibilityLabel={`${u!.name}, pay or request`}
+                onPress={() => router.push({ pathname: '/person/[id]', params: { id: u!.id } })}
+                style={({ pressed }) => [styles.person, { opacity: pressed ? 0.6 : 1 }]}>
+                <Avatar name={u!.name} uri={u!.avatarUrl} size={56} />
+                <Text variant="caption" numberOfLines={1} align="center">
+                  {u!.name.split(' ')[0]}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </>
+      ) : null}
+
+      <View style={styles.sectionHeader}>
         <Text variant="heading">Recent</Text>
         <Pressable accessibilityRole="button" onPress={() => router.navigate('/activity')} style={styles.seeAll}>
           <Text variant="bodyMedium" color="accent">
@@ -110,26 +166,43 @@ export default function Home() {
   );
 }
 
+function CardAction({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={({ pressed }) => [styles.cardAction, { opacity: pressed ? 0.6 : 1 }]}>
+      <View style={[styles.cardActionIcon, { backgroundColor: colors.background }]}>
+        <Icon name={icon} size={18} color={colors.accent} strokeWidth={2.4} />
+      </View>
+      <Text variant="bodyMedium">{label}</Text>
+    </Pressable>
+  );
+}
+
 function TapButton({ onPress }: { onPress: () => void }) {
   const { colors } = useTheme();
   const pulse = useSharedValue(0);
   useEffect(() => {
-    pulse.value = withRepeat(withTiming(1, { duration: 2200, easing: Easing.out(Easing.quad) }), -1, false);
+    pulse.value = withRepeat(withTiming(1, { duration: 2400, easing: Easing.out(Easing.quad) }), -1, false);
   }, [pulse]);
   const ring = useAnimatedStyle(() => ({
-    opacity: 0.35 * (1 - pulse.value),
-    transform: [{ scale: 1 + pulse.value * 0.25 }],
+    opacity: 0.4 * (1 - pulse.value),
+    transform: [{ scale: 1 + pulse.value * 0.22 }],
   }));
 
   return (
     <View style={styles.tapOuter}>
+      <View style={[styles.staticRing, { borderColor: colors.border }]} />
       <Animated.View style={[{ pointerEvents: 'none' }, styles.tapRing, { borderColor: colors.primary }, ring]} />
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Tap to send"
         onPress={onPress}
         style={({ pressed }) => [styles.tap, { backgroundColor: colors.primary, transform: [{ scale: pressed ? 0.96 : 1 }] }]}>
-        <LogoGlyph size={64} color={colors.onPrimary} />
+        <LogoGlyph size={58} color={colors.onPrimary} />
         <Text variant="button" style={{ color: colors.onPrimary }}>
           Tap to send
         </Text>
@@ -138,36 +211,64 @@ function TapButton({ onPress }: { onPress: () => void }) {
   );
 }
 
-const TAP = 188;
+const TAP = 172;
+const RING = TAP + 36;
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 24, paddingBottom: 32 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 52 },
+  content: { paddingHorizontal: 20, paddingBottom: 32 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 52, paddingHorizontal: 4 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  balance: { marginTop: 24, gap: 2 },
-  actions: { flexDirection: 'row', gap: 12, marginTop: 20 },
   flex: { flex: 1 },
+  balanceCard: {
+    marginTop: 16,
+    borderRadius: 28,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingTop: 18,
+    paddingHorizontal: 20,
+  },
+  balanceTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  testChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  testDot: { width: 6, height: 6, borderRadius: 3 },
+  delta: { marginTop: 2 },
+  actions: { flexDirection: 'row', alignItems: 'center', marginTop: 18, marginHorizontal: -20 },
+  actionDivider: { width: StyleSheet.hairlineWidth, height: 28 },
+  cardAction: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 60 },
+  cardActionIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   request: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     padding: 14,
-    borderRadius: 20,
-    borderWidth: StyleSheet.hairlineWidth,
-    marginTop: 16,
+    borderRadius: 22,
+    borderWidth: 1,
+    marginTop: 12,
   },
-  tapWrap: { alignItems: 'center', marginVertical: 36 },
-  tapOuter: { width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center' },
+  reviewPill: { borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
+  tapWrap: { alignItems: 'center', marginTop: 30, marginBottom: 10 },
+  tapOuter: { width: RING, height: RING, alignItems: 'center', justifyContent: 'center' },
+  staticRing: { position: 'absolute', width: RING, height: RING, borderRadius: RING / 2, borderWidth: 1 },
   tapRing: { position: 'absolute', width: TAP, height: TAP, borderRadius: TAP / 2, borderWidth: 2 },
-  tap: {
-    width: TAP,
-    height: TAP,
-    borderRadius: TAP / 2,
+  tap: { width: TAP, height: TAP, borderRadius: TAP / 2, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  tapHint: { marginTop: 10 },
+  sectionHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
+    justifyContent: 'space-between',
+    marginTop: 24,
+    minHeight: MIN_TAP,
+    paddingHorizontal: 4,
   },
-  recentHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
-  seeAll: { minHeight: MIN_TAP, justifyContent: 'center' },
+  peopleScroll: { marginHorizontal: -20 },
+  people: { paddingHorizontal: 20, gap: 14 },
+  person: { width: 64, alignItems: 'center', gap: 6, minHeight: MIN_TAP },
+  seeAll: { minHeight: MIN_TAP, minWidth: MIN_TAP, justifyContent: 'center', alignItems: 'flex-end' },
   empty: { marginTop: 8 },
 });

@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
+import { Button } from '@/components/button';
 import { Card, ListRow, SectionLabel } from '@/components/list-row';
 import { Text } from '@/components/text';
 import { useApp } from '@/store/app-store';
@@ -20,12 +21,17 @@ export default function Profile() {
       style={{ backgroundColor: colors.background }}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 24 }]}
       showsVerticalScrollIndicator={false}>
-      <View style={styles.me}>
-        <Avatar name={me.name} uri={me.avatarUrl} size={96} />
+      <View style={[styles.me, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Avatar name={me.name} uri={me.avatarUrl} size={88} />
         <Text variant="title" align="center">
           {me.name}
         </Text>
-        <Text color="textSecondary">@{me.handle}</Text>
+        <View style={[styles.handle, { borderColor: colors.border }]}>
+          <Text variant="bodyMedium" color="accent">
+            @{me.handle}
+          </Text>
+        </View>
+        <Button label="My QR code" icon="qr" variant="secondary" size="md" onPress={() => router.push('/qr')} style={styles.qr} />
       </View>
 
       <SectionLabel>People you’ve tapped</SectionLabel>
@@ -91,7 +97,17 @@ export default function Profile() {
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 24, paddingBottom: 40 },
-  me: { alignItems: 'center', gap: 6 },
+  me: {
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 28,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingTop: 24,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+  },
+  handle: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 4 },
+  qr: { alignSelf: 'stretch', marginTop: 8 },
   logout: { marginTop: 28 },
   version: { marginTop: 20 },
 });

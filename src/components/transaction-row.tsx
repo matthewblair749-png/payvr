@@ -7,7 +7,7 @@ import { useTheme } from '@/theme/theme-provider';
 import { shortTime } from '@/utils/dates';
 import { formatCents } from '@/utils/money';
 
-import { Avatar } from './avatar';
+import { Avatar, type AvatarBadge } from './avatar';
 import { Text } from './text';
 
 export function statusLine(tx: Transaction, meId: string, otherFirst: string) {
@@ -24,27 +24,43 @@ export function TransactionRow({ tx }: { tx: Transaction }) {
   const d = describe(tx, me.id);
   const other = userById(d.otherId);
   const name = other?.name ?? 'Unknown';
+  const first = name.split(' ')[0];
 
   const sign = d.received ? '+' : d.sent ? '−' : '';
   const amountColor = d.received ? 'successText' : tx.status === 'declined' ? 'textSecondary' : 'text';
 
+  const badge: AvatarBadge = d.isRequest
+    ? { icon: 'request', color: tx.status === 'declined' ? colors.textSecondary : colors.accent, label: 'Request' }
+    : d.received
+      ? { icon: 'arrowDownLeft', color: colors.success, label: 'Received' }
+      : { icon: 'arrowUpRight', color: colors.text, label: 'Sent' };
+
+  const open = () =>
+    d.needsMyAction
+      ? router.push({ pathname: '/request/[id]', params: { id: tx.id } })
+      : router.push({ pathname: '/transaction/[id]', params: { id: tx.id } });
+
+  const chip = d.needsMyAction
+    ? null
+    : d.isRequest && tx.status === 'pending'
+      ? 'Waiting'
+      : tx.status === 'declined'
+        ? 'Declined'
+        : null;
+
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${name}, ${statusLine(tx, me.id, name.split(' ')[0])}, ${sign === '+' ? 'received' : sign ? 'sent' : ''} ${formatCents(tx.amountCents)}, ${shortTime(tx.createdAt)}`}
-      onPress={() =>
-        d.needsMyAction
-          ? router.push({ pathname: '/request/[id]', params: { id: tx.id } })
-          : router.push({ pathname: '/transaction/[id]', params: { id: tx.id } })
-      }
+      accessibilityLabel={`${name}, ${statusLine(tx, me.id, first)}, ${sign === '+' ? 'received' : sign ? 'sent' : ''} ${formatCents(tx.amountCents)}, ${shortTime(tx.createdAt)}`}
+      onPress={open}
       style={({ pressed }) => [styles.row, { opacity: pressed ? 0.6 : 1 }]}>
-      <Avatar name={name} uri={other?.avatarUrl} size={48} />
+      <Avatar name={name} uri={other?.avatarUrl} size={46} badge={badge} />
       <View style={styles.middle}>
         <Text variant="bodyMedium" numberOfLines={1}>
           {name}
         </Text>
-        <Text variant="small" color={d.needsMyAction ? 'accent' : 'textSecondary'} numberOfLines={1}>
-          {statusLine(tx, me.id, name.split(' ')[0])}
+        <Text variant="small" color="textSecondary" numberOfLines={1}>
+          {statusLine(tx, me.id, first)} · {shortTime(tx.createdAt)}
         </Text>
       </View>
       <View style={styles.right}>
@@ -55,16 +71,28 @@ export function TransactionRow({ tx }: { tx: Transaction }) {
           {sign}
           {formatCents(tx.amountCents)}
         </Text>
-        <Text variant="caption" color="textSecondary">
-          {shortTime(tx.createdAt)}
-        </Text>
+        {d.needsMyAction ? (
+          <View style={[styles.payPill, { backgroundColor: colors.primary }]}>
+            <Text variant="caption" style={{ color: colors.onPrimary }}>
+              Pay
+            </Text>
+          </View>
+        ) : chip ? (
+          <View style={[styles.chip, { borderColor: colors.border }]}>
+            <Text variant="caption" color="textSecondary">
+              {chip}
+            </Text>
+          </View>
+        ) : null}
       </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 68, paddingVertical: 8 },
-  middle: { flex: 1, gap: 2 },
-  right: { alignItems: 'flex-end', gap: 2 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 68, paddingVertical: 10 },
+  middle: { flex: 1, gap: 2, minWidth: 0 },
+  right: { alignItems: 'flex-end', gap: 4 },
+  payPill: { borderRadius: 999, paddingHorizontal: 14, paddingVertical: 3 },
+  chip: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 2, borderWidth: StyleSheet.hairlineWidth },
 });

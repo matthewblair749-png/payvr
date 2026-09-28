@@ -6,14 +6,17 @@ export const Fonts = {
   bold: 'SpaceGrotesk_700Bold',
 } as const;
 
+/** Digits line up in columns (amounts, balances). */
+const tabular = { fontVariant: ['tabular-nums'] as TextStyle['fontVariant'] };
+
 export const Type = {
-  hero: { fontFamily: Fonts.bold, fontSize: 64, lineHeight: 70, letterSpacing: -2.5 },
+  hero: { fontFamily: Fonts.bold, fontSize: 64, lineHeight: 70, letterSpacing: -2.5, ...tabular },
   display: { fontFamily: Fonts.bold, fontSize: 44, lineHeight: 50, letterSpacing: -1.5 },
   title: { fontFamily: Fonts.bold, fontSize: 28, lineHeight: 34, letterSpacing: -0.6 },
   heading: { fontFamily: Fonts.bold, fontSize: 20, lineHeight: 26, letterSpacing: -0.3 },
   body: { fontFamily: Fonts.regular, fontSize: 16, lineHeight: 22 },
   bodyMedium: { fontFamily: Fonts.medium, fontSize: 16, lineHeight: 22 },
-  amount: { fontFamily: Fonts.bold, fontSize: 16, lineHeight: 22, letterSpacing: -0.2 },
+  amount: { fontFamily: Fonts.bold, fontSize: 16, lineHeight: 22, letterSpacing: -0.2, ...tabular },
   small: { fontFamily: Fonts.regular, fontSize: 14, lineHeight: 20 },
   caption: { fontFamily: Fonts.medium, fontSize: 13, lineHeight: 18 },
   button: { fontFamily: Fonts.medium, fontSize: 17, lineHeight: 22 },

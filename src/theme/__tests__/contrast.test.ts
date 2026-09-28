@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
+import { AvatarTints } from '../avatar-tints.ts';
 import { Colors, type Palette } from '../colors.ts';
 
 function luminance(hex: string) {
@@ -45,6 +46,13 @@ for (const scheme of ['dark', 'light'] as const) {
     assert.deepEqual(failures, []);
   });
 }
+
+test('avatar initials are readable on every tint, in both themes', () => {
+  const bad = (['dark', 'light'] as const).flatMap((s) =>
+    AvatarTints[s].filter((t) => contrast(t.fg, t.bg) < 4.5).map((t) => `${s} ${t.fg} on ${t.bg} = ${contrast(t.fg, t.bg).toFixed(2)}`),
+  );
+  assert.deepEqual(bad, []);
+});
 
 test('the spec’s #16A34A would fail as small text on white (why successText exists)', () => {
   assert.ok(contrast('#16A34A', '#FFFFFF') < 4.5);
