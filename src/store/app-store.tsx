@@ -64,13 +64,13 @@ type AppState = {
   saveTheme: (theme: ThemePreference) => void;
 
   setDraft: (d: Draft | null) => void;
-  /** Executes the current draft (send, request, or pay-a-request). */
-  submitDraft: () => Promise<Transaction>;
+  /** Executes the current draft (send, request, or pay-a-request), with last-second edits (note, privacy). */
+  submitDraft: (patch?: Partial<Draft>) => Promise<Transaction>;
   payRequest: (id: string) => Promise<Transaction>;
   declineRequest: (id: string) => Promise<void>;
   addMoney: (cents: number) => Promise<void>;
   cashOut: (cents: number) => Promise<void>;
-  rememberContact: (userId: string) => void;
+  rememberContact: (userId: string, viaTap?: boolean) => void;
 
   dismissIncoming: () => void;
   simulateIncomingPayment: (opts?: { amountCents?: number; note?: string; ref?: string }) => void;
@@ -89,7 +89,8 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
   const [balanceCents, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [draft, setDraft] = useState<Draft | null>(null);
+  const [draftState, setDraft] = useState<Draft | null>(null);
+  const draft = draftState;
   const [settings, setSettings] = useState<Settings>({
     notificationsOn: true,
     notifyPayments: true,
@@ -216,11 +217,14 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     setBalance(balance);
   }, []);
 
-  const rememberContact = useCallback((id: string) => {
-    setContacts((list) => [
-      { userId: id, lastTappedAt: new Date().toISOString() },
-      ...list.filter((c) => c.userId !== id),
-    ]);
+  const rememberContact = useCallback((id: string, viaTap?: boolean) => {
+    setContacts((list) => {
+      const prev = list.find((c) => c.userId === id);
+      return [
+        { userId: id, lastTappedAt: new Date().toISOString(), viaTap: !!(viaTap || prev?.viaTap) },
+        ...list.filter((c) => c.userId !== id),
+      ];
+    });
   }, []);
 
   const payRequest = useCallback(
@@ -233,7 +237,8 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     [applyTx, rememberContact],
   );
 
-  const submitDraft = useCallback(async () => {
+  const submitDraft = useCallback(async (patch?: Partial<Draft>) => {
+    const draft = draftState && { ...draftState, ...patch };
     if (!draft?.peerId) throw new Error('No one to pay yet');
     if (draft.requestId) return payRequest(draft.requestId);
     const input = { amountCents: draft.amountCents, note: draft.note };
@@ -241,10 +246,10 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
       draft.mode === 'send'
         ? await payments.send({ ...input, to: draft.peerId, ref: draft.ref })
         : await payments.request({ ...input, from: draft.peerId });
-    applyTx(transaction, b);
-    rememberContact(draft.peerId);
+    applyTx({ ...transaction, privacy: draft.privacy }, b);
+    rememberContact(draft.peerId, draft.viaTap);
     return transaction;
-  }, [draft, payRequest, applyTx, rememberContact]);
+  }, [draftState, payRequest, applyTx, rememberContact]);
 
   const declineRequest = useCallback(
     async (id: string) => {

@@ -31,7 +31,22 @@ export type IconName =
   | 'sparkle'
   | 'flash'
   | 'image'
-  | 'bluetooth';
+  | 'bluetooth'
+  | 'heart'
+  | 'heartFilled'
+  | 'comment'
+  | 'search'
+  | 'star'
+  | 'starFilled'
+  | 'globe'
+  | 'users'
+  | 'wallet'
+  | 'card'
+  | 'bolt'
+  | 'phone'
+  | 'chevronUp'
+  | 'feed'
+  | 'tap';
 
 type Props = { name: IconName; size?: number; color: string; strokeWidth?: number };
 
@@ -137,6 +152,67 @@ function render(name: IconName, p: object, color: string) {
       return <Path d="M12 5v14M6 13l6 6 6-6" {...p} />;
     case 'sparkle':
       return <Path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6" {...p} />;
+    case 'heart':
+      return <Path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" {...p} />;
+    case 'heartFilled':
+      return <Path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" {...p} fill={color} />;
+    case 'comment':
+      return <Path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5 4V6a1 1 0 0 1 1-1z" {...p} />;
+    case 'search':
+      return (
+        <>
+          <Circle cx="11" cy="11" r="7" {...p} />
+          <Path d="m20 20-4-4" {...p} />
+        </>
+      );
+    case 'star':
+      return <Path d="m12 3 2.8 5.8 6.2.9-4.5 4.4 1 6.2L12 17.4l-5.5 2.9 1-6.2L3 9.7l6.2-.9z" {...p} />;
+    case 'starFilled':
+      return <Path d="m12 3 2.8 5.8 6.2.9-4.5 4.4 1 6.2L12 17.4l-5.5 2.9 1-6.2L3 9.7l6.2-.9z" {...p} fill={color} />;
+    case 'globe':
+      return (
+        <>
+          <Circle cx="12" cy="12" r="9" {...p} />
+          <Path d="M3 12h18M12 3c2.5 2.7 3.7 5.7 3.7 9s-1.2 6.3-3.7 9c-2.5-2.7-3.7-5.7-3.7-9S9.5 5.7 12 3z" {...p} />
+        </>
+      );
+    case 'users':
+      return (
+        <>
+          <Circle cx="9" cy="8" r="3.5" {...p} />
+          <Path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2.2.6 3.5 2.8 3.5 6" {...p} />
+        </>
+      );
+    case 'wallet':
+      return <Path d="M4 7h15a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM4 7l12-3v3M16 13.5h.01" {...p} />;
+    case 'card':
+      return (
+        <>
+          <Rect x="3" y="5" width="18" height="14" rx="2.5" {...p} />
+          <Path d="M3 10h18M7 15h4" {...p} />
+        </>
+      );
+    case 'bolt':
+      return <Path d="M13 2 4 14h7l-1 8 9-12h-7z" {...p} />;
+    case 'phone':
+      return (
+        <>
+          <Rect x="6" y="2" width="12" height="20" rx="3" {...p} />
+          <Path d="M11 18h2" {...p} />
+        </>
+      );
+    case 'chevronUp':
+      return <Path d="m6 15 6-6 6 6" {...p} />;
+    case 'feed':
+      return <Path d="M4 6h16M4 12h16M4 18h10" {...p} />;
+    case 'tap':
+      return (
+        <>
+          <Rect x="3" y="6" width="7" height="12" rx="2" {...p} />
+          <Rect x="14" y="6" width="7" height="12" rx="2" {...p} />
+          <Path d="M10.5 12h3" {...p} />
+        </>
+      );
     case 'bluetooth':
       return <Path d="m7 7 10 10-5 4V3l5 4L7 17" {...p} />;
     case 'flash':

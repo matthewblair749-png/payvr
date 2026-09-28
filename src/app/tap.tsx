@@ -4,11 +4,11 @@ import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { LogoGlyph } from '@/components/logo';
 import { PulseRings } from '@/components/pulse-rings';
+import { SendPanel } from '@/components/send-panel';
 import { Text } from '@/components/text';
 import type { Draft } from '@/data/types';
 import { demoFound, startTap, TAP_SESSION_MS, type TapFound, type TapStatus } from '@/services/nearby';
@@ -31,7 +31,7 @@ export default function Tap() {
   const [found, setFound] = useState<TapFound | null>(null);
   const [remaining, setRemaining] = useState(TAP_SESSION_MS / 1000);
   const [attempt, setAttempt] = useState(0);
-  const sheet = useSharedValue(400);
+  const sheet = useSharedValue(900);
   const startedAt = useRef(0);
 
   const showFound = useCallback(
@@ -83,7 +83,7 @@ export default function Tap() {
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: sheet.value }] }));
 
   const restart = useCallback(() => {
-    sheet.set(withTiming(400, { duration: 200 }));
+    sheet.set(withTiming(900, { duration: 200 }));
     setRemaining(TAP_SESSION_MS / 1000);
     setPhase('searching');
     setStarting(true);
@@ -134,11 +134,13 @@ export default function Tap() {
             <Text variant="title" align="center" style={styles.title} accessibilityRole="header">
               {phase === 'found' ? 'Found them' : starting ? 'Getting ready…' : 'Hold your phone\nnear theirs'}
             </Text>
-            <PulseRings size={132} active={phase === 'searching' && !starting}>
+            <View style={styles.rings}>
+            <PulseRings size={140} spread={2.6} active={phase === 'searching' && !starting}>
               <View style={[styles.logo, { backgroundColor: colors.primary }]}>
                 <LogoGlyph size={84} color={colors.onPrimary} />
               </View>
             </PulseRings>
+            </View>
             <Pressable accessibilityRole="link" onPress={showQr} style={styles.qrLink}>
               <Icon name="qr" size={18} color={colors.accent} />
               <Text variant="bodyMedium" color="accent">
@@ -168,22 +170,10 @@ export default function Tap() {
           ]}
           accessibilityViewIsModal>
           <View style={[styles.grabber, { backgroundColor: colors.border }]} />
-          <View style={styles.peerRow}>
-            <Avatar name={found.user.name} uri={found.user.avatarUrl} size={64} ring />
-            <View style={styles.flex}>
-              <Text variant="heading">{found.user.name}</Text>
-              <Text color="textSecondary">@{found.user.handle}</Text>
-              <HowFound found={found} />
-            </View>
-          </View>
-          <IntentHint found={found} draft={draft} />
-          <Button
-            label={`Continue with ${found.user.name.split(' ')[0]}`}
-            onPress={() => {
-              setDraft({ ...draft, peerId: found.user.id });
-              router.replace('/confirm');
-            }}
-          />
+          <SendPanel peer={found.user} draft={draft} patch={{ peerId: found.user.id, viaTap: true }}>
+            <HowFound found={found} />
+            <IntentHint found={found} draft={draft} />
+          </SendPanel>
           <Button label="Not them? Keep looking" variant="ghost" size="md" onPress={restart} />
         </Animated.View>
       ) : null}
@@ -197,12 +187,12 @@ function HowFound({ found }: { found: TapFound }) {
       ? `${Math.max(1, found.distanceCm)} cm away · Ultra Wideband`
       : found.via === 'bluetooth'
         ? 'Right next to you · Bluetooth'
-        : null;
-  return text ? (
-    <Text variant="caption" color="accent" style={styles.how}>
+        : 'Found by tap';
+  return (
+    <Text variant="caption" color="accent" align="center">
       {text}
     </Text>
-  ) : null;
+  );
 }
 
 /** What the other phone is doing, so mismatches are obvious before confirming. */
@@ -221,7 +211,7 @@ function IntentHint({ found, draft }: { found: TapFound; draft: Draft }) {
     text = draft.mode === 'send' ? `${first} is also trying to send money.` : `${first} is also requesting money.`;
   }
   return text ? (
-    <Text variant="small" color={warn ? 'error' : 'textSecondary'} accessibilityLiveRegion="polite">
+    <Text variant="small" align="center" color={warn ? 'error' : 'textSecondary'} accessibilityLiveRegion="polite">
       {text}
     </Text>
   ) : null;
@@ -327,10 +317,11 @@ function Notice({
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  flex: { flex: 1 },
   stretch: { alignSelf: 'stretch' },
   top: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 24, minHeight: 24 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  // The rings fill the screen and may run off its edges.
+  rings: { height: 300, alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
   title: { marginBottom: 8 },
   logo: { width: 132, height: 132, borderRadius: 66, alignItems: 'center', justifyContent: 'center' },
   qrLink: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: MIN_TAP, paddingHorizontal: 12 },
@@ -360,6 +351,4 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   grabber: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, marginBottom: 8 },
-  peerRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 4 },
-  how: { marginTop: 4 },
 });

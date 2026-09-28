@@ -1,12 +1,14 @@
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
-import { Button } from '@/components/button';
 import { Card, ListRow, SectionLabel } from '@/components/list-row';
 import { Text } from '@/components/text';
+import { buildQr } from '@/services/qr';
 import { useApp } from '@/store/app-store';
+import { PRIVACY_LABEL, useSocial } from '@/store/social-store';
 import { useTheme } from '@/theme/theme-provider';
 
 const THEME_LABEL = { dark: 'Dark', light: 'Light', system: 'System' } as const;
@@ -14,7 +16,8 @@ const THEME_LABEL = { dark: 'Dark', light: 'Light', system: 'System' } as const;
 export default function Profile() {
   const insets = useSafeAreaInsets();
   const { colors, preference } = useTheme();
-  const { me, signOut, settings, contacts, userById, simulateIncomingPayment, simulateIncomingRequest } = useApp();
+  const { me, signOut, settings, simulateIncomingPayment, simulateIncomingRequest } = useApp();
+  const { defaultPrivacy } = useSocial();
 
   return (
     <ScrollView
@@ -31,34 +34,27 @@ export default function Profile() {
             @{me.handle}
           </Text>
         </View>
-        <Button label="My QR code" icon="qr" variant="secondary" size="md" onPress={() => router.push('/qr')} style={styles.qr} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Your QR code. Scan to pay me. Opens full screen"
+          onPress={() => router.push('/qr')}
+          style={({ pressed }) => [styles.qr, { transform: [{ scale: pressed ? 0.97 : 1 }] }]}>
+          <QRCode value={buildQr(me.handle)} size={168} color="#0A0A0A" backgroundColor="#FFFFFF" ecl="M" />
+        </Pressable>
+        <Text variant="small" color="textSecondary">
+          Scan to pay me
+        </Text>
       </View>
 
-      <SectionLabel>People you’ve tapped</SectionLabel>
+      <SectionLabel>People</SectionLabel>
       <Card>
-        {contacts.slice(0, 4).map((c, i, arr) => {
-          const u = userById(c.userId);
-          if (!u) return null;
-          return (
-            <ListRow
-              key={c.userId}
-              label={u.name}
-              value={`@${u.handle}`}
-              last={i === arr.length - 1}
-              onPress={() => router.push({ pathname: '/person/[id]', params: { id: u.id } })}
-            />
-          );
-        })}
-      </Card>
-
-      <SectionLabel>Money</SectionLabel>
-      <Card>
-        <ListRow icon="bank" label="Linked bank & card" value="Test" onPress={() => router.push('/settings/bank')} last />
+        <ListRow icon="users" label="Find people" onPress={() => router.push('/people')} last />
       </Card>
 
       <SectionLabel>Settings</SectionLabel>
       <Card>
-        <ListRow icon="shield" label="Security" onPress={() => router.push('/settings/security')} />
+        <ListRow icon="shield" label="Security" value="Face ID · PIN" onPress={() => router.push('/settings/security')} />
+        <ListRow icon="globe" label="Privacy" value={PRIVACY_LABEL[defaultPrivacy]} onPress={() => router.push('/settings/privacy')} />
         <ListRow icon="bell" label="Notifications" value={settings.notificationsOn ? 'On' : 'Off'} onPress={() => router.push('/settings/notifications')} />
         <ListRow icon="moon" label="Appearance" value={THEME_LABEL[preference]} onPress={() => router.push('/settings/appearance')} last />
       </Card>
@@ -67,7 +63,7 @@ export default function Profile() {
       <Card>
         <ListRow icon="help" label="Help" onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'help' } })} />
         <ListRow icon="file" label="Terms" onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'terms' } })} />
-        <ListRow icon="lock" label="Privacy" onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'privacy' } })} last />
+        <ListRow icon="lock" label="Privacy policy" onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'privacy' } })} last />
       </Card>
 
       <SectionLabel>Prototype</SectionLabel>
@@ -107,7 +103,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   handle: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 4 },
-  qr: { alignSelf: 'stretch', marginTop: 8 },
+  qr: { marginTop: 12, padding: 14, borderRadius: 20, backgroundColor: '#FFFFFF' },
   logout: { marginTop: 28 },
   version: { marginTop: 20 },
 });

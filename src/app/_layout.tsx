@@ -14,6 +14,7 @@ import { IncomingBanner } from '@/components/incoming-banner';
 import { configurePush, onNotificationTap } from '@/services/push';
 import { AppStoreProvider, useApp } from '@/store/app-store';
 import { AuthorizeProvider } from '@/store/authorize';
+import { SocialProvider } from '@/store/social-store';
 import { PayvrThemeProvider, useTheme } from '@/theme/theme-provider';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -34,9 +35,11 @@ export default function RootLayout() {
   return (
     <PayvrThemeProvider>
       <AppStoreProvider>
-        <AuthorizeProvider>
-          <Navigator />
-        </AuthorizeProvider>
+        <SocialProvider>
+          <AuthorizeProvider>
+            <Navigator />
+          </AuthorizeProvider>
+        </SocialProvider>
       </AppStoreProvider>
     </PayvrThemeProvider>
   );
@@ -73,7 +76,8 @@ function Navigator() {
         <Stack.Screen name="success" options={{ animation: 'fade', gestureEnabled: false }} />
         <Stack.Screen name="request/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="qr" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
-        <Stack.Screen name="wallet/[action]" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="money/[action]" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="people" options={{ presentation: 'modal' }} />
       </Stack>
       <IncomingBanner />
       <NotificationRouter />

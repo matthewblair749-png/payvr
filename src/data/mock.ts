@@ -41,9 +41,9 @@ export const SEED_TRANSACTIONS: Transaction[] = [
 ];
 
 export const SEED_CONTACTS: Contact[] = [
-  { userId: 'u_jake', lastTappedAt: minutesAgo(48) },
-  { userId: 'u_sofia', lastTappedAt: minutesAgo(190) },
-  { userId: 'u_leo', lastTappedAt: daysAgo(1, 9) },
+  { userId: 'u_jake', lastTappedAt: minutesAgo(48), viaTap: true },
+  { userId: 'u_sofia', lastTappedAt: minutesAgo(190), viaTap: true },
+  { userId: 'u_leo', lastTappedAt: daysAgo(1, 9), viaTap: true },
   { userId: 'u_ava', lastTappedAt: daysAgo(1, 23) },
   { userId: 'u_priya', lastTappedAt: daysAgo(5, 11) },
   { userId: 'u_sam', lastTappedAt: daysAgo(2, 13) },

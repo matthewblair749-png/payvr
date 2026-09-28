@@ -36,7 +36,11 @@ export function Keypad({ onKey, integer }: Props) {
                 }}
                 style={({ pressed }) => [
                   styles.key,
-                  { backgroundColor: pressed ? colors.surface : 'transparent', opacity: hidden ? 0 : 1 },
+                  {
+                    backgroundColor: pressed ? colors.surface : 'transparent',
+                    opacity: hidden ? 0 : 1,
+                    transform: [{ scale: pressed ? 0.9 : 1 }],
+                  },
                 ]}>
                 {k === 'back' ? (
                   <Icon name="delete" size={26} color={colors.text} />
@@ -62,5 +66,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  label: { fontFamily: Fonts.medium, fontSize: 28, lineHeight: 34 },
+  label: { fontFamily: Fonts.medium, fontSize: 30, lineHeight: 36 },
 });

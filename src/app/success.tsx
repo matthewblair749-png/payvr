@@ -6,6 +6,7 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { CheckDraw } from '@/components/check-draw';
+import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { describe, useApp } from '@/store/app-store';
@@ -41,16 +42,20 @@ export default function Success() {
     router.replace('/home');
   };
 
+  const when = tx.completedAt ?? tx.createdAt;
+  const time = new Date(when).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   const rows: [string, string][] = [
-    ['When', fullDateTime(tx.completedAt ?? tx.createdAt)],
-    ['Status', pendingRequest ? 'Waiting for them' : 'Completed · instant'],
-    ['Reference', tx.id.slice(0, 8).toUpperCase()],
+    ['Amount', formatCents(tx.amountCents)],
+    [d.received ? 'From' : pendingRequest ? 'Requested from' : 'To', other ? `${name} · @${other.handle}` : name],
+    ...(tx.note ? ([['Note', tx.note]] as [string, string][]) : []),
+    ['Date', fullDateTime(when)],
+    ['Payment ID', `PV-${tx.id.replace(/[^a-zA-Z0-9]/g, '').slice(-10).toUpperCase()}`],
   ];
 
   return (
     <Screen footer={<Button label="Done" onPress={done} />}>
       <View style={styles.center}>
-        <CheckDraw color={colors.success} size={116} />
+        <CheckDraw color={colors.success} size={132} />
         <Animated.View entering={FadeInUp.delay(450).duration(350)} style={styles.text}>
           <Text variant="display" align="center" accessibilityLiveRegion="polite">
             {headline}
@@ -59,7 +64,14 @@ export default function Success() {
             <Text color="textSecondary" align="center">
               We’ll let you know when {first} pays.
             </Text>
-          ) : null}
+          ) : (
+            <View style={styles.arrived} accessibilityLabel={`Arrived instantly at ${time}. Encrypted.`}>
+              <Icon name="lock" size={16} color={colors.successText} />
+              <Text variant="bodyMedium" color="successText">
+                Arrived instantly · {time}
+              </Text>
+            </View>
+          )}
         </Animated.View>
 
         <Animated.View
@@ -72,7 +84,7 @@ export default function Success() {
                 {name}
               </Text>
               <Text variant="small" color="textSecondary" numberOfLines={1}>
-                {tx.note ? `“${tx.note}”` : other ? `@${other.handle}` : ''}
+                {other ? `@${other.handle}` : ''}
               </Text>
             </View>
             <Text variant="amount" color={d.received ? 'successText' : 'text'}>
@@ -99,7 +111,8 @@ export default function Success() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 22 },
-  text: { gap: 8 },
+  text: { gap: 10, alignItems: 'center' },
+  arrived: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   flex: { flex: 1, minWidth: 0 },
   receipt: { alignSelf: 'stretch', borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, padding: 16, gap: 8 },
   receiptHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },

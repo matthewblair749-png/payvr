@@ -6,9 +6,11 @@ import { useTheme } from '@/theme/theme-provider';
 import { Fonts } from '@/theme/typography';
 
 import { Icon, type IconName } from './icon';
+import { LogoGlyph } from './logo';
 import { Text } from './text';
 
-export type AvatarBadge = { icon: IconName; color: string; label: string };
+/** `icon: 'payvr'` is the tapped-in-person mark: the p logo on brand blue. */
+export type AvatarBadge = { icon: IconName | 'payvr'; color: string; label: string };
 
 type Props = {
   name: string;
@@ -69,11 +71,15 @@ export function Avatar({ name, uri, size = 44, ring, badge }: Props) {
               width: badgeSize,
               height: badgeSize,
               borderRadius: badgeSize / 2,
-              backgroundColor: colors.surface,
+              backgroundColor: badge.icon === 'payvr' ? colors.primary : colors.surface,
               borderColor: colors.background,
             },
           ]}>
-          <Icon name={badge.icon} size={badgeSize * 0.62} color={badge.color} strokeWidth={2.6} />
+          {badge.icon === 'payvr' ? (
+            <LogoGlyph size={badgeSize * 0.8} color={colors.onPrimary} />
+          ) : (
+            <Icon name={badge.icon} size={badgeSize * 0.62} color={badge.color} strokeWidth={2.6} />
+          )}
         </View>
       ) : null}
     </View>

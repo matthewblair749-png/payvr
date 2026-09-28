@@ -1,274 +1,270 @@
-import { router } from 'expo-router';
-import { useEffect, useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import Animated, {
+  type SharedValue,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
-import { Icon, type IconName } from '@/components/icon';
+import { Icon } from '@/components/icon';
 import { IconButton } from '@/components/icon-button';
-import { LogoGlyph } from '@/components/logo';
+import { Keypad } from '@/components/keypad';
 import { Text } from '@/components/text';
-import { TransactionRow } from '@/components/transaction-row';
+import type { TapMode } from '@/data/types';
 import { useCountUp } from '@/hooks/use-count-up';
+import { DAILY_SEND_LIMIT_CENTS } from '@/services/payments';
 import { describe, useApp } from '@/store/app-store';
+import { setTapHandler } from '@/store/tap-intent';
 import { useTheme } from '@/theme/theme-provider';
-import { MIN_TAP } from '@/theme/typography';
-import { isToday } from '@/utils/dates';
+import { Fonts, MIN_TAP } from '@/theme/typography';
 import { haptics } from '@/utils/haptics';
-import { formatCents, formatShort } from '@/utils/money';
+import { applyKey, displayTyped, formatCents, formatShort, toCents } from '@/utils/money';
 
+/**
+ * Keypad first: type an amount, then Request, Pay (pick a person), or Tap (hold phones together).
+ * The balance sits small at the top and opens the Wallet.
+ */
 export default function Home() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { me, balanceCents, transactions, contacts, userById, setDraft } = useApp();
-  const shown = useCountUp(balanceCents);
-  const first = me.name.split(' ')[0];
-
+  const { me, balanceCents, transactions, sentTodayCents, setDraft } = useApp();
+  const shownBalance = useCountUp(balanceCents);
+  const [amount, setAmount] = useState('0');
+  const [hint, setHint] = useState<string | null>(null);
+  const cents = toCents(amount);
   const pending = transactions.filter((t) => describe(t, me.id).needsMyAction);
-  const recent = transactions.slice(0, 5);
-  const people = contacts.map((c) => userById(c.userId)).filter((u) => !!u).slice(0, 8);
-  const receivedToday = useMemo(
-    () =>
-      transactions
-        .filter((t) => describe(t, me.id).received && isToday(t.completedAt ?? t.createdAt))
-        .reduce((s, t) => s + t.amountCents, 0),
-    [transactions, me.id],
-  );
 
-  const startTap = () => {
-    haptics.medium();
-    setDraft(null);
-    router.push('/amount');
+  const leftToday = DAILY_SEND_LIMIT_CENTS - sentTodayCents;
+  const sendError =
+    cents > balanceCents
+      ? 'More than your balance'
+      : cents > leftToday
+        ? `Daily limit · ${formatShort(Math.max(0, leftToday))} left today`
+        : null;
+
+  // Keypad pop: the number bumps on every key and shakes when something's wrong.
+  const bump = useSharedValue(1);
+  const shake = useSharedValue(0);
+  const amountStyle = useAnimatedStyle(() => ({ transform: [{ scale: bump.value }, { translateX: shake.value }] }));
+  const nudge = () => shakeNo(shake);
+
+  const press = (key: string) => {
+    setHint(null);
+    const next = applyKey(amount, key);
+    if (next === amount && key !== 'back') {
+      nudge();
+      return;
+    }
+    setAmount(next);
+    bump.set(withSequence(withTiming(1.06, { duration: 55 }), withSpring(1, { damping: 11, stiffness: 280 })));
   };
 
+  const ready = (mode: TapMode) => {
+    if (cents === 0) {
+      setHint('Type an amount first');
+      nudge();
+      return false;
+    }
+    if (mode === 'send' && sendError) {
+      setHint(sendError);
+      nudge();
+      return false;
+    }
+    return true;
+  };
+
+  const pickPerson = (mode: TapMode) => {
+    if (!ready(mode)) return;
+    haptics.tap();
+    router.push({ pathname: '/people', params: { mode, amount: String(cents) } });
+  };
+
+  // The raised Tap button in the tab bar sends the typed amount by tapping phones.
+  // With nothing typed, it falls through to the amount screen (send or request).
+  useFocusEffect(
+    useCallback(
+      () =>
+        setTapHandler(() => {
+          if (cents === 0) return false;
+          if (sendError) {
+            setHint(sendError);
+            shakeNo(shake);
+          } else {
+            setDraft({ mode: 'send', amountCents: cents, note: '' });
+            router.push('/tap');
+          }
+          return true;
+        }),
+      [cents, sendError, setDraft, shake],
+    ),
+  );
+
+  const size = amount.length > 8 ? 64 : amount.length > 6 ? 76 : 92;
+  const error = cents > 0 && sendError;
+
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.background }}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]}
-      showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <Text variant="heading">Hi, {first}</Text>
-        <View style={styles.headerRight}>
-          <IconButton icon="qr" label="QR code" filled onPress={() => router.push('/qr')} />
-          <Pressable accessibilityRole="button" accessibilityLabel="Your profile" onPress={() => router.navigate('/profile')} hitSlop={4}>
-            <Avatar name={me.name} uri={me.avatarUrl} size={MIN_TAP} />
-          </Pressable>
-        </View>
-      </View>
-
-      {/* Balance card */}
-      <View style={[styles.balanceCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <View style={styles.balanceTop}>
-          <Text variant="caption" color="textSecondary">
-            Payvr balance
-          </Text>
-          <View style={[styles.testChip, { borderColor: colors.border }]}>
-            <View style={[styles.testDot, { backgroundColor: colors.accent }]} />
-            <Text variant="caption" color="textSecondary">
-              Test money
-            </Text>
-          </View>
-        </View>
-        <Text variant="hero" adjustsFontSizeToFit numberOfLines={1} accessibilityLabel={`Balance ${formatCents(balanceCents)}`}>
-          {formatCents(shown)}
-        </Text>
-        <Text variant="small" color={receivedToday ? 'successText' : 'textSecondary'} style={styles.delta}>
-          {receivedToday ? `+${formatShort(receivedToday)} received today` : 'Instant, free transfers'}
-        </Text>
-        <View style={styles.actions}>
-          <CardAction icon="plus" label="Add money" onPress={() => router.push({ pathname: '/wallet/[action]', params: { action: 'add' } })} />
-          <View style={[styles.actionDivider, { backgroundColor: colors.border }]} />
-          <CardAction icon="arrowDown" label="Cash out" onPress={() => router.push({ pathname: '/wallet/[action]', params: { action: 'cashout' } })} />
-        </View>
-      </View>
-
-      {pending.map((req) => {
-        const who = userById(req.toUser);
-        return (
+    <View style={[styles.fill, { backgroundColor: colors.background, paddingTop: insets.top + 6 }]}>
+      <View style={styles.top}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Balance ${formatCents(balanceCents)}. Opens your wallet`}
+          onPress={() => {
+            haptics.tap();
+            router.navigate('/wallet');
+          }}
+          style={({ pressed }) => [
+            styles.balance,
+            { backgroundColor: colors.surface, borderColor: colors.border, transform: [{ scale: pressed ? 0.96 : 1 }] },
+          ]}>
+          <Icon name="wallet" size={18} color={colors.accent} />
+          <Text variant="amount">{formatCents(shownBalance)}</Text>
+        </Pressable>
+        <View style={styles.topRight}>
+          <IconButton icon="qr" label="Scan or show a QR code" onPress={() => router.push('/qr')} />
           <Pressable
-            key={req.id}
             accessibilityRole="button"
-            accessibilityLabel={`${who?.name} is requesting ${formatShort(req.amountCents)}. Review`}
-            onPress={() => router.push({ pathname: '/request/[id]', params: { id: req.id } })}
-            style={({ pressed }) => [
-              styles.request,
-              { backgroundColor: colors.surface, borderColor: colors.accent, opacity: pressed ? 0.7 : 1 },
-            ]}>
-            <Avatar name={who?.name ?? '?'} uri={who?.avatarUrl} size={40} />
-            <View style={styles.flex}>
-              <Text variant="bodyMedium">
-                {who?.name.split(' ')[0]} is requesting {formatShort(req.amountCents)}
-              </Text>
-              <Text variant="small" color="textSecondary">
-                {req.note || 'No note'}
-              </Text>
-            </View>
-            <View style={[styles.reviewPill, { backgroundColor: colors.primary }]}>
-              <Text variant="caption" style={{ color: colors.onPrimary }}>
-                Review
-              </Text>
-            </View>
+            accessibilityLabel="Your profile"
+            hitSlop={4}
+            onPress={() => router.navigate('/profile')}
+            style={({ pressed }) => [styles.me, { opacity: pressed ? 0.7 : 1 }]}>
+            <Avatar name={me.name} uri={me.avatarUrl} size={40} />
           </Pressable>
-        );
-      })}
-
-      {/* The one big action */}
-      <View style={styles.tapWrap}>
-        <TapButton onPress={startTap} />
-        <Text variant="small" color="textSecondary" align="center" style={styles.tapHint}>
-          Hold your phone near a friend’s to pay
-        </Text>
+        </View>
       </View>
 
-      {people.length ? (
-        <>
-          <View style={styles.sectionHeader}>
-            <Text variant="heading">People</Text>
-            <Text variant="caption" color="textSecondary">
-              Pay remotely
-            </Text>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.people} style={styles.peopleScroll}>
-            {people.map((u) => (
-              <Pressable
-                key={u!.id}
-                accessibilityRole="button"
-                accessibilityLabel={`${u!.name}, pay or request`}
-                onPress={() => router.push({ pathname: '/person/[id]', params: { id: u!.id } })}
-                style={({ pressed }) => [styles.person, { opacity: pressed ? 0.6 : 1 }]}>
-                <Avatar name={u!.name} uri={u!.avatarUrl} size={56} />
-                <Text variant="caption" numberOfLines={1} align="center">
-                  {u!.name.split(' ')[0]}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </>
-      ) : null}
-
-      <View style={styles.sectionHeader}>
-        <Text variant="heading">Recent</Text>
-        <Pressable accessibilityRole="button" onPress={() => router.navigate('/activity')} style={styles.seeAll}>
-          <Text variant="bodyMedium" color="accent">
-            See all
+      {pending.length ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${pending.length} ${pending.length === 1 ? 'request' : 'requests'} waiting for you`}
+          onPress={() => {
+            haptics.tap();
+            if (pending.length === 1) router.push({ pathname: '/request/[id]', params: { id: pending[0].id } });
+            else router.navigate('/feed');
+          }}
+          style={[styles.pending, { borderColor: colors.accent }]}>
+          <View style={[styles.dot, { backgroundColor: colors.accent }]} />
+          <Text variant="caption" color="accent">
+            {pending.length === 1 ? '1 request waiting' : `${pending.length} requests waiting`}
           </Text>
         </Pressable>
-      </View>
-      {recent.length ? (
-        recent.map((tx) => <TransactionRow key={tx.id} tx={tx} />)
       ) : (
-        <Text color="textSecondary" style={styles.empty}>
-          No payments yet. Tap phones with a friend to send your first one.
-        </Text>
+        <View style={styles.pendingSpace} />
       )}
-    </ScrollView>
+
+      <View style={styles.display}>
+        <Animated.View style={amountStyle}>
+          <Text
+            accessibilityLiveRegion="polite"
+            accessibilityLabel={`Amount ${displayTyped(amount)}`}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            style={{
+              fontFamily: Fonts.bold,
+              fontSize: size,
+              lineHeight: size * 1.08,
+              letterSpacing: -size * 0.045,
+              fontVariant: ['tabular-nums'],
+              color: error ? colors.error : cents === 0 ? colors.textSecondary : colors.text,
+            }}>
+            {displayTyped(amount)}
+          </Text>
+        </Animated.View>
+        <Text variant="small" color={hint || error ? 'error' : 'textSecondary'} style={styles.hint} accessibilityLiveRegion="polite">
+          {hint ?? (error || (cents ? 'Tap phones to send · or pick someone' : 'Type an amount'))}
+        </Text>
+      </View>
+
+      <View style={styles.pad}>
+        <Keypad onKey={press} />
+      </View>
+
+      <View style={styles.actions}>
+        <PillButton label="Request" onPress={() => pickPerson('request')} />
+        <PillButton label="Pay" onPress={() => pickPerson('send')} />
+      </View>
+    </View>
   );
 }
 
-function CardAction({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
+function shakeNo(shake: SharedValue<number>) {
+  haptics.error();
+  shake.set(
+    withSequence(
+      withTiming(-10, { duration: 45 }),
+      withTiming(10, { duration: 45 }),
+      withTiming(-6, { duration: 45 }),
+      withTiming(0, { duration: 45 }),
+    ),
+  );
+}
+
+function PillButton({ label, onPress }: { label: string; onPress: () => void }) {
   const { colors } = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      style={({ pressed }) => [styles.cardAction, { opacity: pressed ? 0.6 : 1 }]}>
-      <View style={[styles.cardActionIcon, { backgroundColor: colors.background }]}>
-        <Icon name={icon} size={18} color={colors.accent} strokeWidth={2.4} />
-      </View>
-      <Text variant="bodyMedium">{label}</Text>
+      style={({ pressed }) => [
+        styles.pill,
+        { backgroundColor: colors.surface, borderColor: colors.border, transform: [{ scale: pressed ? 0.95 : 1 }] },
+      ]}>
+      <Text variant="button">{label}</Text>
     </Pressable>
   );
 }
 
-function TapButton({ onPress }: { onPress: () => void }) {
-  const { colors } = useTheme();
-  const pulse = useSharedValue(0);
-  useEffect(() => {
-    pulse.value = withRepeat(withTiming(1, { duration: 2400, easing: Easing.out(Easing.quad) }), -1, false);
-  }, [pulse]);
-  const ring = useAnimatedStyle(() => ({
-    opacity: 0.4 * (1 - pulse.value),
-    transform: [{ scale: 1 + pulse.value * 0.22 }],
-  }));
-
-  return (
-    <View style={styles.tapOuter}>
-      <View style={[styles.staticRing, { borderColor: colors.border }]} />
-      <Animated.View style={[{ pointerEvents: 'none' }, styles.tapRing, { borderColor: colors.primary }, ring]} />
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Tap to send"
-        onPress={onPress}
-        style={({ pressed }) => [styles.tap, { backgroundColor: colors.primary, transform: [{ scale: pressed ? 0.96 : 1 }] }]}>
-        <LogoGlyph size={58} color={colors.onPrimary} />
-        <Text variant="button" style={{ color: colors.onPrimary }}>
-          Tap to send
-        </Text>
-      </Pressable>
-    </View>
-  );
-}
-
-const TAP = 172;
-const RING = TAP + 36;
-
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingBottom: 32 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 52, paddingHorizontal: 4 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  flex: { flex: 1 },
-  balanceCard: {
-    marginTop: 16,
-    borderRadius: 28,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingTop: 18,
-    paddingHorizontal: 20,
-  },
-  balanceTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
-  testChip: {
+  fill: { flex: 1 },
+  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, minHeight: 52 },
+  topRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  balance: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    borderWidth: StyleSheet.hairlineWidth,
+    gap: 8,
+    minHeight: MIN_TAP,
+    paddingHorizontal: 14,
     borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
+    borderWidth: StyleSheet.hairlineWidth,
   },
-  testDot: { width: 6, height: 6, borderRadius: 3 },
-  delta: { marginTop: 2 },
-  actions: { flexDirection: 'row', alignItems: 'center', marginTop: 18, marginHorizontal: -20 },
-  actionDivider: { width: StyleSheet.hairlineWidth, height: 28 },
-  cardAction: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 60 },
-  cardActionIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  request: {
+  pending: {
+    alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 14,
-    borderRadius: 22,
+    gap: 8,
+    minHeight: MIN_TAP,
+    paddingHorizontal: 16,
+    borderRadius: 999,
     borderWidth: 1,
-    marginTop: 12,
+    marginTop: 6,
   },
-  reviewPill: { borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
-  tapWrap: { alignItems: 'center', marginTop: 30, marginBottom: 10 },
-  tapOuter: { width: RING, height: RING, alignItems: 'center', justifyContent: 'center' },
-  staticRing: { position: 'absolute', width: RING, height: RING, borderRadius: RING / 2, borderWidth: 1 },
-  tapRing: { position: 'absolute', width: TAP, height: TAP, borderRadius: TAP / 2, borderWidth: 2 },
-  tap: { width: TAP, height: TAP, borderRadius: TAP / 2, alignItems: 'center', justifyContent: 'center', gap: 4 },
-  tapHint: { marginTop: 10 },
-  sectionHeader: {
+  pendingSpace: { height: 50 },
+  me: { width: MIN_TAP, height: MIN_TAP, alignItems: 'center', justifyContent: 'center' },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  display: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 4, minHeight: 130 },
+  hint: { minHeight: 20 },
+  pad: { paddingHorizontal: 20 },
+  actions: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 24,
-    minHeight: MIN_TAP,
-    paddingHorizontal: 4,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 14,
+    gap: 12,
   },
-  peopleScroll: { marginHorizontal: -20 },
-  people: { paddingHorizontal: 20, gap: 14 },
-  person: { width: 64, alignItems: 'center', gap: 6, minHeight: MIN_TAP },
-  seeAll: { minHeight: MIN_TAP, minWidth: MIN_TAP, justifyContent: 'center', alignItems: 'flex-end' },
-  empty: { marginTop: 8 },
+  pill: {
+    flex: 1,
+    height: 56,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

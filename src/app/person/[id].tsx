@@ -3,10 +3,12 @@ import { StyleSheet, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
+import { IconButton } from '@/components/icon-button';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { TransactionRow } from '@/components/transaction-row';
 import { useApp } from '@/store/app-store';
+import { useSocial } from '@/store/social-store';
 import { useTheme } from '@/theme/theme-provider';
 import { shortTime } from '@/utils/dates';
 
@@ -14,6 +16,7 @@ export default function Person() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const { userById, transactions, contacts, me } = useApp();
+  const { favorites, toggleFavorite } = useSocial();
   const person = userById(id);
   if (!person) return <Screen back="back">{null}</Screen>;
 
@@ -23,7 +26,18 @@ export default function Person() {
   const contact = contacts.find((c) => c.userId === person.id);
 
   return (
-    <Screen back="back" scroll>
+    <Screen
+      back="back"
+      scroll
+      headerRight={
+        <IconButton
+          icon={favorites.includes(person.id) ? 'starFilled' : 'star'}
+          label="Favorite"
+          selected={favorites.includes(person.id)}
+          color={favorites.includes(person.id) ? colors.accent : colors.text}
+          onPress={() => toggleFavorite(person.id)}
+        />
+      }>
       <View style={styles.head}>
         <Avatar name={person.name} uri={person.avatarUrl} size={104} />
         <Text variant="title" align="center">
@@ -32,7 +46,7 @@ export default function Person() {
         <Text color="textSecondary">@{person.handle}</Text>
         {contact ? (
           <Text variant="caption" color="textSecondary">
-            Last tapped {shortTime(contact.lastTappedAt).toLowerCase()}
+            {contact.viaTap ? 'Tapped in person' : 'Last paid'} · {shortTime(contact.lastTappedAt)}
           </Text>
         ) : null}
       </View>

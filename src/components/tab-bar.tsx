@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useApp } from '@/store/app-store';
+import { runTapHandler } from '@/store/tap-intent';
 import { useTheme } from '@/theme/theme-provider';
 import { MIN_TAP } from '@/theme/typography';
 import { haptics } from '@/utils/haptics';
@@ -13,11 +14,12 @@ import { Text } from './text';
 
 const TABS: Record<string, { label: string; icon: IconName }> = {
   home: { label: 'Home', icon: 'home' },
-  activity: { label: 'Activity', icon: 'activity' },
+  feed: { label: 'Feed', icon: 'feed' },
+  wallet: { label: 'Wallet', icon: 'wallet' },
   profile: { label: 'Profile', icon: 'user' },
 };
 
-/** Home · Activity · [Tap] · Profile — Tap is a raised blue circle that starts a payment. */
+/** Home · Feed · [Tap] · Wallet · Profile — Tap is a raised, glowing blue circle that starts a tap payment. */
 export function TabBar({ state, navigation, insets }: BottomTabBarProps) {
   const { colors } = useTheme();
   const { setDraft } = useApp();
@@ -57,19 +59,25 @@ export function TabBar({ state, navigation, insets }: BottomTabBarProps) {
         { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 10) },
       ]}>
       {item('home')}
-      {item('activity')}
+      {item('feed')}
       <View style={styles.item}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Tap to pay"
           onPress={() => {
             haptics.medium();
+            if (runTapHandler()) return;
             setDraft(null);
             router.push('/amount');
           }}
           style={({ pressed }) => [
             styles.tap,
-            { backgroundColor: colors.primary, borderColor: colors.background, transform: [{ scale: pressed ? 0.94 : 1 }] },
+            {
+              backgroundColor: colors.primary,
+              borderColor: colors.background,
+              shadowColor: colors.primary,
+              transform: [{ scale: pressed ? 0.92 : 1 }],
+            },
           ]}>
           <LogoGlyph size={34} color={colors.onPrimary} />
         </Pressable>
@@ -77,6 +85,7 @@ export function TabBar({ state, navigation, insets }: BottomTabBarProps) {
           Tap
         </Text>
       </View>
+      {item('wallet')}
       {item('profile')}
     </View>
   );
@@ -97,6 +106,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: -30,
+    // A soft blue glow (a shadow, not a gradient).
+    shadowOpacity: 0.55,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 10,
   },
   tapLabel: { fontSize: 11, lineHeight: 14 },
 });

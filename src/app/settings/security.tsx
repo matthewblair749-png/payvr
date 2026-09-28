@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Modal, StyleSheet, View } from 'react-native';
+import { Modal, Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconButton } from '@/components/icon-button';
@@ -14,6 +14,8 @@ import { useApp } from '@/store/app-store';
 import { useAuthorize } from '@/store/authorize';
 import { useTheme } from '@/theme/theme-provider';
 import { formatShort } from '@/utils/money';
+
+const DEVICE_NAME = Platform.OS === 'ios' ? 'iPhone' : Platform.OS === 'android' ? 'Android phone' : 'browser';
 
 export default function Security() {
   const { settings, updateSettings, sentTodayCents } = useApp();
@@ -57,6 +59,14 @@ export default function Security() {
           Face ID isn’t available here, so payments use your PIN.
         </Text>
       ) : null}
+
+      <SectionLabel>Trusted devices</SectionLabel>
+      <Card>
+        <ListRow icon="phone" label={`This ${DEVICE_NAME}`} value="Active now" last />
+      </Card>
+      <Text variant="small" color="textSecondary" style={styles.note}>
+        Signing in on a new device needs a code sent to your phone number, and payments there still need its own Face ID or PIN.
+      </Text>
 
       <SectionLabel>Limits</SectionLabel>
       <Card>

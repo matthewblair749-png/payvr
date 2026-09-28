@@ -27,9 +27,19 @@ export type Transaction = {
   completedAt?: string | null;
   /** Set when the payment was made for a specific request QR code. */
   ref?: string | null;
+  /** Feed visibility chosen when paying. */
+  privacy?: Privacy;
 };
 
-export type Contact = { userId: string; lastTappedAt: string };
+export type Contact = {
+  userId: string;
+  lastTappedAt: string;
+  /** Met in person with a phone tap (a trusted-contact signal), not just paid remotely or by QR. */
+  viaTap?: boolean;
+};
+
+/** Who can see a payment in the feed. Amounts are never shown to friends. */
+export type Privacy = 'public' | 'friends' | 'private';
 
 export type TapMode = 'send' | 'request';
 
@@ -46,4 +56,8 @@ export type Draft = {
   origin?: 'qrRequest';
   /** The request code's ref, sent with the payment so the requester's phone can match it. */
   ref?: string;
+  /** Feed visibility for this payment. */
+  privacy?: Privacy;
+  /** True when the person was found by tapping phones. */
+  viaTap?: boolean;
 };

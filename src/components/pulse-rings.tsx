@@ -15,7 +15,7 @@ import { useTheme } from '@/theme/theme-provider';
 
 const DURATION = 2400;
 
-function Ring({ delay, size, active, index }: { delay: number; size: number; active: boolean; index: number }) {
+function Ring({ delay, size, active, index, spread }: { delay: number; size: number; active: boolean; index: number; spread: number }) {
   const { colors } = useTheme();
   const reduceMotion = useReducedMotion();
   const t = useSharedValue(0);
@@ -37,7 +37,7 @@ function Ring({ delay, size, active, index }: { delay: number; size: number; act
 
   const style = useAnimatedStyle(() => ({
     opacity: 0.55 * (1 - t.value),
-    transform: [{ scale: 1 + t.value * 1.6 }],
+    transform: [{ scale: 1 + t.value * spread }],
   }));
 
   return (
@@ -51,12 +51,22 @@ function Ring({ delay, size, active, index }: { delay: number; size: number; act
   );
 }
 
-/** Blue rings rippling outward from the center, looping while `active`. */
-export function PulseRings({ size, active = true, children }: { size: number; active?: boolean; children: React.ReactNode }) {
+/** Blue rings rippling outward from the center, looping while `active`. `spread` = how far they travel. */
+export function PulseRings({
+  size,
+  active = true,
+  spread = 1.6,
+  children,
+}: {
+  size: number;
+  active?: boolean;
+  spread?: number;
+  children: React.ReactNode;
+}) {
   return (
-    <View style={[styles.wrap, { width: size * 2.8, height: size * 2.8 }]}>
+    <View style={[styles.wrap, { width: size * (1 + spread) * 1.08, height: size * (1 + spread) * 1.08 }]}>
       {[0, DURATION / 3, (DURATION * 2) / 3].map((d, i) => (
-        <Ring key={d} delay={d} size={size} active={active} index={i} />
+        <Ring key={d} delay={d} size={size} active={active} index={i} spread={spread} />
       ))}
       {children}
     </View>
