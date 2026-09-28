@@ -74,6 +74,12 @@
           "bluetoothAlwaysPermission": "Payvr uses Bluetooth to find phones right next to yours when you tap to pay.",
           "neverForLocation": true
         }
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "enableGooglePay": false
+        }
       ]
     ],
     "experiments": {

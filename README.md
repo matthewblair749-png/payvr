@@ -36,7 +36,7 @@ a fingerprint, it asks for that first.
 | 3 | Supabase auth, tables, RLS, realtime, avatars | Done ([setup](docs/SUPABASE.md)) |
 | 4 | QR send / request | Done (see "QR codes" below) |
 | 5 | Bluetooth LE + Nearby Interaction (UWB) | Built ([how it works](docs/TAP.md)); needs a dev build + two phones to test |
-| 6 | Stripe test mode (Connect) | Next after BLE; plugs in behind `src/services/payments.ts` |
+| 6 | Stripe test mode: add money (PaymentSheet) + cash out (Connect) | Built ([setup](docs/STRIPE.md)) |
 | 7 | Push notifications, polish | In-app realtime banner done |
 
 ## Where things live
@@ -51,7 +51,8 @@ src/
   components/           UI kit: logo (SVG), icons (SVG), buttons, keypad, pulse rings, check draw…
   theme/                colors (both palettes), typography, theme provider (200ms fade)
   services/
-    payments.ts         ALL money movement: Supabase RPCs (live) or the same rules in memory (mock)
+    payments.ts         ALL money movement: Supabase RPCs, Stripe add money / cash out, or the mock
+    stripe/             Stripe config + PaymentSheet (test keys only)
     backend/            auth, profiles, data, realtime: live.ts (Supabase) and mock.ts
     supabase.ts         Supabase client (sessions stored in expo-secure-store)
     nearby.ts           Tap discovery: live Bluetooth/UWB (tap/) or mock
@@ -65,6 +66,7 @@ modules/
   payvr-nearby/         Native module: BLE advertising (iOS + Android), Nearby Interaction (iOS)
 supabase/
   migrations/           Tables, row-level security, money functions, realtime, storage
+  functions/            Edge Functions (Deno): stripe-topup, -cashout, -connect, -webhook, -return
   seed.sql              Demo people and "simulate" helpers (dev projects only)
   tests/                SQL tests: npm run test:db
 ```
@@ -76,6 +78,7 @@ npm run typecheck
 npm run lint
 npm test            # QR format, tap token, proximity and tap-flow unit tests
 npm run test:db     # needs Postgres 15+ binaries installed locally
+npm run test:functions  # needs Deno
 ```
 
 ## QR codes

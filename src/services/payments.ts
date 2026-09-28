@@ -2,18 +2,23 @@
  * Payvr payments service — THE ONLY place money moves.
  *
  * PROTOTYPE / TEST MONEY ONLY.
- *  - Live mode calls the Postgres functions in supabase/migrations (send_payment,
- *    pay_request, …). They lock wallets, check the balance and the $500 daily limit,
- *    and write the ledger in one transaction. The app cannot touch balances directly.
- *  - Mock mode applies the same rules to the in-memory mockDb.
- * Stripe (build step 6) plugs in behind these functions: top-ups and cash-outs become
- * Stripe test-mode charges / payouts. Never send card numbers through the app — only
- * Stripe tokens / PaymentMethod IDs.
+ *  - Between Payvr users (send, request, pay a request): Postgres functions in
+ *    supabase/migrations lock wallets, check the balance and the $500 daily limit, and
+ *    write the ledger in one transaction. The app cannot touch balances directly.
+ *  - Add money / Cash out with Stripe (test mode) when EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY
+ *    is set: Stripe PaymentSheet charges a card (card details go straight to Stripe, never
+ *    to Payvr), a webhook credits the wallet; cash-outs are Stripe Connect transfers to
+ *    the user's own Stripe account. Server side: supabase/functions/stripe-*.
+ *  - Without Stripe: add/cash out use test-money shortcuts.
+ *  - Mock mode (no Supabase): the same rules applied to the in-memory mockDb.
  */
 import type { Transaction } from '@/data/types';
 import { mockDb } from '@/services/backend/mock';
 import { toTransaction, type TransactionRow } from '@/services/backend/live';
+import { isStripeConfigured } from '@/services/stripe/config';
+import { collectPayment } from '@/services/stripe/payment-sheet';
 import { isSupabaseConfigured, supabase } from '@/services/supabase';
+import * as WebBrowser from 'expo-web-browser';
 
 export const DAILY_SEND_LIMIT_CENTS = 500_00;
 export const STARTING_TEST_BALANCE_CENTS = 500_00;
@@ -21,6 +26,12 @@ export const MAX_ADD_MONEY_CENTS = 1_000_00;
 export const TEST_MODE = true;
 
 export type PaymentErrorCode =
+  | 'cancelled'
+  | 'topup_pending'
+  | 'card_failed'
+  | 'payouts_not_ready'
+  | 'transfer_failed'
+  | 'stripe_required'
   | 'insufficient_funds'
   | 'daily_limit'
   | 'invalid_amount'
@@ -57,6 +68,8 @@ function paymentError(code: string, hint?: string | null): PaymentError {
       return new PaymentError(code, 'That request no longer exists.');
     case 'not_pending':
       return new PaymentError(code, 'That request was already handled.');
+    case 'stripe_required':
+      return new PaymentError(code, 'Stripe is on for this project. Add EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY to the app.');
     default:
       return new PaymentError('network', 'Something went wrong. Nothing was sent.');
   }
@@ -193,7 +206,85 @@ const mockProvider: PaymentsProvider = {
   },
 };
 
-export const payments: PaymentsProvider = isSupabaseConfigured ? supabaseProvider : mockProvider;
+// ─────────────────────────────────────────────── Stripe (test mode): add money + cash out
+
+/** Calls a Payvr Edge Function and turns its { code, message } errors into PaymentErrors. */
+async function edge<T>(fn: string, body: Record<string, unknown>): Promise<T> {
+  if (!supabase) throw paymentError('network');
+  const { data, error } = await supabase.functions.invoke(fn, { body });
+  if (error) {
+    const res = (error as { context?: Response }).context;
+    const payload = res && typeof res.json === 'function' ? await res.json().catch(() => null) : null;
+    const code = payload?.code as PaymentErrorCode | undefined;
+    if (code === 'payouts_not_ready') throw new PaymentError(code, 'Set up where your money goes first.');
+    if (code === 'transfer_failed' || code === 'insufficient_funds' || code === 'stripe_required') {
+      throw new PaymentError(code, payload.message);
+    }
+    if (payload?.code === 'invalid_amount') throw new PaymentError('invalid_amount', payload.message);
+    throw paymentError('network');
+  }
+  return data as T;
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** The webhook credits the wallet a moment after Stripe charges the card; wait for it. */
+async function waitForTopup(topupId: string): Promise<number> {
+  for (let i = 0; i < 20; i++) {
+    const { data } = await supabase!.from('wallet_topups').select('status').eq('id', topupId).maybeSingle();
+    if (data?.status === 'succeeded') {
+      const { data: w } = await supabase!.from('wallets').select('balance_cents').single();
+      return Number(w?.balance_cents ?? 0);
+    }
+    if (data?.status === 'failed') throw new PaymentError('card_failed', 'Your card was declined. Nothing was added.');
+    await sleep(1000);
+  }
+  throw new PaymentError('topup_pending', 'Payment received. Your balance will update in a moment.');
+}
+
+const stripeProvider: Pick<PaymentsProvider, 'addMoney' | 'cashOut'> = {
+  async addMoney(cents) {
+    const { topup_id, payment_intent_client_secret } = await edge<{ topup_id: string; payment_intent_client_secret: string }>(
+      'stripe-topup',
+      { amount_cents: cents },
+    );
+    let outcome: 'paid' | 'canceled';
+    try {
+      outcome = await collectPayment(payment_intent_client_secret);
+    } catch (e) {
+      throw new PaymentError('card_failed', e instanceof Error ? e.message : 'The card payment failed.');
+    }
+    if (outcome === 'canceled') throw new PaymentError('cancelled', 'Cancelled.');
+    return waitForTopup(topup_id);
+  },
+  async cashOut(cents) {
+    const res = await edge<{ balance_cents: number }>('stripe-cashout', { amount_cents: cents });
+    return Number(res.balance_cents);
+  },
+};
+
+export const payments: PaymentsProvider = isSupabaseConfigured
+  ? isStripeConfigured
+    ? { ...supabaseProvider, ...stripeProvider }
+    : supabaseProvider
+  : mockProvider;
+
+/** Whether Add money / Cash out go through Stripe (test mode). */
+export const STRIPE_MODE = isStripeConfigured;
+
+export type PayoutAccount = { state: 'not_started' | 'incomplete' | 'ready'; bank: string | null };
+
+/** Where cash-outs go: the user's Stripe Connect account. */
+export async function getPayoutAccount(): Promise<PayoutAccount> {
+  return edge<PayoutAccount>('stripe-connect', { action: 'status' });
+}
+
+/** Opens Stripe's hosted onboarding, then returns the updated status. */
+export async function setupPayoutAccount(): Promise<PayoutAccount> {
+  const { url } = await edge<{ url: string }>('stripe-connect', { action: 'onboard' });
+  await WebBrowser.openAuthSessionAsync(url, 'payvr://stripe-return');
+  return getPayoutAccount();
+}
 
 /** Linked funding sources are Stripe test objects; only display metadata is kept. */
 export const TEST_FUNDING_SOURCES = [

@@ -8,6 +8,11 @@ do $$ begin
   end if;
 end $$;
 grant usage on schema public to anon, authenticated, service_role;
+-- Supabase's defaults: every new table / function / sequence in public is granted to all
+-- three API roles. Migrations must revoke what they don't want exposed.
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
 
 create schema extensions;
 create extension pgcrypto schema extensions;

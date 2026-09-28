@@ -1,7 +1,7 @@
 -- Shared test helpers (included by the *.test.sql files).
 -- Test helpers ------------------------------------------------------------
 create schema t;
-grant usage on schema t to authenticated, anon;
+grant usage on schema t to authenticated, anon, service_role;
 
 create function t.ok(cond boolean, label text) returns void language plpgsql as $$
 begin
@@ -21,7 +21,7 @@ exception when others then
   end if;
   raise notice 'ok - %', label;
 end $$;
-grant execute on all functions in schema t to authenticated, anon;
+grant execute on all functions in schema t to authenticated, anon, service_role;
 
 create function t.login(uid uuid) returns void language plpgsql as $$
 begin

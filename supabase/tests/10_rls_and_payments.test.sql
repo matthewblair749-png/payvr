@@ -147,5 +147,5 @@ reset role;
 
 -- Ledger integrity: total money = starting wallets + top-ups - cash-outs.
 select t.ok((select sum(balance_cents) from public.wallets) = 3 * 50000 + 20000 - 2500, 'no money created or lost');
-select t.ok((select count(*) from pg_publication_tables where pubname = 'supabase_realtime') = 2, 'transactions and wallets are published to realtime');
+select t.ok((select count(*) from pg_publication_tables where pubname = 'supabase_realtime' and tablename in ('transactions', 'wallets')) = 2, 'transactions and wallets are published to realtime');
 \echo 'ALL TESTS PASSED'
