@@ -135,18 +135,12 @@ export default function Tap() {
               {phase === 'found' ? 'Found them' : starting ? 'Getting ready…' : 'Hold your phone\nnear theirs'}
             </Text>
             <View style={styles.rings}>
-            <PulseRings size={140} spread={2.6} filled active={phase === 'searching' && !starting}>
+            <PulseRings size={140} spread={2.6} active={phase === 'searching' && !starting}>
               <View style={[styles.logo, { backgroundColor: colors.primary }]}>
                 <LogoGlyph size={84} color={colors.onPrimary} />
               </View>
             </PulseRings>
             </View>
-            {phase === 'searching' && !starting ? (
-              <View style={[styles.status, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <View style={[styles.statusDot, { backgroundColor: colors.accent }]} />
-                <Text variant="caption">Searching nearby · encrypted</Text>
-              </View>
-            ) : null}
             <Pressable accessibilityRole="link" onPress={showQr} style={styles.qrLink}>
               <Icon name="qr" size={18} color={colors.accent} />
               <Text variant="bodyMedium" color="accent">
@@ -330,17 +324,6 @@ const styles = StyleSheet.create({
   rings: { height: 300, alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
   title: { marginBottom: 8 },
   logo: { width: 132, height: 132, borderRadius: 66, alignItems: 'center', justifyContent: 'center' },
-  status: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 14,
-    minHeight: 32,
-    borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
-    marginBottom: 4,
-  },
-  statusDot: { width: 8, height: 8, borderRadius: 4 },
   qrLink: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: MIN_TAP, paddingHorizontal: 12 },
   cancel: { marginHorizontal: 24 },
   notice: { alignItems: 'center', paddingHorizontal: 24, gap: 10, alignSelf: 'stretch' },

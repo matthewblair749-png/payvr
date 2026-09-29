@@ -15,21 +15,7 @@ import { useTheme } from '@/theme/theme-provider';
 
 const DURATION = 2400;
 
-function Ring({
-  delay,
-  size,
-  active,
-  index,
-  spread,
-  filled,
-}: {
-  delay: number;
-  size: number;
-  active: boolean;
-  index: number;
-  spread: number;
-  filled: boolean;
-}) {
+function Ring({ delay, size, active, index, spread }: { delay: number; size: number; active: boolean; index: number; spread: number }) {
   const { colors } = useTheme();
   const reduceMotion = useReducedMotion();
   const t = useSharedValue(0);
@@ -58,14 +44,7 @@ function Ring({
     <Animated.View
       style={[{ pointerEvents: 'none' }, 
         styles.ring,
-        {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          borderColor: colors.ring,
-          // A faint wash of blue inside each ring (hex alpha, still one flat color).
-          backgroundColor: filled ? `${colors.ring}1A` : 'transparent',
-        },
+        { width: size, height: size, borderRadius: size / 2, borderColor: colors.ring },
         style,
       ]}
     />
@@ -77,19 +56,17 @@ export function PulseRings({
   size,
   active = true,
   spread = 1.6,
-  filled = false,
   children,
 }: {
   size: number;
   active?: boolean;
   spread?: number;
-  filled?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <View style={[styles.wrap, { width: size * (1 + spread) * 1.08, height: size * (1 + spread) * 1.08 }]}>
       {[0, DURATION / 3, (DURATION * 2) / 3].map((d, i) => (
-        <Ring key={d} delay={d} size={size} active={active} index={i} spread={spread} filled={filled} />
+        <Ring key={d} delay={d} size={size} active={active} index={i} spread={spread} />
       ))}
       {children}
     </View>
