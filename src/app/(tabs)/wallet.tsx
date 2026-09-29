@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
@@ -7,6 +7,7 @@ import { Icon } from '@/components/icon';
 import { Card, ListRow, SectionLabel } from '@/components/list-row';
 import { LogoGlyph } from '@/components/logo';
 import { Text } from '@/components/text';
+import { TransactionRow } from '@/components/transaction-row';
 import { useCountUp } from '@/hooks/use-count-up';
 import { DAILY_SEND_LIMIT_CENTS, STRIPE_MODE, TEST_FUNDING_SOURCES } from '@/services/payments';
 import { useApp } from '@/store/app-store';
@@ -18,7 +19,8 @@ import { formatCents, formatShort } from '@/utils/money';
 export default function Wallet() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { me, balanceCents, sentTodayCents } = useApp();
+  const { me, balanceCents, sentTodayCents, transactions } = useApp();
+  const recent = transactions.slice(0, 3);
   const shown = useCountUp(balanceCents);
   const bank = STRIPE_MODE ? 'Stripe test account' : TEST_FUNDING_SOURCES[1].label;
 
@@ -59,6 +61,26 @@ export default function Wallet() {
           style={styles.flex}
         />
       </View>
+
+      {recent.length ? (
+        <>
+          <View style={styles.recentHead}>
+            <SectionLabel>Recent</SectionLabel>
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel="See all activity"
+              onPress={() => router.navigate({ pathname: '/feed', params: { tab: 'me' } })}
+              style={styles.seeAll}>
+              <Text variant="caption" color="accent">
+                See all
+              </Text>
+            </Pressable>
+          </View>
+          {recent.map((t) => (
+            <TransactionRow key={t.id} tx={t} />
+          ))}
+        </>
+      ) : null}
 
       <SectionLabel>Payvr card</SectionLabel>
       <DebitCard name={me.name} />
@@ -112,6 +134,8 @@ const styles = StyleSheet.create({
   trust: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   actions: { flexDirection: 'row', gap: 12, marginTop: 24 },
   note: { marginTop: 10 },
+  recentHead: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
+  seeAll: { minHeight: 44, minWidth: 44, justifyContent: 'flex-end', alignItems: 'flex-end', paddingBottom: 8 },
   card: {
     aspectRatio: 1.586,
     borderRadius: 24,

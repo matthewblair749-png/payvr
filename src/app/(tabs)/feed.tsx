@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,6 +10,7 @@ import { TransactionRow } from '@/components/transaction-row';
 import { describe, useApp } from '@/store/app-store';
 import { useSocial } from '@/store/social-store';
 import { useTheme } from '@/theme/theme-provider';
+import { dayLabel } from '@/utils/dates';
 import { formatCents } from '@/utils/money';
 
 type Tab = 'friends' | 'me';
@@ -22,7 +24,14 @@ export default function Feed() {
   const { colors } = useTheme();
   const { transactions, me } = useApp();
   const { friendsFeed, myFeed } = useSocial();
-  const [tab, setTab] = useState<Tab>('friends');
+  const params = useLocalSearchParams<{ tab?: string }>();
+  const [tab, setTab] = useState<Tab>(params.tab === 'me' ? 'me' : 'friends');
+  // Opened again from "See all" while already mounted: switch to Just me.
+  const [seenTabParam, setSeenTabParam] = useState(params.tab);
+  if (params.tab !== seenTabParam) {
+    setSeenTabParam(params.tab);
+    if (params.tab === 'me') setTab('me');
+  }
 
   // Friends: what's still open. Just me: also declined requests, so nothing disappears.
   const open = transactions.filter((t) => t.status === 'pending' || (tab === 'me' && t.status === 'declined'));
@@ -103,7 +112,21 @@ export default function Feed() {
             ) : null}
           </View>
         }
-        renderItem={({ item }) => <StoryCard story={item} />}
+        renderItem={({ item, index }) => {
+          // A day header ("Today", "Yesterday", "Mon, Sep 22") above the first card of each day.
+          const day = dayLabel(item.createdAt);
+          const newDay = index === 0 || dayLabel(data[index - 1].createdAt) !== day;
+          return (
+            <>
+              {newDay ? (
+                <Text variant="caption" color="textSecondary" style={[styles.label, styles.dayHead, index > 0 && styles.dayGap]} accessibilityRole="header">
+                  {day.toUpperCase()}
+                </Text>
+              ) : null}
+              <StoryCard story={item} />
+            </>
+          );
+        }}
         ListEmptyComponent={
           <Text color="textSecondary" align="center" style={styles.empty}>
             {tab === 'friends' ? 'When your friends pay each other, it shows up here.' : 'Your payments show up here.'}
@@ -119,6 +142,8 @@ const styles = StyleSheet.create({
   head: { paddingHorizontal: 20, gap: 14, paddingBottom: 8 },
   list: { paddingHorizontal: 16, paddingBottom: 32 },
   top: { gap: 14, paddingTop: 6, paddingBottom: 14 },
+  dayHead: { marginBottom: 10 },
+  dayGap: { marginTop: 12 },
   gap: { height: 12 },
   label: { letterSpacing: 0.8, paddingHorizontal: 4 },
   privacyNote: { paddingHorizontal: 4 },
