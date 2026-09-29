@@ -1,11 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
 import { Icon } from '@/components/icon';
 import { IconButton } from '@/components/icon-button';
+import { PressableScale } from '@/components/pressable-scale';
 import { Text } from '@/components/text';
 import type { TapMode, User } from '@/data/types';
 import { useApp } from '@/store/app-store';
@@ -15,6 +17,7 @@ import { Fonts, MIN_TAP } from '@/theme/typography';
 import { shortTime } from '@/utils/dates';
 import { haptics } from '@/utils/haptics';
 import { formatShort } from '@/utils/money';
+import { listEnter, listLayout } from '@/utils/motion';
 
 /**
  * Who to pay (or request from). Search by name or @handle; favorites and recent people are
@@ -106,11 +109,11 @@ export default function People() {
         {query ? <IconButton icon="close" label="Clear search" onPress={() => setQuery('')} /> : null}
       </View>
 
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         {q ? (
           <>
-            {results.map((u) => (
-              <PersonRow key={u.id} user={u} tapped={isTapped(u.id)} onPress={() => choose(u)} />
+            {results.map((u, i) => (
+              <PersonRow key={u.id} index={i} user={u} tapped={isTapped(u.id)} onPress={() => choose(u)} />
             ))}
             {results.length === 0 ? (
               <Text color="textSecondary" align="center" style={styles.empty}>
@@ -132,9 +135,10 @@ export default function People() {
               </Text>
             </View>
             {tapped.length ? (
-              tapped.map(({ user, contact }) => (
+              tapped.map(({ user, contact }, i) => (
                 <PersonRow
                   key={user.id}
+                  index={i}
                   user={user}
                   tapped
                   detail={`Tapped · ${shortTime(contact.lastTappedAt)}`}
@@ -172,12 +176,13 @@ function AvatarStrip({
       </Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripRow}>
         {users.map((u) => (
-          <Pressable
+          <PressableScale
+            scaleTo={0.94}
             key={u.id}
             accessibilityRole="button"
             accessibilityLabel={`${u.name}, @${u.handle}`}
             onPress={() => onPick(u)}
-            style={({ pressed }) => [styles.big, { transform: [{ scale: pressed ? 0.94 : 1 }] }]}>
+            style={({ pressed }) => [styles.big]}>
             <Avatar
               name={u.name}
               uri={u.avatarUrl}
@@ -187,38 +192,53 @@ function AvatarStrip({
             <Text variant="caption" numberOfLines={1} align="center">
               {u.name.split(' ')[0]}
             </Text>
-          </Pressable>
+          </PressableScale>
         ))}
       </ScrollView>
     </View>
   );
 }
 
-function PersonRow({ user, tapped, detail, onPress }: { user: User; tapped?: boolean; detail?: string; onPress: () => void }) {
+function PersonRow({
+  user,
+  tapped,
+  detail,
+  onPress,
+  index = 0,
+}: {
+  user: User;
+  tapped?: boolean;
+  detail?: string;
+  onPress: () => void;
+  index?: number;
+}) {
   const { colors } = useTheme();
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`${user.name}, @${user.handle}${tapped ? ', tapped in person' : ''}`}
-      onPress={onPress}
-      style={({ pressed }) => [styles.row, { backgroundColor: pressed ? colors.surface : 'transparent' }]}>
-      <Avatar
-        name={user.name}
-        uri={user.avatarUrl}
-        size={48}
-        badge={tapped ? { icon: 'payvr', color: colors.accent, label: 'Tapped in person' } : undefined}
-      />
-      <View style={styles.flex}>
-        <Text variant="bodyMedium" numberOfLines={1}>
-          {user.name}
-        </Text>
-        <Text variant="small" color="textSecondary" numberOfLines={1}>
-          @{user.handle}
-          {detail ? ` · ${detail}` : ''}
-        </Text>
-      </View>
-      <Icon name="chevronRight" size={20} color={colors.textSecondary} />
-    </Pressable>
+    <Animated.View entering={listEnter(index)} layout={listLayout}>
+      <PressableScale
+        scaleTo={0.985}
+        accessibilityRole="button"
+        accessibilityLabel={`${user.name}, @${user.handle}${tapped ? ', tapped in person' : ''}`}
+        onPress={onPress}
+        style={({ pressed }) => [styles.row, { backgroundColor: pressed ? colors.surface : 'transparent' }]}>
+        <Avatar
+          name={user.name}
+          uri={user.avatarUrl}
+          size={48}
+          badge={tapped ? { icon: 'payvr', color: colors.accent, label: 'Tapped in person' } : undefined}
+        />
+        <View style={styles.flex}>
+          <Text variant="bodyMedium" numberOfLines={1}>
+            {user.name}
+          </Text>
+          <Text variant="small" color="textSecondary" numberOfLines={1}>
+            @{user.handle}
+            {detail ? ` · ${detail}` : ''}
+          </Text>
+        </View>
+        <Icon name="chevronRight" size={20} color={colors.textSecondary} />
+      </PressableScale>
+    </Animated.View>
   );
 }
 

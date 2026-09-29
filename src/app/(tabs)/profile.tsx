@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
 import { Card, ListRow, SectionLabel } from '@/components/list-row';
+import { PressableScale } from '@/components/pressable-scale';
 import { Text } from '@/components/text';
 import { buildQr } from '@/services/qr';
 import { useCall } from '@/store/call-store';
@@ -36,13 +37,14 @@ export default function Profile() {
             @{me.handle}
           </Text>
         </View>
-        <Pressable
+        <PressableScale
+          scaleTo={0.97}
           accessibilityRole="button"
           accessibilityLabel="Your QR code. Scan to pay me. Opens full screen"
           onPress={() => router.push('/qr')}
-          style={({ pressed }) => [styles.qr, { transform: [{ scale: pressed ? 0.97 : 1 }] }]}>
+          style={({ pressed }) => [styles.qr]}>
           <QRCode value={buildQr(me.handle)} size={168} color="#0A0A0A" backgroundColor="#FFFFFF" ecl="M" />
-        </Pressable>
+        </PressableScale>
         <Text variant="small" color="textSecondary">
           Scan to pay me
         </Text>

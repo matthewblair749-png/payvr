@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import type { Privacy } from '@/data/types';
 import { useTheme } from '@/theme/theme-provider';
@@ -6,6 +6,7 @@ import { MIN_TAP } from '@/theme/typography';
 import { haptics } from '@/utils/haptics';
 
 import { Icon, type IconName } from './icon';
+import { PressableScale } from './pressable-scale';
 import { Text } from './text';
 
 export const PRIVACY_OPTIONS: { value: Privacy; label: string; icon: IconName; hint: string }[] = [
@@ -26,7 +27,7 @@ export function PrivacyPicker({ value, onChange }: { value: Privacy; onChange: (
       {PRIVACY_OPTIONS.map((o) => {
         const active = o.value === value;
         return (
-          <Pressable
+          <PressableScale
             key={o.value}
             accessibilityRole="radio"
             accessibilityLabel={`${o.label}: ${o.hint}`}
@@ -40,14 +41,13 @@ export function PrivacyPicker({ value, onChange }: { value: Privacy; onChange: (
               {
                 borderColor: active ? colors.accent : colors.border,
                 backgroundColor: active ? colors.surface : 'transparent',
-                transform: [{ scale: pressed ? 0.96 : 1 }],
               },
             ]}>
             <Icon name={o.icon} size={16} color={active ? colors.accent : colors.textSecondary} />
             <Text variant="caption" color={active ? 'accent' : 'textSecondary'}>
               {o.label}
             </Text>
-          </Pressable>
+          </PressableScale>
         );
       })}
     </View>

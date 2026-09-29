@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { PressableScale } from '@/components/pressable-scale';
 import { Screen } from '@/components/screen';
 import { StepHeader } from '@/components/step-header';
 import { Text } from '@/components/text';
@@ -66,7 +67,7 @@ export default function CodeStep() {
         title="Enter the code"
         subtitle={`Sent to ${signupDraft.phone || 'your phone'}`}
       />
-      <Pressable
+      <PressableScale
         accessibilityLabel={`Verification code, ${code.length} of ${LEN} digits entered`}
         onPress={() => input.current?.focus()}
         style={styles.boxes}>
@@ -83,7 +84,7 @@ export default function CodeStep() {
             <Text style={styles.digit}>{code[i] ?? ''}</Text>
           </View>
         ))}
-      </Pressable>
+      </PressableScale>
       <TextInput
         ref={input}
         autoFocus

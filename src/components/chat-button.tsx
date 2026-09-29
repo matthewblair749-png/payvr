@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { useChat } from '@/store/chat-store';
 import { useTheme } from '@/theme/theme-provider';
@@ -7,6 +7,7 @@ import { MIN_TAP } from '@/theme/typography';
 import { haptics } from '@/utils/haptics';
 
 import { Icon } from './icon';
+import { PressableScale } from './pressable-scale';
 import { Text } from './text';
 
 /** Opens group chats; shows how many messages are unread. */
@@ -14,7 +15,7 @@ export function ChatButton() {
   const { colors } = useTheme();
   const { totalUnread } = useChat();
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={totalUnread ? `Chats, ${totalUnread} unread` : 'Chats'}
       hitSlop={6}
@@ -22,7 +23,7 @@ export function ChatButton() {
         haptics.tap();
         router.push('/chats');
       }}
-      style={({ pressed }) => [styles.base, { opacity: pressed ? 0.6 : 1 }]}>
+      style={({ pressed }) => [styles.base, { opacity: pressed ? 0.75 : 1 }]}>
       <Icon name="comment" size={22} color={colors.text} />
       {totalUnread ? (
         <View style={[styles.badge, { backgroundColor: colors.primary, borderColor: colors.background }]}>
@@ -31,7 +32,7 @@ export function ChatButton() {
           </Text>
         </View>
       ) : null}
-    </Pressable>
+    </PressableScale>
   );
 }
 

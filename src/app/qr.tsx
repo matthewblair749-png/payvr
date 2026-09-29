@@ -2,12 +2,13 @@ import { CameraView, scanFromURLAsync, useCameraPermissions } from 'expo-camera'
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Linking, Platform, StyleSheet, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { Icon, type IconName } from '@/components/icon';
+import { PressableScale } from '@/components/pressable-scale';
 import { Screen } from '@/components/screen';
 import { Segmented } from '@/components/segmented';
 import { Text } from '@/components/text';
@@ -219,14 +220,14 @@ function Scanner() {
           </View>
         ) : null}
         {Platform.OS !== 'web' ? (
-          <Pressable
+          <PressableScale
             accessibilityRole="switch"
             accessibilityLabel="Flashlight"
             aria-checked={torch}
             onPress={() => setTorch((t) => !t)}
             style={[styles.torch, { backgroundColor: torch ? '#FFFFFF' : 'rgba(0,0,0,0.55)' }]}>
             <Icon name="flash" size={20} color={torch ? '#0A0A0A' : '#FFFFFF'} />
-          </Pressable>
+          </PressableScale>
         ) : null}
       </>
     );
@@ -261,12 +262,12 @@ function Scanner() {
 function SmallAction({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
   const { colors } = useTheme();
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={styles.smallAction}>
+    <PressableScale accessibilityRole="button" onPress={onPress} style={styles.smallAction}>
       <Icon name={icon} size={18} color={colors.accent} />
       <Text variant="bodyMedium" color="accent">
         {label}
       </Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 

@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
 import { Card } from '@/components/list-row';
+import { PressableScale } from '@/components/pressable-scale';
 import { PRIVACY_OPTIONS } from '@/components/privacy-picker';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
@@ -22,7 +23,7 @@ export default function PrivacySettings() {
         {PRIVACY_OPTIONS.map((o, i) => {
           const active = defaultPrivacy === o.value;
           return (
-            <Pressable
+            <PressableScale
               key={o.value}
               accessibilityRole="radio"
               accessibilityLabel={`${o.label}: ${o.hint}`}
@@ -33,7 +34,7 @@ export default function PrivacySettings() {
               }}
               style={({ pressed }) => [
                 styles.row,
-                { opacity: pressed ? 0.7 : 1 },
+                { opacity: pressed ? 0.8 : 1 },
                 i < PRIVACY_OPTIONS.length - 1 && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth },
               ]}>
               <Icon name={o.icon} size={22} color={colors.accent} />
@@ -44,7 +45,7 @@ export default function PrivacySettings() {
                 </Text>
               </View>
               {active ? <Icon name="check" color={colors.accent} /> : null}
-            </Pressable>
+            </PressableScale>
           );
         })}
       </Card>

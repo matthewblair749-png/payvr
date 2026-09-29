@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
@@ -8,6 +8,7 @@ import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { IconButton } from '@/components/icon-button';
 import { Keypad } from '@/components/keypad';
+import { PressableScale } from '@/components/pressable-scale';
 import { Text } from '@/components/text';
 import { evenShares } from '@/data/chat';
 import type { User } from '@/data/types';
@@ -82,13 +83,14 @@ export default function SplitBill() {
           {others.map((u) => {
             const on = included.includes(u.id);
             return (
-              <Pressable
+              <PressableScale
+                scaleTo={0.94}
                 key={u.id}
                 accessibilityRole="checkbox"
                 accessibilityLabel={u.name}
                 aria-checked={on}
                 onPress={() => toggle(u.id)}
-                style={({ pressed }) => [styles.person, { opacity: on ? 1 : 0.45, transform: [{ scale: pressed ? 0.94 : 1 }] }]}>
+                style={({ pressed }) => [styles.person, { opacity: on ? 1 : 0.45 }]}>
                 <View>
                   <Avatar name={u.name} uri={u.avatarUrl} size={52} ring={on} />
                   {on ? (
@@ -100,7 +102,7 @@ export default function SplitBill() {
                 <Text variant="caption" numberOfLines={1}>
                   {u.name.split(' ')[0]}
                 </Text>
-              </Pressable>
+              </PressableScale>
             );
           })}
         </View>

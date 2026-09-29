@@ -1,10 +1,12 @@
 import { router } from 'expo-router';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { GroupAvatar } from '@/components/group-avatar';
 import { IconButton } from '@/components/icon-button';
+import { PressableScale } from '@/components/pressable-scale';
 import { Text } from '@/components/text';
 import type { User } from '@/data/types';
 import { useApp } from '@/store/app-store';
@@ -12,6 +14,7 @@ import { useChat } from '@/store/chat-store';
 import { useTheme } from '@/theme/theme-provider';
 import { shortTime } from '@/utils/dates';
 import { previewText } from '@/utils/chat';
+import { listEnter, listLayout } from '@/utils/motion';
 
 export default function Chats() {
   const insets = useSafeAreaInsets();
@@ -33,7 +36,7 @@ export default function Chats() {
         data={chats}
         keyExtractor={(c) => c.id}
         contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 24 }]}
-        renderItem={({ item }) => {
+        renderItem={({ item, index }) => {
           const members = item.memberIds
             .filter((id) => id !== me.id)
             .map((id) => userById(id))
@@ -41,35 +44,38 @@ export default function Chats() {
           const last = lastMessage(item.id);
           const count = unread[item.id] ?? 0;
           return (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`${item.name}, ${members.length + 1} people${count ? `, ${count} unread` : ''}. ${previewText(last, me.id, nameOf)}`}
-              onPress={() => router.push({ pathname: '/chat/[id]', params: { id: item.id } })}
-              style={({ pressed }) => [styles.row, { backgroundColor: pressed ? colors.surface : 'transparent' }]}>
-              <GroupAvatar members={members} />
-              <View style={styles.flex}>
-                <View style={styles.line}>
-                  <Text variant="bodyMedium" numberOfLines={1} style={styles.flex}>
-                    {item.name}
-                  </Text>
-                  <Text variant="caption" color={count ? 'accent' : 'textSecondary'}>
-                    {shortTime(last?.createdAt ?? item.createdAt)}
-                  </Text>
+            <Animated.View entering={listEnter(index)} layout={listLayout}>
+              <PressableScale
+                scaleTo={0.985}
+                accessibilityRole="button"
+                accessibilityLabel={`${item.name}, ${members.length + 1} people${count ? `, ${count} unread` : ''}. ${previewText(last, me.id, nameOf)}`}
+                onPress={() => router.push({ pathname: '/chat/[id]', params: { id: item.id } })}
+                style={({ pressed }) => [styles.row, { backgroundColor: pressed ? colors.surface : 'transparent' }]}>
+                <GroupAvatar members={members} />
+                <View style={styles.flex}>
+                  <View style={styles.line}>
+                    <Text variant="bodyMedium" numberOfLines={1} style={styles.flex}>
+                      {item.name}
+                    </Text>
+                    <Text variant="caption" color={count ? 'accent' : 'textSecondary'}>
+                      {shortTime(last?.createdAt ?? item.createdAt)}
+                    </Text>
+                  </View>
+                  <View style={styles.line}>
+                    <Text variant="small" color={count ? 'text' : 'textSecondary'} numberOfLines={1} style={styles.flex}>
+                      {previewText(last, me.id, nameOf)}
+                    </Text>
+                    {count ? (
+                      <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+                        <Text variant="caption" style={{ color: colors.onPrimary }}>
+                          {count}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
                 </View>
-                <View style={styles.line}>
-                  <Text variant="small" color={count ? 'text' : 'textSecondary'} numberOfLines={1} style={styles.flex}>
-                    {previewText(last, me.id, nameOf)}
-                  </Text>
-                  {count ? (
-                    <View style={[styles.badge, { backgroundColor: colors.primary }]}>
-                      <Text variant="caption" style={{ color: colors.onPrimary }}>
-                        {count}
-                      </Text>
-                    </View>
-                  ) : null}
-                </View>
-              </View>
-            </Pressable>
+              </PressableScale>
+            </Animated.View>
           );
         }}
         ListEmptyComponent={

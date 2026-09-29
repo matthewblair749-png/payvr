@@ -1,20 +1,13 @@
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  useWindowDimensions,
-  View,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-} from 'react-native';
+import { ScrollView, StyleSheet, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Rect } from 'react-native-svg';
 
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { LogoGlyph } from '@/components/logo';
+import { PressableScale } from '@/components/pressable-scale';
 import { Text } from '@/components/text';
 import { useTheme } from '@/theme/theme-provider';
 import { MIN_TAP } from '@/theme/typography';
@@ -66,7 +59,7 @@ export default function Onboarding() {
 
       <View style={styles.dots}>
         {SLIDES.map((_, i) => (
-          <Pressable
+          <PressableScale
             key={i}
             accessibilityRole="button"
             accessibilityLabel={`Slide ${i + 1} of ${SLIDES.length}`}
@@ -79,7 +72,7 @@ export default function Onboarding() {
                 { backgroundColor: i === page ? colors.accent : colors.border, width: i === page ? 24 : 8 },
               ]}
             />
-          </Pressable>
+          </PressableScale>
         ))}
       </View>
 

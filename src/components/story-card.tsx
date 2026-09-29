@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
 import { useApp } from '@/store/app-store';
@@ -11,6 +11,7 @@ import { formatCents } from '@/utils/money';
 
 import { Avatar } from './avatar';
 import { Icon } from './icon';
+import { PressableScale } from './pressable-scale';
 import { privacyIcon } from './privacy-picker';
 import { Text } from './text';
 
@@ -38,12 +39,13 @@ export function StoryCard({ story, detail }: { story: Story; detail?: boolean })
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <Pressable
+      <PressableScale
+        scaleTo={0.985}
         accessibilityRole={detail ? undefined : 'button'}
         accessibilityLabel={story.amountCents !== null ? `${summary}. ${formatCents(story.amountCents)}` : summary}
         disabled={detail}
         onPress={open}
-        style={({ pressed }) => [styles.main, { opacity: pressed ? 0.75 : 1 }]}>
+        style={({ pressed }) => [styles.main, { opacity: pressed ? 0.9 : 1 }]}>
         <View style={styles.head}>
           <View style={styles.faces}>
             <Avatar name={from?.name ?? '?'} uri={from?.avatarUrl} size={40} />
@@ -76,10 +78,10 @@ export function StoryCard({ story, detail }: { story: Story; detail?: boolean })
           ) : null}
         </View>
         {story.note ? <Text style={[styles.note, { color: colors.text }]}>{story.note}</Text> : null}
-      </Pressable>
+      </PressableScale>
 
       <View style={styles.actions}>
-        <Pressable
+        <PressableScale
           accessibilityRole="button"
           accessibilityLabel={story.likedByMe ? 'Unlike' : 'Like'}
           aria-pressed={story.likedByMe}
@@ -95,8 +97,8 @@ export function StoryCard({ story, detail }: { story: Story; detail?: boolean })
           <Text variant="caption" color={story.likedByMe ? 'accent' : 'textSecondary'}>
             {story.likes || ''}
           </Text>
-        </Pressable>
-        <Pressable
+        </PressableScale>
+        <PressableScale
           accessibilityRole="button"
           accessibilityLabel={`${story.comments.length} comments`}
           disabled={detail}
@@ -106,7 +108,7 @@ export function StoryCard({ story, detail }: { story: Story; detail?: boolean })
           <Text variant="caption" color="textSecondary">
             {story.comments.length || ''}
           </Text>
-        </Pressable>
+        </PressableScale>
       </View>
     </View>
   );

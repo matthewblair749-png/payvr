@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { BackHandler, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { BackHandler, Platform, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -14,6 +14,7 @@ import { Fonts } from '@/theme/typography';
 import { Avatar } from './avatar';
 import { CallVideo } from './call-video';
 import { Icon, type IconName } from './icon';
+import { PressableScale } from './pressable-scale';
 import { PulseRings } from './pulse-rings';
 import { Text } from './text';
 
@@ -234,18 +235,19 @@ function RoundButton({
   const tint = color ?? (selected ? (onDark ? '#000000' : colors.background) : onDark ? '#FFFFFF' : colors.text);
   return (
     <View style={styles.btnWrap}>
-      <Pressable
+      <PressableScale
+        scaleTo={0.92}
         accessibilityRole="button"
         accessibilityLabel={label}
         aria-pressed={selected}
         onPress={onPress}
         style={({ pressed }) => [
-          { width: size, height: size, borderRadius: size / 2, backgroundColor: background, transform: [{ scale: pressed ? 0.92 : 1 }] },
+          { width: size, height: size, borderRadius: size / 2, backgroundColor: background },
           styles.btn,
           !bg && !onDark && { borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
         ]}>
         <Icon name={icon} size={big ? 30 : 26} color={tint} />
-      </Pressable>
+      </PressableScale>
       <Text variant="caption" style={{ color: captionColor }}>
         {caption}
       </Text>

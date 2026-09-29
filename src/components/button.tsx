@@ -1,9 +1,10 @@
-import { ActivityIndicator, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { ActivityIndicator, StyleSheet, View, type ViewStyle } from 'react-native';
 
 import { useTheme } from '@/theme/theme-provider';
 import { MIN_TAP, Radius } from '@/theme/typography';
 
 import { Icon, type IconName } from './icon';
+import { PressableScale } from './pressable-scale';
 import { Text } from './text';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -45,7 +46,9 @@ export function Button({
   const inactive = disabled || loading;
 
   return (
-    <Pressable
+    <PressableScale
+      scaleTo={0.98}
+      haptic="tap"
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
@@ -60,7 +63,6 @@ export function Button({
           backgroundColor: bg,
           borderColor: variant === 'secondary' ? colors.border : 'transparent',
           opacity: disabled ? 0.4 : pressed ? 0.8 : 1,
-          transform: [{ scale: pressed ? 0.98 : 1 }],
         },
         style,
       ]}>
@@ -74,7 +76,7 @@ export function Button({
           </Text>
         </View>
       )}
-    </Pressable>
+    </PressableScale>
   );
 }
 

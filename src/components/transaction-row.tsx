@@ -1,13 +1,16 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import type { Transaction } from '@/data/types';
 import { describe, useApp } from '@/store/app-store';
 import { useTheme } from '@/theme/theme-provider';
 import { shortTime } from '@/utils/dates';
 import { formatCents } from '@/utils/money';
+import { listEnter, listLayout } from '@/utils/motion';
 
 import { Avatar, type AvatarBadge } from './avatar';
+import { PressableScale } from './pressable-scale';
 import { Text } from './text';
 
 export function statusLine(tx: Transaction, meId: string, otherFirst: string) {
@@ -49,43 +52,46 @@ export function TransactionRow({ tx }: { tx: Transaction }) {
         : null;
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`${name}, ${statusLine(tx, me.id, first)}, ${sign === '+' ? 'received' : sign ? 'sent' : ''} ${formatCents(tx.amountCents)}, ${shortTime(tx.createdAt)}`}
-      onPress={open}
-      style={({ pressed }) => [styles.row, { opacity: pressed ? 0.6 : 1 }]}>
-      <Avatar name={name} uri={other?.avatarUrl} size={46} badge={badge} />
-      <View style={styles.middle}>
-        <Text variant="bodyMedium" numberOfLines={1}>
-          {name}
-        </Text>
-        <Text variant="small" color="textSecondary" numberOfLines={1}>
-          {statusLine(tx, me.id, first)} · {shortTime(tx.createdAt)}
-        </Text>
-      </View>
-      <View style={styles.right}>
-        <Text
-          variant="amount"
-          color={amountColor}
-          style={tx.status === 'declined' ? { textDecorationLine: 'line-through', textDecorationColor: colors.textSecondary } : undefined}>
-          {sign}
-          {formatCents(tx.amountCents)}
-        </Text>
-        {d.needsMyAction ? (
-          <View style={[styles.payPill, { backgroundColor: colors.primary }]}>
-            <Text variant="caption" style={{ color: colors.onPrimary }}>
-              Pay
-            </Text>
-          </View>
-        ) : chip ? (
-          <View style={[styles.chip, { borderColor: colors.border }]}>
-            <Text variant="caption" color="textSecondary">
-              {chip}
-            </Text>
-          </View>
-        ) : null}
-      </View>
-    </Pressable>
+    <Animated.View entering={listEnter()} layout={listLayout}>
+      <PressableScale
+        scaleTo={0.985}
+        accessibilityRole="button"
+        accessibilityLabel={`${name}, ${statusLine(tx, me.id, first)}, ${sign === '+' ? 'received' : sign ? 'sent' : ''} ${formatCents(tx.amountCents)}, ${shortTime(tx.createdAt)}`}
+        onPress={open}
+        style={({ pressed }) => [styles.row, { opacity: pressed ? 0.85 : 1 }]}>
+        <Avatar name={name} uri={other?.avatarUrl} size={46} badge={badge} />
+        <View style={styles.middle}>
+          <Text variant="bodyMedium" numberOfLines={1}>
+            {name}
+          </Text>
+          <Text variant="small" color="textSecondary" numberOfLines={1}>
+            {statusLine(tx, me.id, first)} · {shortTime(tx.createdAt)}
+          </Text>
+        </View>
+        <View style={styles.right}>
+          <Text
+            variant="amount"
+            color={amountColor}
+            style={tx.status === 'declined' ? { textDecorationLine: 'line-through', textDecorationColor: colors.textSecondary } : undefined}>
+            {sign}
+            {formatCents(tx.amountCents)}
+          </Text>
+          {d.needsMyAction ? (
+            <View style={[styles.payPill, { backgroundColor: colors.primary }]}>
+              <Text variant="caption" style={{ color: colors.onPrimary }}>
+                Pay
+              </Text>
+            </View>
+          ) : chip ? (
+            <View style={[styles.chip, { borderColor: colors.border }]}>
+              <Text variant="caption" color="textSecondary">
+                {chip}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+      </PressableScale>
+    </Animated.View>
   );
 }
 

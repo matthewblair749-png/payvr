@@ -1,8 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { Card, ListRow } from '@/components/list-row';
+import { PressableScale } from '@/components/pressable-scale';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { describe, useApp } from '@/store/app-store';
@@ -44,7 +45,7 @@ export default function TransactionDetail() {
       </View>
 
       {other ? (
-        <Pressable
+        <PressableScale
           accessibilityRole="button"
           accessibilityLabel={`Open ${other.name}'s profile`}
           onPress={() => router.push({ pathname: '/person/[id]', params: { id: other.id } })}
@@ -59,7 +60,7 @@ export default function TransactionDetail() {
           <Text variant="bodyMedium" color="accent">
             View
           </Text>
-        </Pressable>
+        </PressableScale>
       ) : null}
 
       <Card>

@@ -1,6 +1,15 @@
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { useApp } from '@/store/app-store';
 import { runTapHandler } from '@/store/tap-intent';
@@ -10,6 +19,7 @@ import { haptics } from '@/utils/haptics';
 
 import { Icon, type IconName } from './icon';
 import { LogoGlyph } from './logo';
+import { PressableScale } from './pressable-scale';
 import { Text } from './text';
 
 const TABS: Record<string, { label: string; icon: IconName }> = {
@@ -31,7 +41,7 @@ export function TabBar({ state, navigation, insets }: BottomTabBarProps) {
     const meta = TABS[routeName];
     const color = focused ? colors.accent : colors.textSecondary;
     return (
-      <Pressable
+      <PressableScale
         key={routeName}
         accessibilityRole="tab"
         accessibilityLabel={meta.label}
@@ -44,11 +54,11 @@ export function TabBar({ state, navigation, insets }: BottomTabBarProps) {
           }
         }}
         style={styles.item}>
-        <Icon name={meta.icon} size={24} color={color} />
+        <TabIcon name={meta.icon} color={color} focused={focused} />
         <Text variant="caption" style={{ color, fontSize: 11, lineHeight: 14 }}>
           {meta.label}
         </Text>
-      </Pressable>
+      </PressableScale>
     );
   };
 
@@ -61,7 +71,8 @@ export function TabBar({ state, navigation, insets }: BottomTabBarProps) {
       {item('home')}
       {item('feed')}
       <View style={styles.item}>
-        <Pressable
+        <PressableScale
+          scaleTo={0.92}
           accessibilityRole="button"
           accessibilityLabel="Tap to pay"
           onPress={() => {
@@ -76,11 +87,10 @@ export function TabBar({ state, navigation, insets }: BottomTabBarProps) {
               backgroundColor: colors.primary,
               borderColor: colors.background,
               shadowColor: colors.primary,
-              transform: [{ scale: pressed ? 0.92 : 1 }],
             },
           ]}>
           <LogoGlyph size={34} color={colors.onPrimary} />
-        </Pressable>
+        </PressableScale>
         <Text variant="caption" color="textSecondary" style={styles.tapLabel}>
           Tap
         </Text>
@@ -88,6 +98,22 @@ export function TabBar({ state, navigation, insets }: BottomTabBarProps) {
       {item('wallet')}
       {item('profile')}
     </View>
+  );
+}
+
+/** The tab's icon gives a small springy hop when its tab becomes active. */
+function TabIcon({ name, color, focused }: { name: IconName; color: string; focused: boolean }) {
+  const reduceMotion = useReducedMotion();
+  const s = useSharedValue(1);
+  useEffect(() => {
+    if (!focused || reduceMotion) return;
+    s.set(withSequence(withTiming(0.82, { duration: 90 }), withSpring(1, { damping: 9, stiffness: 320 })));
+  }, [focused, reduceMotion, s]);
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
+  return (
+    <Animated.View style={style}>
+      <Icon name={name} size={24} color={color} />
+    </Animated.View>
   );
 }
 

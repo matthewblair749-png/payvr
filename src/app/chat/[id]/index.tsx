@@ -1,6 +1,6 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -8,6 +8,7 @@ import { Avatar } from '@/components/avatar';
 import { GroupAvatar } from '@/components/group-avatar';
 import { Icon } from '@/components/icon';
 import { IconButton } from '@/components/icon-button';
+import { PressableScale } from '@/components/pressable-scale';
 import { Text } from '@/components/text';
 import type { ChatMessage, Split } from '@/data/chat';
 import type { User } from '@/data/types';
@@ -85,6 +86,7 @@ export default function ChatThread() {
         contentContainerStyle={styles.messages}
         onContentSizeChange={() => list.current?.scrollToEnd({ animated: true })}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
         renderItem={({ item, index }) => {
           const prev = messages[index - 1];
           const firstOfRun = !prev || prev.userId !== item.userId || prev.kind === 'system' || prev.kind === 'payment';
@@ -103,16 +105,16 @@ export default function ChatThread() {
       />
 
       <View style={[styles.composer, { borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 10) }]}>
-        <Pressable
+        <PressableScale
           accessibilityRole="button"
           accessibilityLabel="Split a bill"
           onPress={() => {
             haptics.tap();
             router.push({ pathname: '/chat/[id]/split', params: { id: chat.id } });
           }}
-          style={({ pressed }) => [styles.plus, { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}>
+          style={({ pressed }) => [styles.plus, { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.8 : 1 }]}>
           <Icon name="plus" size={22} color={colors.accent} />
-        </Pressable>
+        </PressableScale>
         <TextInput
           value={text}
           onChangeText={setText}
@@ -125,17 +127,18 @@ export default function ChatThread() {
           accessibilityLabel="Message"
           style={[styles.input, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.border }]}
         />
-        <Pressable
+        <PressableScale
+          scaleTo={0.92}
           accessibilityRole="button"
           accessibilityLabel="Send message"
           aria-disabled={!text.trim()}
           onPress={send}
           style={({ pressed }) => [
             styles.send,
-            { backgroundColor: text.trim() ? colors.primary : colors.surface, transform: [{ scale: pressed ? 0.92 : 1 }] },
+            { backgroundColor: text.trim() ? colors.primary : colors.surface },
           ]}>
           <Icon name="send" size={20} color={text.trim() ? colors.onPrimary : colors.textSecondary} />
-        </Pressable>
+        </PressableScale>
       </View>
     </KeyboardAvoidingView>
   );
@@ -174,13 +177,13 @@ function MessageItem({ m, firstOfRun, chatId }: { m: ChatMessage; firstOfRun: bo
       {!mine ? (
         <View style={styles.msgAvatar}>
           {firstOfRun && author ? (
-            <Pressable
+            <PressableScale
               accessibilityRole="button"
               accessibilityLabel={`${author.name}'s profile`}
               onPress={() => router.push({ pathname: '/person/[id]', params: { id: author.id } })}
               style={styles.avatarTap}>
               <Avatar name={author.name} uri={author.avatarUrl} size={30} />
-            </Pressable>
+            </PressableScale>
           ) : null}
         </View>
       ) : null}
@@ -258,15 +261,16 @@ function SplitCard({ split, chatId }: { split: Split; chatId: string }) {
             </Text>
             <Text variant="amount">{formatShort(s.cents)}</Text>
             {mineToPay ? (
-              <Pressable
+              <PressableScale
+                scaleTo={0.95}
                 accessibilityRole="button"
                 accessibilityLabel={`Pay your share, ${formatShort(s.cents)} to ${ownerFirst}`}
                 onPress={() => payShare(s.cents)}
-                style={({ pressed }) => [styles.payPill, { backgroundColor: colors.primary, transform: [{ scale: pressed ? 0.95 : 1 }] }]}>
+                style={({ pressed }) => [styles.payPill, { backgroundColor: colors.primary }]}>
                 <Text variant="caption" style={{ color: colors.onPrimary }}>
                   Pay
                 </Text>
-              </Pressable>
+              </PressableScale>
             ) : isOwner ? (
               <Text variant="caption" color="textSecondary" style={styles.statusText}>
                 Paid bill

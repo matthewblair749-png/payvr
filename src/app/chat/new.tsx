@@ -1,12 +1,13 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { IconButton } from '@/components/icon-button';
+import { PressableScale } from '@/components/pressable-scale';
 import { Text } from '@/components/text';
 import type { User } from '@/data/types';
 import { useApp } from '@/store/app-store';
@@ -69,7 +70,8 @@ export default function NewGroup() {
         {people.map((u) => {
           const on = picked.includes(u.id);
           return (
-            <Pressable
+            <PressableScale
+              scaleTo={0.985}
               key={u.id}
               accessibilityRole="checkbox"
               accessibilityLabel={`${u.name}, @${u.handle}`}
@@ -90,7 +92,7 @@ export default function NewGroup() {
                 ]}>
                 {on ? <Icon name="check" size={14} color={colors.onPrimary} strokeWidth={3} /> : null}
               </View>
-            </Pressable>
+            </PressableScale>
           );
         })}
         {!people.length ? (

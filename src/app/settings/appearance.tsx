@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
 import { Card } from '@/components/list-row';
+import { PressableScale } from '@/components/pressable-scale';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import type { ThemePreference } from '@/theme/colors';
@@ -24,7 +25,7 @@ export default function Appearance() {
         {OPTIONS.map((o, i) => {
           const active = preference === o.value;
           return (
-            <Pressable
+            <PressableScale
               key={o.value}
               accessibilityRole="radio"
               aria-checked={active}
@@ -42,7 +43,7 @@ export default function Appearance() {
                 {o.hint ? <Text variant="small" color="textSecondary">{o.hint}</Text> : null}
               </View>
               {active ? <Icon name="check" color={colors.accent} /> : null}
-            </Pressable>
+            </PressableScale>
           );
         })}
       </Card>

@@ -1,12 +1,13 @@
 import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { LogoGlyph } from '@/components/logo';
+import { PressableScale } from '@/components/pressable-scale';
 import { PulseRings } from '@/components/pulse-rings';
 import { SendPanel } from '@/components/send-panel';
 import { Text } from '@/components/text';
@@ -141,12 +142,12 @@ export default function Tap() {
               </View>
             </PulseRings>
             </View>
-            <Pressable accessibilityRole="link" onPress={showQr} style={styles.qrLink}>
+            <PressableScale accessibilityRole="link" onPress={showQr} style={styles.qrLink}>
               <Icon name="qr" size={18} color={colors.accent} />
               <Text variant="bodyMedium" color="accent">
                 Show QR code instead
               </Text>
-            </Pressable>
+            </PressableScale>
           </>
         )}
       </View>

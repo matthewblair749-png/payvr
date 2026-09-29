@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, { ZoomIn, ZoomOut } from 'react-native-reanimated';
 
 import { useApp } from '@/store/app-store';
@@ -9,6 +9,7 @@ import { Fonts } from '@/theme/typography';
 
 import { Avatar } from './avatar';
 import { Icon } from './icon';
+import { PressableScale } from './pressable-scale';
 import { Text } from './text';
 
 /**
@@ -41,11 +42,12 @@ export function CallBanner() {
 
   return (
     <Animated.View entering={ZoomIn} exiting={ZoomOut} style={styles.wrap}>
-      <Pressable
+      <PressableScale
+        scaleTo={0.92}
         accessibilityRole="button"
         accessibilityLabel={`Return to call with ${first}, ${call.connectedAt ? time : 'calling'}`}
         onPress={() => setExpanded(true)}
-        style={({ pressed }) => [styles.bubble, { transform: [{ scale: pressed ? 0.92 : 1 }] }]}>
+        style={({ pressed }) => [styles.bubble]}>
         <View style={[styles.ring, { borderColor: BRAND_BLUE }]}>
           <Avatar name={peer?.name ?? '?'} uri={peer?.avatarUrl} size={52} />
           <View style={[styles.kind, { backgroundColor: BRAND_BLUE }]}>
@@ -55,7 +57,7 @@ export function CallBanner() {
         <View style={[styles.time, { backgroundColor: BRAND_BLUE }]}>
           <Text style={styles.timeText}>{time}</Text>
         </View>
-      </Pressable>
+      </PressableScale>
     </Animated.View>
   );
 }

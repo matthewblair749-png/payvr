@@ -1,10 +1,11 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { useTheme } from '@/theme/theme-provider';
 import { Fonts } from '@/theme/typography';
 import { haptics } from '@/utils/haptics';
 
 import { Icon } from './icon';
+import { PressableScale } from './pressable-scale';
 import { Text } from './text';
 
 const ROWS = [
@@ -25,7 +26,8 @@ export function Keypad({ onKey, integer }: Props) {
           {row.map((k) => {
             const hidden = integer && k === '.';
             return (
-              <Pressable
+              <PressableScale
+                scaleTo={0.9}
                 key={k}
                 disabled={hidden}
                 accessibilityRole="button"
@@ -39,7 +41,6 @@ export function Keypad({ onKey, integer }: Props) {
                   {
                     backgroundColor: pressed ? colors.surface : 'transparent',
                     opacity: hidden ? 0 : 1,
-                    transform: [{ scale: pressed ? 0.9 : 1 }],
                   },
                 ]}>
                 {k === 'back' ? (
@@ -47,7 +48,7 @@ export function Keypad({ onKey, integer }: Props) {
                 ) : (
                   <Text style={[styles.label, { color: colors.text }]}>{k}</Text>
                 )}
-              </Pressable>
+              </PressableScale>
             );
           })}
         </View>

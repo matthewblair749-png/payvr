@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withSpring } from 'react-native-reanimated';
 
 import type { Draft, Privacy, User } from '@/data/types';
@@ -17,6 +17,7 @@ import { formatShort } from '@/utils/money';
 import { Avatar } from './avatar';
 import { Button } from './button';
 import { Icon } from './icon';
+import { PressableScale } from './pressable-scale';
 import { PrivacyPicker } from './privacy-picker';
 import { SwipeToSend } from './swipe-to-send';
 import { Text } from './text';
@@ -117,7 +118,7 @@ export function SendPanel({ peer, draft, patch, children }: Props) {
       {isSend ? (
         <>
           <SwipeToSend label={`Swipe up to ${action.toLowerCase()}`} onComplete={go} disabled={busy} />
-          <Pressable
+          <PressableScale
             accessibilityRole="button"
             accessibilityLabel={`${action} with Face ID`}
             accessibilityHint="Asks for Face ID or your PIN, then sends the money"
@@ -126,12 +127,12 @@ export function SendPanel({ peer, draft, patch, children }: Props) {
               go();
             }}
             disabled={busy}
-            style={({ pressed }) => [styles.faceId, { opacity: pressed ? 0.6 : 1 }]}>
+            style={({ pressed }) => [styles.faceId, { opacity: pressed ? 0.75 : 1 }]}>
             <Icon name="faceId" size={20} color={colors.accent} />
             <Text variant="bodyMedium" color="accent">
               {busy ? 'Sending…' : 'Or use Face ID'}
             </Text>
-          </Pressable>
+          </PressableScale>
         </>
       ) : (
         <Button label={action} loading={busy} onPress={go} />

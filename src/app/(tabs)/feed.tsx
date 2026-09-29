@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ChatButton } from '@/components/chat-button';
@@ -11,6 +12,7 @@ import { describe, useApp } from '@/store/app-store';
 import { useSocial } from '@/store/social-store';
 import { useTheme } from '@/theme/theme-provider';
 import { formatCents } from '@/utils/money';
+import { listEnter, listLayout } from '@/utils/motion';
 
 type Tab = 'friends' | 'me';
 
@@ -107,7 +109,11 @@ export default function Feed() {
             ) : null}
           </View>
         }
-        renderItem={({ item }) => <StoryCard story={item} />}
+        renderItem={({ item, index }) => (
+          <Animated.View entering={listEnter(index)} layout={listLayout}>
+            <StoryCard story={item} />
+          </Animated.View>
+        )}
         ListEmptyComponent={
           <Text color="textSecondary" align="center" style={styles.empty}>
             {tab === 'friends' ? 'When your friends pay each other, it shows up here.' : 'Your payments show up here.'}

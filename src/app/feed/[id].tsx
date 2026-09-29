@@ -46,7 +46,7 @@ export default function StoryDetail() {
         </Text>
       ) : (
         <>
-          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
             <StoryCard story={story} detail />
             {story.mine ? (
               <View style={styles.privacy}>

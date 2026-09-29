@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, {
   type SharedValue,
   useAnimatedStyle,
@@ -16,6 +16,7 @@ import { ChatButton } from '@/components/chat-button';
 import { Icon } from '@/components/icon';
 import { IconButton } from '@/components/icon-button';
 import { Keypad } from '@/components/keypad';
+import { PressableScale } from '@/components/pressable-scale';
 import { Text } from '@/components/text';
 import type { TapMode } from '@/data/types';
 import { useCountUp } from '@/hooks/use-count-up';
@@ -112,7 +113,7 @@ export default function Home() {
   return (
     <View style={[styles.fill, { backgroundColor: colors.background, paddingTop: insets.top + 6 }]}>
       <View style={styles.top}>
-        <Pressable
+        <PressableScale
           accessibilityRole="button"
           accessibilityLabel={`Balance ${formatCents(balanceCents)}. Opens your wallet`}
           onPress={() => {
@@ -121,27 +122,27 @@ export default function Home() {
           }}
           style={({ pressed }) => [
             styles.balance,
-            { backgroundColor: colors.surface, borderColor: colors.border, transform: [{ scale: pressed ? 0.96 : 1 }] },
+            { backgroundColor: colors.surface, borderColor: colors.border },
           ]}>
           <Icon name="wallet" size={18} color={colors.accent} />
           <Text variant="amount">{formatCents(shownBalance)}</Text>
-        </Pressable>
+        </PressableScale>
         <View style={styles.topRight}>
           <ChatButton />
           <IconButton icon="qr" label="Scan or show a QR code" onPress={() => router.push('/qr')} />
-          <Pressable
+          <PressableScale
             accessibilityRole="button"
             accessibilityLabel="Your profile"
             hitSlop={4}
             onPress={() => router.navigate('/profile')}
-            style={({ pressed }) => [styles.me, { opacity: pressed ? 0.7 : 1 }]}>
+            style={({ pressed }) => [styles.me, { opacity: pressed ? 0.8 : 1 }]}>
             <Avatar name={me.name} uri={me.avatarUrl} size={40} />
-          </Pressable>
+          </PressableScale>
         </View>
       </View>
 
       {pending.length ? (
-        <Pressable
+        <PressableScale
           accessibilityRole="button"
           accessibilityLabel={`${pending.length} ${pending.length === 1 ? 'request' : 'requests'} waiting for you`}
           onPress={() => {
@@ -154,7 +155,7 @@ export default function Home() {
           <Text variant="caption" color="accent">
             {pending.length === 1 ? '1 request waiting' : `${pending.length} requests waiting`}
           </Text>
-        </Pressable>
+        </PressableScale>
       ) : (
         <View style={styles.pendingSpace} />
       )}
@@ -209,16 +210,17 @@ function shakeNo(shake: SharedValue<number>) {
 function PillButton({ label, onPress }: { label: string; onPress: () => void }) {
   const { colors } = useTheme();
   return (
-    <Pressable
+    <PressableScale
+      scaleTo={0.95}
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
       style={({ pressed }) => [
         styles.pill,
-        { backgroundColor: colors.surface, borderColor: colors.border, transform: [{ scale: pressed ? 0.95 : 1 }] },
+        { backgroundColor: colors.surface, borderColor: colors.border },
       ]}>
       <Text variant="button">{label}</Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 

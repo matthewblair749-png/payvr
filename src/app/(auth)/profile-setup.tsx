@@ -1,12 +1,13 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { Field } from '@/components/field';
 import { Icon } from '@/components/icon';
+import { PressableScale } from '@/components/pressable-scale';
 import { Screen } from '@/components/screen';
 import { StepHeader } from '@/components/step-header';
 import { Text } from '@/components/text';
@@ -76,7 +77,7 @@ export default function ProfileSetup() {
       }>
       <StepHeader step={3} total={5} title="Make it yours" subtitle="This is what people see when you tap phones." />
 
-      <Pressable
+      <PressableScale
         accessibilityRole="button"
         accessibilityLabel={photo ? 'Change profile photo' : 'Add profile photo'}
         onPress={pickPhoto}
@@ -85,7 +86,7 @@ export default function ProfileSetup() {
         <View style={[styles.badge, { backgroundColor: colors.primary, borderColor: colors.background }]}>
           <Icon name="camera" size={18} color={colors.onPrimary} />
         </View>
-      </Pressable>
+      </PressableScale>
       <Text variant="small" color="accent" align="center" style={styles.photoLabel}>
         {photo ? 'Change photo' : 'Add a photo'}
       </Text>

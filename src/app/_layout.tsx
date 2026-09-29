@@ -8,11 +8,12 @@ import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, type ErrorBounda
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { CallBanner } from '@/components/call-banner';
 import { CallOverlay } from '@/components/call-overlay';
 import { IncomingBanner } from '@/components/incoming-banner';
+import { PressableScale } from '@/components/pressable-scale';
 import { configurePush, onNotificationTap } from '@/services/push';
 import { AppStoreProvider, useApp } from '@/store/app-store';
 import { AuthorizeProvider } from '@/store/authorize';
@@ -74,6 +75,9 @@ function Navigator() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colors.background },
+          // Native iOS-style push, and swipe back from anywhere on the screen (not just the edge).
+          animation: 'ios_from_right',
+          fullScreenGestureEnabled: true,
         }}>
         <Stack.Screen name="index" options={{ animation: 'fade' }} />
         <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
@@ -131,9 +135,9 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
         No money moved because of this. Try again, and if it keeps happening, restart Payvr.
       </Text>
       {__DEV__ ? <Text style={errorStyles.dev}>{error.message}</Text> : null}
-      <Pressable accessibilityRole="button" onPress={retry} style={errorStyles.button}>
+      <PressableScale accessibilityRole="button" onPress={retry} style={errorStyles.button}>
         <Text style={errorStyles.buttonText}>Try again</Text>
-      </Pressable>
+      </PressableScale>
     </View>
   );
 }

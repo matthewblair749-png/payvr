@@ -1,8 +1,9 @@
-import { Pressable, StyleSheet, Switch, View } from 'react-native';
+import { StyleSheet, Switch, View } from 'react-native';
 
 import { useTheme } from '@/theme/theme-provider';
 
 import { Icon, type IconName } from './icon';
+import { PressableScale } from './pressable-scale';
 import { Text } from './text';
 
 type Props = {
@@ -20,12 +21,14 @@ export function ListRow({ icon, label, value, onPress, right, danger, last }: Pr
   const { colors } = useTheme();
   const tint = danger ? colors.error : colors.text;
   return (
-    <Pressable
+    <PressableScale
+      scaleTo={onPress ? 0.985 : 1}
+      haptic={onPress ? 'tap' : undefined}
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={value ? `${label}, ${value}` : label}
       disabled={!onPress}
       onPress={onPress}
-      style={({ pressed }) => [styles.row, { opacity: pressed ? 0.6 : 1 }]}>
+      style={({ pressed }) => [styles.row, { opacity: pressed ? 0.85 : 1 }]}>
       {icon ? <Icon name={icon} size={22} color={danger ? colors.error : colors.accent} /> : null}
       <View style={[styles.main, !last && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
         <Text variant="bodyMedium" style={{ color: tint, flex: 1 }}>
@@ -35,7 +38,7 @@ export function ListRow({ icon, label, value, onPress, right, danger, last }: Pr
         {right}
         {onPress && !right && !danger ? <Icon name="chevronRight" size={20} color={colors.textSecondary} /> : null}
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -58,12 +61,14 @@ export function ToggleRow({
 }) {
   const { colors } = useTheme();
   return (
-    <Pressable
+    <PressableScale
+      scaleTo={0.985}
+      haptic="tap"
       accessibilityRole="switch"
       accessibilityLabel={label}
       aria-checked={value}
       onPress={() => onChange(!value)}
-      style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}>
+      style={({ pressed }) => [styles.row, { opacity: pressed ? 0.85 : 1 }]}>
       {icon ? <Icon name={icon} size={22} color={colors.accent} /> : null}
       <View style={[styles.main, !last && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
         <Text variant="bodyMedium" style={{ color: colors.text, flex: 1 }}>
@@ -78,7 +83,7 @@ export function ToggleRow({
           />
         </View>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 

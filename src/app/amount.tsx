@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -8,6 +8,7 @@ import { Avatar } from '@/components/avatar';
 import { Button } from '@/components/button';
 import { IconButton } from '@/components/icon-button';
 import { Keypad } from '@/components/keypad';
+import { PressableScale } from '@/components/pressable-scale';
 import { Segmented } from '@/components/segmented';
 import { Text } from '@/components/text';
 import type { TapMode } from '@/data/types';
@@ -133,7 +134,7 @@ export default function Amount() {
         {cents === 0 ? (
           <View style={styles.quick}>
             {QUICK_AMOUNTS.map((c) => (
-              <Pressable
+              <PressableScale
                 key={c}
                 accessibilityRole="button"
                 accessibilityLabel={formatShort(c)}
@@ -143,7 +144,7 @@ export default function Amount() {
                   { borderColor: colors.border, backgroundColor: pressed ? colors.surface : 'transparent' },
                 ]}>
                 <Text variant="bodyMedium">{formatShort(c)}</Text>
-              </Pressable>
+              </PressableScale>
             ))}
           </View>
         ) : null}

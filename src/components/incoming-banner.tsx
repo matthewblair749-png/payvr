@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, { SlideInUp, SlideOutUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -9,6 +9,7 @@ import { useTheme } from '@/theme/theme-provider';
 import { formatShort } from '@/utils/money';
 
 import { Avatar } from './avatar';
+import { PressableScale } from './pressable-scale';
 import { Text } from './text';
 
 /**
@@ -43,7 +44,7 @@ export function IncomingBanner() {
       entering={SlideInUp.springify().damping(18)}
       exiting={SlideOutUp.duration(200)}
       style={[styles.wrap, { top: insets.top + 8, pointerEvents: 'box-none' }]}>
-      <Pressable
+      <PressableScale
         accessibilityRole="alert"
         accessibilityLabel={`${title}${tx.note ? `, ${tx.note}` : ''}`}
         onPress={() => {
@@ -72,7 +73,7 @@ export function IncomingBanner() {
             Review
           </Text>
         )}
-      </Pressable>
+      </PressableScale>
     </Animated.View>
   );
 }

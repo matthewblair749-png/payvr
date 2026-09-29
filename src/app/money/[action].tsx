@@ -1,10 +1,11 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { Keypad } from '@/components/keypad';
+import { PressableScale } from '@/components/pressable-scale';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import {
@@ -166,7 +167,8 @@ function SpeedPicker({ value, onChange, cents }: { value: Speed; onChange: (s: S
       {options.map((o) => {
         const active = o.value === value;
         return (
-          <Pressable
+          <PressableScale
+            scaleTo={0.98}
             key={o.value}
             accessibilityRole="radio"
             accessibilityLabel={`${o.title}, ${o.price}, ${o.detail}`}
@@ -180,7 +182,6 @@ function SpeedPicker({ value, onChange, cents }: { value: Speed; onChange: (s: S
               {
                 borderColor: active ? colors.accent : colors.border,
                 backgroundColor: colors.surface,
-                transform: [{ scale: pressed ? 0.98 : 1 }],
               },
             ]}>
             <Icon name={o.value === 'instant' ? 'bolt' : 'bank'} size={20} color={active ? colors.accent : colors.textSecondary} />
@@ -193,7 +194,7 @@ function SpeedPicker({ value, onChange, cents }: { value: Speed; onChange: (s: S
             <Text variant="amount" color={active ? 'accent' : 'text'}>
               {o.price}
             </Text>
-          </Pressable>
+          </PressableScale>
         );
       })}
       <Text variant="caption" color="textSecondary" align="center">
