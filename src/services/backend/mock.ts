@@ -95,9 +95,10 @@ export const mockBackend: Backend = {
   async simulateIncoming(kind, opts) {
     const now = new Date().toISOString();
     if (kind === 'payment') {
+      const from = opts?.from ?? 'u_jake';
       const tx: Transaction = {
         id: mockDb.newId(),
-        fromUser: 'u_jake',
+        fromUser: from,
         toUser: mockDb.me.id,
         amountCents: opts?.amountCents ?? 2000,
         note: opts?.note ?? 'Pizza',
@@ -109,7 +110,7 @@ export const mockBackend: Backend = {
       };
       mockDb.transactions = [tx, ...mockDb.transactions];
       mockDb.balanceCents += tx.amountCents;
-      mockDb.remember('u_jake');
+      mockDb.remember(from);
       mockDb.emit({ type: 'transaction', change: 'insert', tx });
       mockDb.emit({ type: 'balance', balanceCents: mockDb.balanceCents });
     } else {

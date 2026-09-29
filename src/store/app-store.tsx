@@ -73,7 +73,7 @@ type AppState = {
   rememberContact: (userId: string, viaTap?: boolean) => void;
 
   dismissIncoming: () => void;
-  simulateIncomingPayment: (opts?: { amountCents?: number; note?: string; ref?: string }) => void;
+  simulateIncomingPayment: (opts?: { amountCents?: number; note?: string; ref?: string; from?: string }) => void;
   /** Result of the last push registration (null until tried). */
   push: PushRegistration | null;
   simulateIncomingRequest: () => void;

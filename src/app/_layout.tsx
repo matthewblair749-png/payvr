@@ -14,6 +14,7 @@ import { IncomingBanner } from '@/components/incoming-banner';
 import { configurePush, onNotificationTap } from '@/services/push';
 import { AppStoreProvider, useApp } from '@/store/app-store';
 import { AuthorizeProvider } from '@/store/authorize';
+import { ChatProvider } from '@/store/chat-store';
 import { SocialProvider } from '@/store/social-store';
 import { PayvrThemeProvider, useTheme } from '@/theme/theme-provider';
 
@@ -36,9 +37,11 @@ export default function RootLayout() {
     <PayvrThemeProvider>
       <AppStoreProvider>
         <SocialProvider>
-          <AuthorizeProvider>
-            <Navigator />
-          </AuthorizeProvider>
+          <ChatProvider>
+            <AuthorizeProvider>
+              <Navigator />
+            </AuthorizeProvider>
+          </ChatProvider>
         </SocialProvider>
       </AppStoreProvider>
     </PayvrThemeProvider>
@@ -78,6 +81,8 @@ function Navigator() {
         <Stack.Screen name="qr" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="money/[action]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="people" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="chat/new" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="chat/[id]/split" options={{ presentation: 'modal' }} />
       </Stack>
       <IncomingBanner />
       <NotificationRouter />

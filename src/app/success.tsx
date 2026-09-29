@@ -15,7 +15,7 @@ import { fullDateTime } from '@/utils/dates';
 import { formatCents, formatShort } from '@/utils/money';
 
 export default function Success() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, chat } = useLocalSearchParams<{ id: string; chat?: string }>();
   const { colors } = useTheme();
   const { transactions, userById, me, setDraft } = useApp();
   const tx = transactions.find((t) => t.id === id);
@@ -38,6 +38,11 @@ export default function Success() {
         : `${amount} sent to ${first}`;
 
   const done = () => {
+    // Paid a share from a group chat: go back to the conversation.
+    if (chat && router.canGoBack()) {
+      router.back();
+      return;
+    }
     if (router.canDismiss()) router.dismissAll();
     router.replace('/home');
   };

@@ -76,7 +76,11 @@ export interface Backend {
 
   // Prototype helpers
   /** Pretend another phone just paid you / requested from you. */
-  simulateIncoming(kind: 'payment' | 'request', opts?: { amountCents?: number; note?: string; ref?: string }): Promise<void>;
+  simulateIncoming(
+    kind: 'payment' | 'request',
+    /** `from`: the demo friend who pays (mock only; defaults to Jake). */
+    opts?: { amountCents?: number; note?: string; ref?: string; from?: string },
+  ): Promise<void>;
   /** Demo people a single phone can "tap" before step 5 adds real Bluetooth. */
   demoPeople(): Promise<User[]>;
 }

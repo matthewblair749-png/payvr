@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ChatButton } from '@/components/chat-button';
 import { Segmented } from '@/components/segmented';
 import { StoryCard } from '@/components/story-card';
 import { Text } from '@/components/text';
@@ -45,9 +46,12 @@ export default function Feed() {
   return (
     <View style={[styles.fill, { backgroundColor: colors.background, paddingTop: insets.top + 8 }]}>
       <View style={styles.head}>
-        <Text variant="title" accessibilityRole="header">
-          Feed
-        </Text>
+        <View style={styles.titleRow}>
+          <Text variant="title" accessibilityRole="header">
+            Feed
+          </Text>
+          <ChatButton />
+        </View>
         <Segmented<Tab>
           value={tab}
           onChange={setTab}
@@ -117,6 +121,7 @@ export default function Feed() {
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   head: { paddingHorizontal: 20, gap: 14, paddingBottom: 8 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginRight: -10 },
   list: { paddingHorizontal: 16, paddingBottom: 32 },
   top: { gap: 14, paddingTop: 6, paddingBottom: 14 },
   gap: { height: 12 },

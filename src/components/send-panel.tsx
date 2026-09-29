@@ -7,6 +7,7 @@ import type { Draft, Privacy, User } from '@/data/types';
 import { PaymentError } from '@/services/payments';
 import { useApp } from '@/store/app-store';
 import { useAuthorize } from '@/store/authorize';
+import { useChat } from '@/store/chat-store';
 import { useSocial } from '@/store/social-store';
 import { useTheme } from '@/theme/theme-provider';
 import { Fonts, MIN_TAP } from '@/theme/typography';
@@ -38,6 +39,7 @@ export function SendPanel({ peer, draft, patch, children }: Props) {
   const { submitDraft } = useApp();
   const { defaultPrivacy, setPrivacy } = useSocial();
   const authorize = useAuthorize();
+  const { markSharePaid } = useChat();
   const reduceMotion = useReducedMotion();
   const [note, setNote] = useState(draft.note);
   const [privacy, setPrivacyChoice] = useState<Privacy>(draft.privacy ?? defaultPrivacy);
@@ -65,7 +67,8 @@ export function SendPanel({ peer, draft, patch, children }: Props) {
     try {
       const tx = await submitDraft({ ...patch, note: note.trim(), privacy });
       setPrivacy(tx.id, privacy);
-      router.replace({ pathname: '/success', params: { id: tx.id } });
+      if (draft.chatSplit) markSharePaid(draft.chatSplit.chatId, draft.chatSplit.splitId, tx.fromUser, tx.id);
+      router.replace({ pathname: '/success', params: draft.chatSplit ? { id: tx.id, chat: '1' } : { id: tx.id } });
     } catch (e) {
       haptics.error();
       setError(e instanceof PaymentError ? e.message : 'Something went wrong. Nothing was sent.');

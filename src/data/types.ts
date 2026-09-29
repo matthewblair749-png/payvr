@@ -60,4 +60,6 @@ export type Draft = {
   privacy?: Privacy;
   /** True when the person was found by tapping phones. */
   viaTap?: boolean;
+  /** Set when paying your share of a bill split in a group chat. */
+  chatSplit?: { chatId: string; splitId: string };
 };

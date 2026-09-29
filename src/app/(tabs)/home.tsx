@@ -12,6 +12,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
+import { ChatButton } from '@/components/chat-button';
 import { Icon } from '@/components/icon';
 import { IconButton } from '@/components/icon-button';
 import { Keypad } from '@/components/keypad';
@@ -126,6 +127,7 @@ export default function Home() {
           <Text variant="amount">{formatCents(shownBalance)}</Text>
         </Pressable>
         <View style={styles.topRight}>
+          <ChatButton />
           <IconButton icon="qr" label="Scan or show a QR code" onPress={() => router.push('/qr')} />
           <Pressable
             accessibilityRole="button"
