@@ -56,7 +56,14 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Payvr uses the camera to scan Payvr QR codes."
+          "cameraPermission": "Payvr uses the camera to scan Payvr QR codes and for video calls."
+        }
+      ],
+      [
+        "@config-plugins/react-native-webrtc",
+        {
+          "cameraPermission": "Payvr uses the camera to scan Payvr QR codes and for video calls.",
+          "microphonePermission": "Payvr uses the microphone for voice and video calls."
         }
       ],
       [

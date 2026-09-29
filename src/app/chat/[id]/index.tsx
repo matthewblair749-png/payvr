@@ -172,7 +172,17 @@ function MessageItem({ m, firstOfRun, chatId }: { m: ChatMessage; firstOfRun: bo
   return (
     <Animated.View entering={FadeInUp.duration(220)} style={[styles.msgRow, mine && styles.msgRowMine, firstOfRun && styles.runGap]}>
       {!mine ? (
-        <View style={styles.msgAvatar}>{firstOfRun && author ? <Avatar name={author.name} uri={author.avatarUrl} size={30} /> : null}</View>
+        <View style={styles.msgAvatar}>
+          {firstOfRun && author ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${author.name}'s profile`}
+              onPress={() => router.push({ pathname: '/person/[id]', params: { id: author.id } })}
+              style={styles.avatarTap}>
+              <Avatar name={author.name} uri={author.avatarUrl} size={30} />
+            </Pressable>
+          ) : null}
+        </View>
       ) : null}
       <View style={[styles.msgCol, mine && styles.msgColMine]}>
         {!mine && firstOfRun ? (
@@ -307,6 +317,8 @@ const styles = StyleSheet.create({
   msgRowMine: { justifyContent: 'flex-end' },
   runGap: { marginTop: 8 },
   msgAvatar: { width: 30 },
+  // 44pt tap area around the 30pt face, without moving it.
+  avatarTap: { width: MIN_TAP, height: MIN_TAP, margin: -7, alignItems: 'center', justifyContent: 'center' },
   msgCol: { maxWidth: '78%', gap: 3 },
   msgColMine: { alignItems: 'flex-end' },
   author: { marginLeft: 12 },

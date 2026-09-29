@@ -46,7 +46,14 @@ export type IconName =
   | 'phone'
   | 'chevronUp'
   | 'feed'
-  | 'tap';
+  | 'tap'
+  | 'call'
+  | 'callEnd'
+  | 'video'
+  | 'videoOff'
+  | 'mic'
+  | 'micOff'
+  | 'flip';
 
 type Props = { name: IconName; size?: number; color: string; strokeWidth?: number };
 
@@ -194,6 +201,46 @@ function render(name: IconName, p: object, color: string) {
       );
     case 'bolt':
       return <Path d="M13 2 4 14h7l-1 8 9-12h-7z" {...p} />;
+    case 'call':
+      return <Path d="M5 4h3.5l1.8 4.4-2.3 1.4a11 11 0 0 0 6.2 6.2l1.4-2.3L20 15.5V19a2 2 0 0 1-2.1 2A17 17 0 0 1 3 6.1 2 2 0 0 1 5 4z" {...p} />;
+    case 'callEnd':
+      // The handset turned on its side.
+      return <Path d="M3.5 13.6c4.8-4.4 12.2-4.4 17 0l-1.9 2.7-3.3-1.2-.3-2.6a10 10 0 0 0-6 0l-.3 2.6-3.3 1.2z" {...p} />;
+    case 'video':
+      return (
+        <>
+          <Rect x="2.5" y="6" width="13" height="12" rx="2.5" {...p} />
+          <Path d="m15.5 10.5 6-3.5v10l-6-3.5" {...p} />
+        </>
+      );
+    case 'videoOff':
+      return (
+        <>
+          <Path d="M10.5 6h2.5a2.5 2.5 0 0 1 2.5 2.5v2l6-3.5v10l-3-1.75M15.5 15.5A2.5 2.5 0 0 1 13 18H5a2.5 2.5 0 0 1-2.5-2.5v-7A2.5 2.5 0 0 1 4.5 6" {...p} />
+          <Path d="m3 3 18 18" {...p} />
+        </>
+      );
+    case 'mic':
+      return (
+        <>
+          <Rect x="9" y="3" width="6" height="11" rx="3" {...p} />
+          <Path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" {...p} />
+        </>
+      );
+    case 'micOff':
+      return (
+        <>
+          <Path d="M15 10V6a3 3 0 0 0-5.7-1.3M9 9v2a3 3 0 0 0 4.6 2.5M5.5 11a6.5 6.5 0 0 0 10.4 5.2M18.4 12.5a6.4 6.4 0 0 0 .1-1.5M12 17.5V21" {...p} />
+          <Path d="m3 3 18 18" {...p} />
+        </>
+      );
+    case 'flip':
+      return (
+        <>
+          <Path d="M20 11a8 8 0 0 0-14.3-4.9L4 8M4 4v4h4" {...p} />
+          <Path d="M4 13a8 8 0 0 0 14.3 4.9L20 16M20 20v-4h-4" {...p} />
+        </>
+      );
     case 'phone':
       return (
         <>

@@ -7,6 +7,7 @@ import { Avatar } from '@/components/avatar';
 import { Card, ListRow, SectionLabel } from '@/components/list-row';
 import { Text } from '@/components/text';
 import { buildQr } from '@/services/qr';
+import { useCall } from '@/store/call-store';
 import { useApp } from '@/store/app-store';
 import { PRIVACY_LABEL, useSocial } from '@/store/social-store';
 import { useTheme } from '@/theme/theme-provider';
@@ -16,6 +17,7 @@ const THEME_LABEL = { dark: 'Dark', light: 'Light', system: 'System' } as const;
 export default function Profile() {
   const insets = useSafeAreaInsets();
   const { colors, preference } = useTheme();
+  const { simulateIncomingCall } = useCall();
   const { me, signOut, settings, simulateIncomingPayment, simulateIncomingRequest } = useApp();
   const { defaultPrivacy } = useSocial();
 
@@ -69,7 +71,9 @@ export default function Profile() {
       <SectionLabel>Prototype</SectionLabel>
       <Card>
         <ListRow icon="arrowDownLeft" label="Simulate: Jake pays you $20" onPress={() => { router.navigate('/home'); simulateIncomingPayment(); }} />
-        <ListRow icon="request" label="Simulate: Priya requests $14.50" onPress={simulateIncomingRequest} last />
+        <ListRow icon="request" label="Simulate: Priya requests $14.50" onPress={simulateIncomingRequest} />
+        <ListRow icon="video" label="Simulate: Sofia video-calls you" onPress={() => simulateIncomingCall('u_sofia', 'video')} />
+        <ListRow icon="call" label="Simulate: Leo calls you" onPress={() => simulateIncomingCall('u_leo', 'audio')} last />
       </Card>
 
       <Card style={styles.logout}>

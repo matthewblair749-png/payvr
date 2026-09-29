@@ -48,6 +48,7 @@ src/
     (tabs)/             home, feed, wallet, profile (+ raised Tap button in the tab bar)
     amount, people, tap, confirm, success, request/[id], qr, person/[id], feed/[id],
     chats, chat/new, chat/[id] (thread), chat/[id]/split,
+    (the call screen is an overlay: components/call-overlay.tsx; see docs/CALLS.md)
     transaction/[id], money/[action], settings/*, legal/[doc]
   components/           UI kit: logo (SVG), icons (SVG), buttons, keypad, pulse rings, check draw…
   theme/                colors (both palettes), typography, theme provider (200ms fade)

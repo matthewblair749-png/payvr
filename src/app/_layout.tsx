@@ -10,10 +10,13 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { CallBanner } from '@/components/call-banner';
+import { CallOverlay } from '@/components/call-overlay';
 import { IncomingBanner } from '@/components/incoming-banner';
 import { configurePush, onNotificationTap } from '@/services/push';
 import { AppStoreProvider, useApp } from '@/store/app-store';
 import { AuthorizeProvider } from '@/store/authorize';
+import { CallProvider } from '@/store/call-store';
 import { ChatProvider } from '@/store/chat-store';
 import { SocialProvider } from '@/store/social-store';
 import { PayvrThemeProvider, useTheme } from '@/theme/theme-provider';
@@ -38,9 +41,11 @@ export default function RootLayout() {
       <AppStoreProvider>
         <SocialProvider>
           <ChatProvider>
-            <AuthorizeProvider>
-              <Navigator />
-            </AuthorizeProvider>
+            <CallProvider>
+              <AuthorizeProvider>
+                <Navigator />
+              </AuthorizeProvider>
+            </CallProvider>
           </ChatProvider>
         </SocialProvider>
       </AppStoreProvider>
@@ -84,7 +89,9 @@ function Navigator() {
         <Stack.Screen name="chat/new" options={{ presentation: 'modal' }} />
         <Stack.Screen name="chat/[id]/split" options={{ presentation: 'modal' }} />
       </Stack>
+      <CallOverlay />
       <IncomingBanner />
+      <CallBanner />
       <NotificationRouter />
     </ThemeProvider>
   );

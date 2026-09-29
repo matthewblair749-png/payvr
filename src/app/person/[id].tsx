@@ -8,6 +8,7 @@ import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { TransactionRow } from '@/components/transaction-row';
 import { useApp } from '@/store/app-store';
+import { useCall } from '@/store/call-store';
 import { useSocial } from '@/store/social-store';
 import { useTheme } from '@/theme/theme-provider';
 import { shortTime } from '@/utils/dates';
@@ -17,6 +18,7 @@ export default function Person() {
   const { colors } = useTheme();
   const { userById, transactions, contacts, me } = useApp();
   const { favorites, toggleFavorite } = useSocial();
+  const { startCall } = useCall();
   const person = userById(id);
   if (!person) return <Screen back="back">{null}</Screen>;
 
@@ -30,13 +32,17 @@ export default function Person() {
       back="back"
       scroll
       headerRight={
-        <IconButton
-          icon={favorites.includes(person.id) ? 'starFilled' : 'star'}
-          label="Favorite"
-          selected={favorites.includes(person.id)}
-          color={favorites.includes(person.id) ? colors.accent : colors.text}
-          onPress={() => toggleFavorite(person.id)}
-        />
+        <View style={styles.headerActions}>
+          <IconButton icon="call" label={`Call ${person.name}`} onPress={() => startCall(person.id, 'audio')} />
+          <IconButton icon="video" label={`Video call ${person.name}`} onPress={() => startCall(person.id, 'video')} />
+          <IconButton
+            icon={favorites.includes(person.id) ? 'starFilled' : 'star'}
+            label="Favorite"
+            selected={favorites.includes(person.id)}
+            color={favorites.includes(person.id) ? colors.accent : colors.text}
+            onPress={() => toggleFavorite(person.id)}
+          />
+        </View>
       }>
       <View style={styles.head}>
         <Avatar name={person.name} uri={person.avatarUrl} size={104} />
@@ -83,6 +89,7 @@ export default function Person() {
 }
 
 const styles = StyleSheet.create({
+  headerActions: { flexDirection: 'row', alignItems: 'center' },
   head: { alignItems: 'center', gap: 4, marginTop: 8 },
   actions: { flexDirection: 'row', gap: 12, marginTop: 28 },
   flex: { flex: 1 },
