@@ -9,6 +9,7 @@ import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { useApp } from '@/store/app-store';
 import { signupDraft } from '@/store/signup-draft';
+import { EASE } from '@/utils/motion';
 
 export default function Welcome() {
   const { completeSignUp } = useApp();
@@ -45,7 +46,7 @@ export default function Welcome() {
         </>
       }>
       <View style={styles.center}>
-        <Animated.View entering={ZoomIn.springify().damping(14)}>
+        <Animated.View entering={ZoomIn.duration(480).easing(EASE)}>
           <Avatar name={signupDraft.name || 'You'} uri={signupDraft.avatarUrl} size={112} ring />
         </Animated.View>
         <Animated.View entering={FadeInUp.delay(150)} style={styles.text}>

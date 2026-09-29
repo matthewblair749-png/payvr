@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 
 import { useApp } from '@/store/app-store';
 import { useSocial, type Story } from '@/store/social-store';
@@ -8,6 +8,7 @@ import { useTheme } from '@/theme/theme-provider';
 import { Fonts, MIN_TAP } from '@/theme/typography';
 import { shortTime } from '@/utils/dates';
 import { formatCents } from '@/utils/money';
+import { smooth } from '@/utils/motion';
 
 import { Avatar } from './avatar';
 import { Icon } from './icon';
@@ -30,7 +31,8 @@ export function StoryCard({ story, detail }: { story: Story; detail?: boolean })
   const pop = useSharedValue(1);
   const heartStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.value }] }));
   const like = () => {
-    if (!story.likedByMe) pop.set(withSequence(withTiming(1.45, { duration: 110 }), withSpring(1, { damping: 8, stiffness: 300 })));
+    // A smooth swell and settle (no bounce).
+    if (!story.likedByMe) pop.set(withSequence(withTiming(1.25, smooth(140)), withTiming(1, smooth(260))));
     toggleLike(story.id);
   };
 

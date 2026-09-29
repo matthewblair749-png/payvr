@@ -6,8 +6,6 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
-  withSequence,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -16,6 +14,7 @@ import { runTapHandler } from '@/store/tap-intent';
 import { useTheme } from '@/theme/theme-provider';
 import { MIN_TAP } from '@/theme/typography';
 import { haptics } from '@/utils/haptics';
+import { smooth } from '@/utils/motion';
 
 import { Icon, type IconName } from './icon';
 import { LogoGlyph } from './logo';
@@ -101,13 +100,14 @@ export function TabBar({ state, navigation, insets }: BottomTabBarProps) {
   );
 }
 
-/** The tab's icon gives a small springy hop when its tab becomes active. */
+/** The tab's icon eases up to full size when its tab becomes active (no bounce). */
 function TabIcon({ name, color, focused }: { name: IconName; color: string; focused: boolean }) {
   const reduceMotion = useReducedMotion();
   const s = useSharedValue(1);
   useEffect(() => {
     if (!focused || reduceMotion) return;
-    s.set(withSequence(withTiming(0.82, { duration: 90 }), withSpring(1, { damping: 9, stiffness: 320 })));
+    s.set(0.9);
+    s.set(withTiming(1, smooth(280)));
   }, [focused, reduceMotion, s]);
   const style = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
   return (

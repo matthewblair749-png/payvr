@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
@@ -18,6 +18,7 @@ import { useTheme } from '@/theme/theme-provider';
 import { Fonts, MIN_TAP } from '@/theme/typography';
 import { haptics } from '@/utils/haptics';
 import { applyKey, displayTyped, formatShort, toCents } from '@/utils/money';
+import { smooth } from '@/utils/motion';
 
 const QUICK_AMOUNTS = [500, 1000, 2000, 5000];
 
@@ -62,7 +63,7 @@ export default function Amount() {
         ),
       );
     } else {
-      bump.set(withSequence(withTiming(1.04, { duration: 60 }), withSpring(1, { damping: 12, stiffness: 260 })));
+      bump.set(withSequence(withTiming(1.03, smooth(70)), withTiming(1, smooth(200))));
     }
   };
 

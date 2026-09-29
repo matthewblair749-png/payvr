@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '@/store/app-store';
 import { useTheme } from '@/theme/theme-provider';
 import { formatShort } from '@/utils/money';
+import { EASE } from '@/utils/motion';
 
 import { Avatar } from './avatar';
 import { PressableScale } from './pressable-scale';
@@ -41,7 +42,7 @@ export function IncomingBanner() {
 
   return (
     <Animated.View
-      entering={SlideInUp.springify().damping(18)}
+      entering={SlideInUp.duration(360).easing(EASE)}
       exiting={SlideOutUp.duration(200)}
       style={[styles.wrap, { top: insets.top + 8, pointerEvents: 'box-none' }]}>
       <PressableScale

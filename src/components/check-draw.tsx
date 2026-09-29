@@ -5,32 +5,30 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withDelay,
-  withSequence,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
 import { haptics } from '@/utils/haptics';
+import { smooth } from '@/utils/motion';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 const CIRCLE_LEN = 2 * Math.PI * 44;
 const CHECK_LEN = 60;
 
-/** A circle then a checkmark draw themselves in, finishing with a small haptic bounce. */
+/** A circle then a checkmark draw themselves in and settle smoothly, with a success haptic. */
 export function CheckDraw({ size = 132, color }: { size?: number; color: string }) {
   const ring = useSharedValue(0);
   const check = useSharedValue(0);
-  const scale = useSharedValue(0.6);
+  const scale = useSharedValue(0.8);
 
   useEffect(() => {
-    scale.value = withSpring(1, { damping: 12, stiffness: 160 });
+    scale.value = withTiming(1, smooth(520));
     ring.value = withTiming(1, { duration: 450, easing: Easing.out(Easing.cubic) });
     check.value = withDelay(350, withTiming(1, { duration: 350, easing: Easing.out(Easing.cubic) }));
     const t = setTimeout(() => {
       haptics.success();
-      scale.value = withSequence(withTiming(1.08, { duration: 110 }), withSpring(1, { damping: 8 }));
     }, 700);
     return () => clearTimeout(t);
   }, [ring, check, scale]);

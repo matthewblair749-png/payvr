@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
@@ -18,6 +18,7 @@ import { useTheme } from '@/theme/theme-provider';
 import { MIN_TAP } from '@/theme/typography';
 import { haptics } from '@/utils/haptics';
 import { formatShort } from '@/utils/money';
+import { smooth } from '@/utils/motion';
 
 type Phase = 'searching' | 'found' | 'expired' | 'blocked';
 type Blocked = { status: Exclude<TapStatus, 'starting' | 'searching'>; message?: string };
@@ -41,7 +42,7 @@ export default function Tap() {
       haptics.success();
       setFound(f);
       setPhase('found');
-      sheet.set(withSpring(0, { damping: 18, stiffness: 180 }));
+      sheet.set(withTiming(0, smooth(420)));
     },
     [addPeople, sheet],
   );

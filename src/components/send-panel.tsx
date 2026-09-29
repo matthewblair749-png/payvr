@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withSpring } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 
 import type { Draft, Privacy, User } from '@/data/types';
 import { PaymentError } from '@/services/payments';
@@ -13,6 +13,7 @@ import { useTheme } from '@/theme/theme-provider';
 import { Fonts, MIN_TAP } from '@/theme/typography';
 import { haptics } from '@/utils/haptics';
 import { formatShort } from '@/utils/money';
+import { smooth } from '@/utils/motion';
 
 import { Avatar } from './avatar';
 import { Button } from './button';
@@ -54,9 +55,9 @@ export function SendPanel({ peer, draft, patch, children }: Props) {
   const action = payingRequest ? `Pay ${amount}` : isSend ? `Send ${amount}` : `Request ${amount}`;
 
   // Their photo zooms in when the panel appears.
-  const zoom = useSharedValue(reduceMotion ? 1 : 0.4);
+  const zoom = useSharedValue(reduceMotion ? 1 : 0.7);
   useEffect(() => {
-    zoom.set(withDelay(80, withSpring(1, { damping: 11, stiffness: 180 })));
+    zoom.set(withDelay(60, withTiming(1, smooth(460))));
   }, [zoom]);
   const zoomStyle = useAnimatedStyle(() => ({ transform: [{ scale: zoom.value }] }));
 

@@ -6,7 +6,6 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSequence,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,6 +26,7 @@ import { useTheme } from '@/theme/theme-provider';
 import { Fonts, MIN_TAP } from '@/theme/typography';
 import { haptics } from '@/utils/haptics';
 import { applyKey, displayTyped, formatCents, formatShort, toCents } from '@/utils/money';
+import { smooth } from '@/utils/motion';
 
 /**
  * Keypad first: type an amount, then Request, Pay (pick a person), or Tap (hold phones together).
@@ -64,7 +64,7 @@ export default function Home() {
       return;
     }
     setAmount(next);
-    bump.set(withSequence(withTiming(1.06, { duration: 55 }), withSpring(1, { damping: 11, stiffness: 280 })));
+    bump.set(withSequence(withTiming(1.03, smooth(70)), withTiming(1, smooth(200))));
   };
 
   const ready = (mode: TapMode) => {

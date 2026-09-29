@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react';
 import { StyleSheet, View, type GestureResponderEvent } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { useTheme } from '@/theme/theme-provider';
 import { haptics } from '@/utils/haptics';
+import { smooth } from '@/utils/motion';
 
 import { Icon } from './icon';
 import { Text } from './text';
@@ -26,7 +27,7 @@ export function SwipeToSend({ label, onComplete, disabled }: { label: string; on
   const reset = () => {
     armedRef.current = false;
     setArmed(false);
-    y.set(withSpring(0, { damping: 16, stiffness: 220 }));
+    y.set(withTiming(0, smooth(260)));
   };
 
   // Plain responder events (no PanResponder object), so nothing is created during render.

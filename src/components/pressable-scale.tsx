@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { haptics } from '@/utils/haptics';
+import { smooth } from '@/utils/motion';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-/** Press in: quick and firm. Release: a softer spring with a hint of bounce. */
-const PRESS_IN = { damping: 22, stiffness: 520, mass: 0.6 } as const;
-const PRESS_OUT = { damping: 13, stiffness: 300, mass: 0.7 } as const;
+/** Press in: quick and firm. Release: an unhurried glide back to rest (no bounce). */
+const PRESS_IN = { duration: 110, easing: Easing.out(Easing.quad) };
+const PRESS_OUT = smooth(240);
 
 type Props = Omit<PressableProps, 'style'> & {
   /** How far it sinks while held (1 = not at all). */
@@ -19,7 +20,7 @@ type Props = Omit<PressableProps, 'style'> & {
 };
 
 /**
- * Drop-in Pressable that sinks on touch and springs back on release, animated on the UI thread
+ * Drop-in Pressable that sinks on touch and eases back on release, animated on the UI thread
  * (smooth even while JS is busy). With Reduce Motion on, it only uses the pressed styles.
  */
 export function PressableScale({ scaleTo = 0.96, haptic, style, onPressIn, onPressOut, onPress, ...rest }: Props) {
@@ -33,12 +34,12 @@ export function PressableScale({ scaleTo = 0.96, haptic, style, onPressIn, onPre
       {...rest}
       onPressIn={(e) => {
         setPressed(true);
-        if (!reduceMotion && scaleTo !== 1) scale.set(withSpring(scaleTo, PRESS_IN));
+        if (!reduceMotion && scaleTo !== 1) scale.set(withTiming(scaleTo, PRESS_IN));
         onPressIn?.(e);
       }}
       onPressOut={(e) => {
         setPressed(false);
-        scale.set(withSpring(1, PRESS_OUT));
+        scale.set(withTiming(1, PRESS_OUT));
         onPressOut?.(e);
       }}
       onPress={(e) => {

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { useTheme } from '@/theme/theme-provider';
 import { MIN_TAP } from '@/theme/typography';
 import { haptics } from '@/utils/haptics';
+import { smooth } from '@/utils/motion';
 
 import { PressableScale } from './pressable-scale';
 import { Text } from './text';
@@ -16,7 +17,7 @@ type Props<T extends string> = {
   compact?: boolean;
 };
 
-const SLIDE = { damping: 20, stiffness: 260, mass: 0.8 } as const;
+const SLIDE = smooth(280);
 
 /** Tabs in a pill. The blue highlight slides to the chosen option. */
 export function Segmented<T extends string>({ options, value, onChange, compact }: Props<T>) {
@@ -34,8 +35,8 @@ export function Segmented<T extends string>({ options, value, onChange, compact 
       x.set(l.x);
       w.set(l.w);
     } else {
-      x.set(withSpring(l.x, SLIDE));
-      w.set(withSpring(l.w, SLIDE));
+      x.set(withTiming(l.x, SLIDE));
+      w.set(withTiming(l.w, SLIDE));
     }
   }, [value, layouts, x, w, reduceMotion]);
 

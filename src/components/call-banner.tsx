@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, { ZoomIn, ZoomOut } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 import { useApp } from '@/store/app-store';
 import { useCall } from '@/store/call-store';
@@ -41,13 +41,13 @@ export function CallBanner() {
   const time = call.connectedAt ? `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}` : '…';
 
   return (
-    <Animated.View entering={ZoomIn} exiting={ZoomOut} style={styles.wrap}>
+    <Animated.View entering={FadeIn.duration(240)} exiting={FadeOut.duration(180)} style={styles.wrap}>
       <PressableScale
         scaleTo={0.92}
         accessibilityRole="button"
         accessibilityLabel={`Return to call with ${first}, ${call.connectedAt ? time : 'calling'}`}
         onPress={() => setExpanded(true)}
-        style={({ pressed }) => [styles.bubble]}>
+        style={styles.bubble}>
         <View style={[styles.ring, { borderColor: BRAND_BLUE }]}>
           <Avatar name={peer?.name ?? '?'} uri={peer?.avatarUrl} size={52} />
           <View style={[styles.kind, { backgroundColor: BRAND_BLUE }]}>
