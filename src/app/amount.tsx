@@ -14,6 +14,7 @@ import { Text } from '@/components/text';
 import type { TapMode } from '@/data/types';
 import { DAILY_SEND_LIMIT_CENTS } from '@/services/payments';
 import { useApp } from '@/store/app-store';
+import { useCards } from '@/store/cards-store';
 import { useTheme } from '@/theme/theme-provider';
 import { Fonts, MIN_TAP } from '@/theme/typography';
 import { haptics } from '@/utils/haptics';
@@ -25,8 +26,11 @@ const QUICK_AMOUNTS = [500, 1000, 2000, 5000];
 export default function Amount() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const params = useLocalSearchParams<{ mode?: TapMode; to?: string }>();
+  const params = useLocalSearchParams<{ mode?: TapMode; to?: string; source?: string }>();
   const { setDraft, balanceCents, sentTodayCents, userById } = useApp();
+  const { cards } = useCards();
+  // With a card connected, amounts above the balance are fine: the card pays.
+  const canUseCard = cards.length > 0;
   const [mode, setMode] = useState<TapMode>(params.mode === 'request' ? 'request' : 'send');
   const [amount, setAmount] = useState('0');
   const [note, setNote] = useState('');
@@ -34,9 +38,9 @@ export default function Amount() {
 
   const cents = toCents(amount);
   const leftToday = DAILY_SEND_LIMIT_CENTS - sentTodayCents;
-  const overLimit = (c: number) => mode === 'send' && (c > balanceCents || c > leftToday);
+  const overLimit = (c: number) => mode === 'send' && ((!canUseCard && c > balanceCents) || c > leftToday);
   const error =
-    mode === 'send' && cents > balanceCents
+    mode === 'send' && !canUseCard && cents > balanceCents
       ? 'That’s more than your balance.'
       : mode === 'send' && cents > leftToday
         ? `Daily limit: you can send ${formatShort(Math.max(0, leftToday))} more today.`
@@ -80,7 +84,7 @@ export default function Amount() {
   };
 
   const next = () => {
-    setDraft({ mode, amountCents: cents, note: note.trim(), peerId: peer?.id });
+    setDraft({ mode, amountCents: cents, note: note.trim(), peerId: peer?.id, source: params.source });
     if (peer) router.push('/confirm');
     else router.push('/tap');
   };

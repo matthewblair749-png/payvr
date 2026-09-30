@@ -55,7 +55,8 @@ export type IconName =
   | 'micOff'
   | 'flip'
   | 'eye'
-  | 'eyeOff';
+  | 'eyeOff'
+  | 'chevronDown';
 
 type Props = { name: IconName; size?: number; color: string; strokeWidth?: number };
 
@@ -264,6 +265,8 @@ function render(name: IconName, p: object, color: string) {
           <Path d="M11 18h2" {...p} />
         </>
       );
+    case 'chevronDown':
+      return <Path d="m6 9 6 6 6-6" {...p} />;
     case 'chevronUp':
       return <Path d="m6 15 6-6 6 6" {...p} />;
     case 'feed':

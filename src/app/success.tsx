@@ -10,6 +10,7 @@ import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { describe, useApp } from '@/store/app-store';
+import { useCards } from '@/store/cards-store';
 import { useTheme } from '@/theme/theme-provider';
 import { fullDateTime } from '@/utils/dates';
 import { formatCents, formatShort } from '@/utils/money';
@@ -18,6 +19,7 @@ export default function Success() {
   const { id, chat } = useLocalSearchParams<{ id: string; chat?: string }>();
   const { colors } = useTheme();
   const { transactions, userById, me, setDraft } = useApp();
+  const { paidWith } = useCards();
   const tx = transactions.find((t) => t.id === id);
 
   useEffect(() => () => setDraft(null), [setDraft]);
@@ -54,6 +56,7 @@ export default function Success() {
     [d.received ? 'From' : pendingRequest ? 'Requested from' : 'To', other ? `${name} · @${other.handle}` : name],
     ...(tx.note ? ([['Note', tx.note]] as [string, string][]) : []),
     ['Date', fullDateTime(when)],
+    ...(paidWith[tx.id] ? ([['Paid with', paidWith[tx.id]]] as [string, string][]) : []),
     ['Payment ID', `PV-${tx.id.replace(/[^a-zA-Z0-9]/g, '').slice(-10).toUpperCase()}`],
   ];
 

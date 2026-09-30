@@ -4,23 +4,29 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { CardDetails } from '@/components/card-details';
+import { CardStack } from '@/components/card-stack';
 import { Icon, type IconName } from '@/components/icon';
 import { IconButton } from '@/components/icon-button';
+import { LinkedCardFace } from '@/components/linked-card-face';
 import { Card, ListRow, SectionLabel } from '@/components/list-row';
 import { PressableScale } from '@/components/pressable-scale';
 import { Text } from '@/components/text';
 import { TransactionRow } from '@/components/transaction-row';
 import { WalletCard } from '@/components/wallet-card';
+import { cardLabel } from '@/data/cards';
 import { useCountUp } from '@/hooks/use-count-up';
 import { DAILY_SEND_LIMIT_CENTS, STRIPE_MODE, TEST_FUNDING_SOURCES } from '@/services/payments';
 import { storage } from '@/services/storage';
 import { describe, useApp } from '@/store/app-store';
+import { useCards } from '@/store/cards-store';
 import { useTheme } from '@/theme/theme-provider';
 import { Fonts, MIN_TAP } from '@/theme/typography';
 import { formatCents, formatShort } from '@/utils/money';
 import { EASE, smooth } from '@/utils/motion';
 
 const HIDE_KEY = 'payvr.hideBalance';
+const PAYVR = 'payvr';
 
 export default function Wallet() {
   const insets = useSafeAreaInsets();
@@ -28,6 +34,16 @@ export default function Wallet() {
   const { me, balanceCents, sentTodayCents, transactions, setDraft } = useApp();
   const shown = useCountUp(balanceCents);
   const [hidden, setHidden] = useState(false);
+  const { cards, defaultSource } = useCards();
+  const [selected, setSelected] = useState<string>(PAYVR);
+  // A newly added card comes to the front.
+  const [cardCount, setCardCount] = useState(cards.length);
+  if (cards.length !== cardCount) {
+    if (cards.length > cardCount) setSelected(cards[cards.length - 1].id);
+    setCardCount(cards.length);
+  }
+  const selectedCard = cards.find((c) => c.id === selected);
+  const selectedKey = selectedCard ? selectedCard.id : PAYVR;
   const bank = STRIPE_MODE ? 'Stripe test account' : TEST_FUNDING_SOURCES[1].label;
   const recent = transactions.slice(0, 3);
 
@@ -77,49 +93,65 @@ export default function Wallet() {
         <Text variant="title" accessibilityRole="header">
           Wallet
         </Text>
-        <IconButton icon={hidden ? 'eyeOff' : 'eye'} label={hidden ? 'Show balance' : 'Hide balance'} selected={hidden} onPress={toggleHidden} />
+        <View style={styles.headActions}>
+          <IconButton icon={hidden ? 'eyeOff' : 'eye'} label={hidden ? 'Show balance' : 'Hide balance'} selected={hidden} onPress={toggleHidden} />
+          <IconButton icon="plus" label="Add a card" onPress={() => router.push('/cards/add')} />
+        </View>
       </View>
 
       <Animated.View entering={enter(0)}>
-        <WalletCard name={me.name} balanceCents={shown} hidden={hidden} />
+        <CardStack
+          items={[
+            { key: PAYVR, label: 'Payvr card', node: <WalletCard name={me.name} balanceCents={shown} hidden={hidden} /> },
+            ...cards.map((c) => ({ key: c.id, label: cardLabel(c), node: <LinkedCardFace card={c} isDefault={defaultSource === c.id} /> })),
+          ]}
+          selected={selectedKey}
+          onSelect={setSelected}
+        />
       </Animated.View>
 
-      <Animated.View entering={enter(1)} style={styles.actions}>
-        {actions.map((a) => (
-          <PressableScale key={a.label} scaleTo={0.92} haptic="tap" accessibilityRole="button" accessibilityLabel={a.label} onPress={a.onPress} style={styles.action}>
-            <View style={[styles.actionIcon, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Icon name={a.icon} size={22} color={colors.accent} />
-            </View>
-            <Text variant="caption">{a.label}</Text>
-          </PressableScale>
-        ))}
-      </Animated.View>
+      {selectedCard ? (
+        <CardDetails key={selectedCard.id} card={selectedCard} onRemoved={() => setSelected(PAYVR)} />
+      ) : (
+        <>
+          <Animated.View entering={enter(1)} style={styles.actions}>
+            {actions.map((a) => (
+              <PressableScale key={a.label} scaleTo={0.92} haptic="tap" accessibilityRole="button" accessibilityLabel={a.label} onPress={a.onPress} style={styles.action}>
+                <View style={[styles.actionIcon, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <Icon name={a.icon} size={22} color={colors.accent} />
+                </View>
+                <Text variant="caption">{a.label}</Text>
+              </PressableScale>
+            ))}
+          </Animated.View>
 
-      <Animated.View entering={enter(2)} style={styles.tiles}>
-        <MonthTile label={month.label} inCents={month.inCents} outCents={month.outCents} hidden={hidden} />
-        <LimitTile sent={sentTodayCents} limit={DAILY_SEND_LIMIT_CENTS} />
-      </Animated.View>
+          <Animated.View entering={enter(2)} style={styles.tiles}>
+            <MonthTile label={month.label} inCents={month.inCents} outCents={month.outCents} hidden={hidden} />
+            <LimitTile sent={sentTodayCents} limit={DAILY_SEND_LIMIT_CENTS} />
+          </Animated.View>
 
-      {recent.length ? (
-        <Animated.View entering={enter(3)}>
-          <View style={styles.sectionHead}>
-            <SectionLabel>Recent</SectionLabel>
-            <PressableScale
-              scaleTo={0.94}
-              accessibilityRole="link"
-              accessibilityLabel="See all activity"
-              onPress={() => router.navigate({ pathname: '/feed', params: { tab: 'me' } })}
-              style={styles.seeAll}>
-              <Text variant="caption" color="accent">
-                See all
-              </Text>
-            </PressableScale>
-          </View>
-          {recent.map((t) => (
-            <TransactionRow key={t.id} tx={t} />
-          ))}
-        </Animated.View>
-      ) : null}
+          {recent.length ? (
+            <Animated.View entering={enter(3)}>
+              <View style={styles.sectionHead}>
+                <SectionLabel>Recent</SectionLabel>
+                <PressableScale
+                  scaleTo={0.94}
+                  accessibilityRole="link"
+                  accessibilityLabel="See all activity"
+                  onPress={() => router.navigate({ pathname: '/feed', params: { tab: 'me' } })}
+                  style={styles.seeAll}>
+                  <Text variant="caption" color="accent">
+                    See all
+                  </Text>
+                </PressableScale>
+              </View>
+              {recent.map((t) => (
+                <TransactionRow key={t.id} tx={t} />
+              ))}
+            </Animated.View>
+          ) : null}
+        </>
+      )}
 
       <Animated.View entering={enter(4)}>
         <SectionLabel>Linked bank</SectionLabel>
@@ -210,6 +242,7 @@ function LimitTile({ sent, limit }: { sent: number; limit: number }) {
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 40 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, marginRight: -10 },
+  headActions: { flexDirection: 'row', alignItems: 'center' },
   actions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 22, paddingHorizontal: 4 },
   action: { alignItems: 'center', gap: 6, minWidth: MIN_TAP + 20 },
   actionIcon: {

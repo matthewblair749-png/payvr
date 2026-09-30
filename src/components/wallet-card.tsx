@@ -114,7 +114,7 @@ function Rings() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { aspectRatio: 1.586, width: '100%' },
+  wrap: { flex: 1 },
   face: {
     position: 'absolute',
     top: 0,

@@ -7,6 +7,7 @@ import type { Draft, Privacy, User } from '@/data/types';
 import { PaymentError } from '@/services/payments';
 import { useApp } from '@/store/app-store';
 import { useAuthorize } from '@/store/authorize';
+import { useCards, type FundingSource } from '@/store/cards-store';
 import { useChat } from '@/store/chat-store';
 import { useSocial } from '@/store/social-store';
 import { useTheme } from '@/theme/theme-provider';
@@ -38,7 +39,8 @@ type Props = {
  */
 export function SendPanel({ peer, draft, patch, children }: Props) {
   const { colors } = useTheme();
-  const { submitDraft } = useApp();
+  const { submitDraft, addMoney, balanceCents } = useApp();
+  const { cards, defaultSource, sourceLabel, notePaidWith } = useCards();
   const { defaultPrivacy, setPrivacy } = useSocial();
   const authorize = useAuthorize();
   const { markSharePaid } = useChat();
@@ -47,6 +49,17 @@ export function SendPanel({ peer, draft, patch, children }: Props) {
   const [privacy, setPrivacyChoice] = useState<Privacy>(draft.privacy ?? defaultPrivacy);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // What pays: the balance, or a connected card (charged in test mode first, then sent).
+  const short = draft.amountCents > balanceCents;
+  const [source, setSource] = useState<FundingSource>(() => {
+    let s = draft.source ?? defaultSource;
+    if (s !== 'balance' && !cards.some((c) => c.id === s)) s = 'balance';
+    if (s === 'balance' && short && cards[0]) s = cards[0].id;
+    return s;
+  });
+  const [choosing, setChoosing] = useState(false);
+  const withCard = source !== 'balance';
 
   const first = peer.name.split(' ')[0];
   const amount = formatShort(draft.amountCents);
@@ -64,11 +77,15 @@ export function SendPanel({ peer, draft, patch, children }: Props) {
   const go = async () => {
     if (busy) return;
     setError(null);
-    if (isSend && !(await authorize(`${payingRequest ? 'Pay' : 'Send'} ${amount} to ${peer.name}`))) return;
+    const via = isSend && withCard ? ` with ${sourceLabel(source)}` : '';
+    if (isSend && !(await authorize(`${payingRequest ? 'Pay' : 'Send'} ${amount} to ${peer.name}${via}`))) return;
     setBusy(true);
     try {
+      // Paying with a card: charge it first (test mode), then send from Payvr as usual.
+      if (isSend && withCard) await addMoney(draft.amountCents);
       const tx = await submitDraft({ ...patch, note: note.trim(), privacy });
       setPrivacy(tx.id, privacy);
+      if (isSend) notePaidWith(tx.id, sourceLabel(source));
       if (draft.chatSplit) markSharePaid(draft.chatSplit.chatId, draft.chatSplit.splitId, tx.fromUser, tx.id);
       router.replace({ pathname: '/success', params: draft.chatSplit ? { id: tx.id, chat: '1' } : { id: tx.id } });
     } catch (e) {
@@ -98,6 +115,58 @@ export function SendPanel({ peer, draft, patch, children }: Props) {
         style={[styles.amount, { color: colors.text }]}>
         {amount}
       </Text>
+
+      {isSend && cards.length ? (
+        <View style={[styles.payWith, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <PressableScale
+            scaleTo={0.98}
+            haptic="tap"
+            accessibilityRole="button"
+            accessibilityLabel={`Pay with ${sourceLabel(source)}. Change`}
+            aria-expanded={choosing}
+            onPress={() => setChoosing((c) => !c)}
+            style={styles.payWithRow}>
+            <Icon name={withCard ? 'card' : 'wallet'} size={20} color={colors.accent} />
+            <View style={styles.flex}>
+              <Text variant="caption" color="textSecondary">
+                Pay with
+              </Text>
+              <Text variant="bodyMedium">{sourceLabel(source)}</Text>
+            </View>
+            <Icon name={choosing ? 'chevronUp' : 'chevronDown'} size={18} color={colors.textSecondary} />
+          </PressableScale>
+          {choosing
+            ? (['balance', ...cards.map((c) => c.id)] as FundingSource[]).map((s) => {
+                const off = s === 'balance' && short;
+                const on = s === source;
+                return (
+                  <PressableScale
+                    key={s}
+                    scaleTo={0.98}
+                    haptic="tap"
+                    disabled={off}
+                    accessibilityRole="radio"
+                    aria-checked={on}
+                    aria-disabled={off}
+                    accessibilityLabel={sourceLabel(s)}
+                    onPress={() => {
+                      setSource(s);
+                      setChoosing(false);
+                    }}
+                    style={[styles.option, { borderTopColor: colors.border, opacity: off ? 0.45 : 1 }]}>
+                    <Text variant="bodyMedium" style={styles.flex}>
+                      {sourceLabel(s)}
+                    </Text>
+                    <Text variant="caption" color="textSecondary">
+                      {s === 'balance' ? (off ? 'Not enough' : `${formatShort(balanceCents)} available`) : 'Test card'}
+                    </Text>
+                    {on ? <Icon name="check" size={18} color={colors.accent} /> : <View style={styles.checkSpace} />}
+                  </PressableScale>
+                );
+              })
+            : null}
+        </View>
+      ) : null}
 
       <TextInput
         value={note}
@@ -151,6 +220,11 @@ export function SendPanel({ peer, draft, patch, children }: Props) {
 
 const styles = StyleSheet.create({
   wrap: { gap: 12, alignSelf: 'stretch' },
+  flex: { flex: 1 },
+  payWith: { borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
+  payWithRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingHorizontal: 16 },
+  option: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: MIN_TAP + 4, paddingHorizontal: 16, borderTopWidth: StyleSheet.hairlineWidth },
+  checkSpace: { width: 18 },
   who: { alignItems: 'center', gap: 8 },
   amount: {
     fontFamily: Fonts.bold,

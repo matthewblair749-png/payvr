@@ -60,6 +60,8 @@ export type Draft = {
   privacy?: Privacy;
   /** True when the person was found by tapping phones. */
   viaTap?: boolean;
+  /** What pays for it: 'balance' or a linked card's id (the card is charged first, then sent). */
+  source?: string;
   /** Set when paying your share of a bill split in a group chat. */
   chatSplit?: { chatId: string; splitId: string };
 };

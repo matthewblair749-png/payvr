@@ -18,6 +18,7 @@ import { configurePush, onNotificationTap } from '@/services/push';
 import { AppStoreProvider, useApp } from '@/store/app-store';
 import { AuthorizeProvider } from '@/store/authorize';
 import { CallProvider } from '@/store/call-store';
+import { CardsProvider } from '@/store/cards-store';
 import { ChatProvider } from '@/store/chat-store';
 import { SocialProvider } from '@/store/social-store';
 import { PayvrThemeProvider, useTheme } from '@/theme/theme-provider';
@@ -43,9 +44,11 @@ export default function RootLayout() {
         <SocialProvider>
           <ChatProvider>
             <CallProvider>
-              <AuthorizeProvider>
-                <Navigator />
-              </AuthorizeProvider>
+              <CardsProvider>
+                <AuthorizeProvider>
+                  <Navigator />
+                </AuthorizeProvider>
+              </CardsProvider>
             </CallProvider>
           </ChatProvider>
         </SocialProvider>
@@ -91,6 +94,7 @@ function Navigator() {
         <Stack.Screen name="money/[action]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="people" options={{ presentation: 'modal' }} />
         <Stack.Screen name="chat/new" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="cards/add" options={{ presentation: 'modal' }} />
         <Stack.Screen name="chat/[id]/split" options={{ presentation: 'modal' }} />
       </Stack>
       <CallOverlay />
