@@ -23,6 +23,7 @@ export function PaymentBlock({
   slot,
   onPay,
   busy,
+  disabledReason,
 }: {
   block: BlockOf<"payment">;
   total: number;
@@ -31,6 +32,7 @@ export function PaymentBlock({
   slot?: ReactNode;
   onPay: () => void;
   busy?: boolean;
+  disabledReason?: string;
 }) {
   const amount = payIn4 ? `${formatMoney(Math.ceil(total / 4), currency)} today` : formatMoney(total, currency);
   return (
@@ -39,12 +41,17 @@ export function PaymentBlock({
       <button
         type="button"
         onClick={onPay}
-        disabled={busy}
+        disabled={busy || !!disabledReason}
         className="flex w-full items-center justify-center gap-2 rounded-(--co-radius) border-2 border-(--co-accent-ring) bg-(--co-accent) px-4 py-3.5 text-base font-semibold text-(--co-accent-fg) shadow-sm transition-transform duration-150 hover:brightness-105 active:scale-[0.98] disabled:opacity-70"
       >
         <Lock size={16} aria-hidden="true" />
         {busy ? "Processing…" : `${block.props.buttonLabel} ${amount}`}
       </button>
+      {disabledReason && (
+        <p className="text-center text-xs text-(--co-muted)" role="note">
+          {disabledReason}
+        </p>
+      )}
     </div>
   );
 }

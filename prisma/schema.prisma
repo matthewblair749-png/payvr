@@ -1,0 +1,336 @@
+// lumen data model.
+//
+// Tenancy: every business row carries `merchantId`. All reads/writes go
+// through the data-access layer in src/server/dal/*, which always scopes by
+// the signed-in merchant (row-level access by merchant).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Auth.js tables (names/fields follow @auth/prisma-adapter)
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  merchant      Merchant?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+// ---------------------------------------------------------------------------
+// Merchants & catalog
+// ---------------------------------------------------------------------------
+
+model Merchant {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                 String
+  /// Stripe Connect account (acct_...). Set in Phase 3.
+  stripeAccountId      String?  @unique
+  stripeChargesEnabled Boolean  @default(false)
+  stripeDetailsSubmitted Boolean @default(false)
+  country              String?
+  defaultCurrency      String   @default("usd")
+  /// Set once, when the first successful payment lands (drives the celebration).
+  firstSaleAt          DateTime?
+  firstSaleCelebratedAt DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  products        Product[]
+  checkoutPages   CheckoutPage[]
+  experiments     Experiment[]
+  orders          Order[]
+  events          CheckoutEvent[]
+  surveyResponses SurveyResponse[]
+  insights        Insight[]
+}
+
+model Product {
+  id              String   @id @default(cuid())
+  merchantId      String
+  merchant        Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  name            String
+  description     String   @default("")
+  /// Integer minor units (cents). Never floats for money.
+  priceCents      Int
+  currency        String   @default("usd")
+  imageUrl        String?
+  stripeProductId String?
+  stripePriceId   String?
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  checkoutPages CheckoutPage[]
+  orders        Order[]
+
+  @@index([merchantId])
+}
+
+// ---------------------------------------------------------------------------
+// Checkout pages, versions, experiments
+// ---------------------------------------------------------------------------
+
+enum CheckoutPageStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model CheckoutPage {
+  id                 String              @id @default(cuid())
+  merchantId         String
+  merchant           Merchant            @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  productId          String?
+  product            Product?            @relation(fields: [productId], references: [id], onDelete: SetNull)
+  name               String
+  /// Public URL: /pay/[slug]. Globally unique.
+  slug               String              @unique
+  status             CheckoutPageStatus  @default(DRAFT)
+  /// Working copy edited (and autosaved) by the Studio. CheckoutConfig JSON.
+  draftConfig        Json
+  publishedVersionId String?             @unique
+  publishedVersion   CheckoutPageVersion? @relation("PublishedVersion", fields: [publishedVersionId], references: [id], onDelete: SetNull)
+  publishedAt        DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  versions    CheckoutPageVersion[] @relation("PageVersions")
+  experiments Experiment[]
+  orders      Order[]
+  events      CheckoutEvent[]
+  surveyResponses SurveyResponse[]
+
+  @@index([merchantId])
+}
+
+/// Immutable snapshot of a checkout config.
+model CheckoutPageVersion {
+  id             String       @id @default(cuid())
+  checkoutPageId String
+  checkoutPage   CheckoutPage @relation("PageVersions", fields: [checkoutPageId], references: [id], onDelete: Cascade)
+  number         Int
+  config         Json
+  note           String       @default("")
+  createdAt      DateTime     @default(now())
+
+  publishedFor CheckoutPage? @relation("PublishedVersion")
+
+  @@unique([checkoutPageId, number])
+}
+
+enum ExperimentStatus {
+  DRAFT
+  RUNNING
+  COMPLETED
+  STOPPED
+}
+
+model Experiment {
+  id              String           @id @default(cuid())
+  merchantId      String
+  merchant        Merchant         @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  checkoutPageId  String
+  checkoutPage    CheckoutPage     @relation(fields: [checkoutPageId], references: [id], onDelete: Cascade)
+  name            String
+  hypothesis      String           @default("")
+  status          ExperimentStatus @default(DRAFT)
+  /// Which metric decides the winner, e.g. "conversion" or "revenuePerVisitor".
+  primaryMetric   String           @default("conversion")
+  winnerVariantId String?
+  /// Set when proposed by the Research Assistant.
+  sourceInsightId String?
+  startedAt       DateTime?
+  endedAt         DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  variants Variant[]
+
+  @@index([merchantId])
+  @@index([checkoutPageId, status])
+}
+
+model Variant {
+  id              String     @id @default(cuid())
+  experimentId    String
+  experiment      Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  /// "A", "B", ...
+  key             String
+  name            String
+  /// Control variants render the page's published version (config stays null).
+  isControl       Boolean    @default(false)
+  /// Working copy of this variant's CheckoutConfig (non-control only).
+  config          Json?
+  /// Snapshot served to buyers, taken at publish time.
+  publishedConfig Json?
+  /// Relative traffic weight (0-100).
+  weight          Int        @default(50)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  orders Order[]
+  events CheckoutEvent[]
+
+  @@unique([experimentId, key])
+}
+
+// ---------------------------------------------------------------------------
+// Payments & research data
+// ---------------------------------------------------------------------------
+
+enum OrderStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  DISPUTED
+}
+
+model Order {
+  id                    String      @id @default(cuid())
+  merchantId            String
+  merchant              Merchant    @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  checkoutPageId        String?
+  checkoutPage          CheckoutPage? @relation(fields: [checkoutPageId], references: [id], onDelete: SetNull)
+  productId             String?
+  product               Product?    @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variantId             String?
+  variant               Variant?    @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  status                OrderStatus @default(PENDING)
+  amountCents           Int
+  subtotalCents         Int         @default(0)
+  tipCents              Int         @default(0)
+  discountCents         Int         @default(0)
+  refundedCents         Int         @default(0)
+  currency              String
+  stripePaymentIntentId String?     @unique
+  customerEmail         String?
+  country               String?
+  paymentMethod         String?
+  device                String?
+  /// Anonymous checkout session id (links events <-> order <-> survey).
+  sessionId             String?
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  surveyResponses SurveyResponse[]
+
+  @@index([merchantId, createdAt])
+}
+
+enum CheckoutEventType {
+  VIEW
+  FIELD_FOCUS
+  STEP
+  PAY_CLICK
+  PAYMENT_SUCCEEDED
+  PAYMENT_FAILED
+  ABANDON
+}
+
+model CheckoutEvent {
+  id             String            @id @default(cuid())
+  merchantId     String
+  merchant       Merchant          @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  checkoutPageId String
+  checkoutPage   CheckoutPage      @relation(fields: [checkoutPageId], references: [id], onDelete: Cascade)
+  variantId      String?
+  variant        Variant?          @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  sessionId      String
+  type           CheckoutEventType
+  /// Funnel step name for STEP/ABANDON ("view", "details", "payment", "paid").
+  step           String?
+  /// Block/field name for FIELD_FOCUS. Never field values.
+  field          String?
+  paymentMethod  String?
+  device         String?
+  country        String?
+  createdAt      DateTime          @default(now())
+
+  @@index([merchantId, createdAt])
+  @@index([checkoutPageId, createdAt])
+  @@index([sessionId])
+}
+
+model SurveyResponse {
+  id             String        @id @default(cuid())
+  merchantId     String
+  merchant       Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  checkoutPageId String?
+  checkoutPage   CheckoutPage? @relation(fields: [checkoutPageId], references: [id], onDelete: SetNull)
+  orderId        String?
+  order          Order?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  /// Stable question key, e.g. "nearly_stopped" or "heard_about".
+  question       String
+  answer         String
+  createdAt      DateTime      @default(now())
+
+  @@index([merchantId, question, createdAt])
+}
+
+model Insight {
+  id          String    @id @default(cuid())
+  merchantId  String
+  merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  kind        String
+  title       String
+  body        String
+  data        Json?
+  createdAt   DateTime  @default(now())
+  dismissedAt DateTime?
+
+  @@index([merchantId, createdAt])
+}

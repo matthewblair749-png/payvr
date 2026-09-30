@@ -20,7 +20,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   // is required for the CSP nonce (set in src/proxy.ts) to reach Next's scripts.
   await headers();
   return (
-    <html lang="en" className={fontVariables}>
+    <html lang="en" className={fontVariables} data-scroll-behavior="smooth">
       <body className="min-h-dvh">
         <a
           href="#main"

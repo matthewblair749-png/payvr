@@ -39,6 +39,9 @@ export function CheckoutView({
   mode = "demo",
   paymentSlot,
   onPay,
+  paymentsDisabledReason,
+  selectedBlockId,
+  onSelectBlock,
   className,
 }: {
   config: CheckoutConfig;
@@ -48,6 +51,11 @@ export function CheckoutView({
   paymentSlot?: ReactNode;
   /** Live mode: confirm the payment. Resolve true on success. */
   onPay?: (totalCents: number) => Promise<boolean>;
+  /** Hosted page whose merchant can't take payments yet: pay button is disabled with this note. */
+  paymentsDisabledReason?: string;
+  /** Studio: highlight + click-to-select blocks in the preview. */
+  selectedBlockId?: string | null;
+  onSelectBlock?: (id: string) => void;
   className?: string;
 }) {
   const vars = useMemo(() => themeToVars(config.theme), [config.theme]);
@@ -131,6 +139,7 @@ export function CheckoutView({
             slot={mode === "live" ? paymentSlot : undefined}
             onPay={handlePay}
             busy={status === "busy"}
+            disabledReason={paymentsDisabledReason}
           />
         );
     }
@@ -173,6 +182,11 @@ export function CheckoutView({
               {visible.map((b) => (
                 <m.li
                   key={b.id}
+                  onPointerDownCapture={onSelectBlock ? () => onSelectBlock(b.id) : undefined}
+                  className={cn(
+                    onSelectBlock && "rounded-(--co-radius) outline-offset-4 transition-[outline-color]",
+                    onSelectBlock && (selectedBlockId === b.id ? "outline-2 outline-dashed outline-[#F04A1A]" : "outline-2 outline-transparent hover:outline-dashed hover:outline-[#F04A1A]/40"),
+                  )}
                   layout="position"
                   initial={{ opacity: 0, scale: 0.96 }}
                   animate={{ opacity: 1, scale: 1 }}
