@@ -2,6 +2,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, {
+  FadeInDown,
   type SharedValue,
   useAnimatedStyle,
   useSharedValue,
@@ -27,7 +28,7 @@ import { useTheme } from '@/theme/theme-provider';
 import { Fonts, MIN_TAP } from '@/theme/typography';
 import { haptics } from '@/utils/haptics';
 import { applyKey, displayTyped, formatCents, formatShort, toCents } from '@/utils/money';
-import { smooth } from '@/utils/motion';
+import { EASE, smooth } from '@/utils/motion';
 
 /**
  * Keypad first: type an amount, then Request, Pay (pick a person), or Tap (hold phones together).
@@ -36,14 +37,20 @@ import { smooth } from '@/utils/motion';
 export default function Home() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { me, balanceCents, transactions, sentTodayCents, setDraft } = useApp();
+  const { me, balanceCents, transactions, sentTodayCents, setDraft, userById } = useApp();
   // With a card connected, amounts above the balance are fine: the card pays.
-  const canUseCard = useCards().cards.length > 0;
+  const { cards, defaultSource, sourceLabel } = useCards();
+  const canUseCard = cards.length > 0;
   const shownBalance = useCountUp(balanceCents);
+  const first = me.name.split(' ')[0];
+  const [greeting] = useState(greetingNow);
   const [amount, setAmount] = useState('0');
   const [hint, setHint] = useState<string | null>(null);
   const cents = toCents(amount);
   const pending = transactions.filter((t) => describe(t, me.id).needsMyAction);
+  const request = pending[0];
+  const requester = request ? userById(request.toUser) : undefined;
+  const payWith = defaultSource === 'balance' ? `Balance ${formatCents(shownBalance)}` : `Pay with ${sourceLabel(defaultSource)}`;
 
   const leftToday = DAILY_SEND_LIMIT_CENTS - sentTodayCents;
   const sendError =
@@ -117,50 +124,53 @@ export default function Home() {
     <View style={[styles.fill, { backgroundColor: colors.background, paddingTop: insets.top + 6 }]}>
       <View style={styles.top}>
         <PressableScale
+          scaleTo={0.97}
           accessibilityRole="button"
-          accessibilityLabel={`Balance ${formatCents(balanceCents)}. Opens your wallet`}
-          onPress={() => {
-            haptics.tap();
-            router.navigate('/wallet');
-          }}
-          style={({ pressed }) => [
-            styles.balance,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-          ]}>
-          <Icon name="wallet" size={18} color={colors.accent} />
-          <Text variant="amount">{formatCents(shownBalance)}</Text>
+          accessibilityLabel={`${greeting}, ${first}. Your profile`}
+          onPress={() => router.navigate('/profile')}
+          style={styles.hello}>
+          <Avatar name={me.name} uri={me.avatarUrl} size={40} />
+          <View>
+            <Text variant="caption" color="textSecondary">
+              {greeting}
+            </Text>
+            <Text variant="bodyMedium">{first}</Text>
+          </View>
         </PressableScale>
         <View style={styles.topRight}>
           <ChatButton />
           <IconButton icon="qr" label="Scan or show a QR code" onPress={() => router.push('/qr')} />
-          <PressableScale
-            accessibilityRole="button"
-            accessibilityLabel="Your profile"
-            hitSlop={4}
-            onPress={() => router.navigate('/profile')}
-            style={({ pressed }) => [styles.me, { opacity: pressed ? 0.8 : 1 }]}>
-            <Avatar name={me.name} uri={me.avatarUrl} size={40} />
-          </PressableScale>
         </View>
       </View>
 
-      {pending.length ? (
-        <PressableScale
-          accessibilityRole="button"
-          accessibilityLabel={`${pending.length} ${pending.length === 1 ? 'request' : 'requests'} waiting for you`}
-          onPress={() => {
-            haptics.tap();
-            if (pending.length === 1) router.push({ pathname: '/request/[id]', params: { id: pending[0].id } });
-            else router.navigate('/feed');
-          }}
-          style={[styles.pending, { borderColor: colors.accent }]}>
-          <View style={[styles.dot, { backgroundColor: colors.accent }]} />
-          <Text variant="caption" color="accent">
-            {pending.length === 1 ? '1 request waiting' : `${pending.length} requests waiting`}
-          </Text>
-        </PressableScale>
+      {request ? (
+        <Animated.View entering={FadeInDown.duration(380).easing(EASE)} style={styles.requestWrap}>
+          <PressableScale
+            scaleTo={0.98}
+            haptic="tap"
+            accessibilityRole="button"
+            accessibilityLabel={`${requester?.name ?? 'Someone'} requested ${formatShort(request.amountCents)}${request.note ? ` for ${request.note}` : ''}. Open`}
+            onPress={() => router.push({ pathname: '/request/[id]', params: { id: request.id } })}
+            style={[styles.request, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Avatar name={requester?.name ?? '?'} uri={requester?.avatarUrl} size={36} />
+            <View style={styles.flex}>
+              <Text variant="bodyMedium" numberOfLines={1}>
+                {requester?.name.split(' ')[0] ?? 'Someone'} requested {formatShort(request.amountCents)}
+              </Text>
+              <Text variant="caption" color="textSecondary" numberOfLines={1}>
+                {request.note || 'Payment request'}
+                {pending.length > 1 ? ` · +${pending.length - 1} more` : ''}
+              </Text>
+            </View>
+            <View style={[styles.payChip, { backgroundColor: colors.primary }]}>
+              <Text variant="caption" style={{ color: colors.onPrimary }}>
+                Pay
+              </Text>
+            </View>
+          </PressableScale>
+        </Animated.View>
       ) : (
-        <View style={styles.pendingSpace} />
+        <View style={styles.requestSpace} />
       )}
 
       <View style={styles.display}>
@@ -181,9 +191,50 @@ export default function Home() {
             {displayTyped(amount)}
           </Text>
         </Animated.View>
-        <Text variant="small" color={hint || error ? 'error' : 'textSecondary'} style={styles.hint} accessibilityLiveRegion="polite">
-          {hint ?? (error || (cents ? 'Tap phones to send · or pick someone' : 'Type an amount'))}
-        </Text>
+        {hint || error ? (
+          <Text variant="small" color="error" style={styles.hint} accessibilityLiveRegion="polite">
+            {hint ?? error}
+          </Text>
+        ) : (
+          <PressableScale
+            scaleTo={0.96}
+            haptic="tap"
+            accessibilityRole="button"
+            accessibilityLabel={`Pay with ${payWith}. Opens your wallet`}
+            onPress={() => router.navigate('/wallet')}
+            style={[styles.source, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Icon name={defaultSource === 'balance' ? 'wallet' : 'card'} size={16} color={colors.accent} />
+            <Text variant="caption" color="textSecondary">
+              {payWith}
+            </Text>
+            <Icon name="chevronRight" size={14} color={colors.textSecondary} />
+          </PressableScale>
+        )}
+        {cents === 0 ? (
+          <View style={styles.quick}>
+            {QUICK.map((c) => (
+              <PressableScale
+                key={c}
+                scaleTo={0.94}
+                haptic="tap"
+                accessibilityRole="button"
+                accessibilityLabel={formatShort(c)}
+                onPress={() => {
+                  setHint(null);
+                  setAmount(String(c / 100));
+                }}
+                style={[styles.quickChip, { borderColor: colors.border }]}>
+                <Text variant="bodyMedium">{formatShort(c)}</Text>
+              </PressableScale>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.quickSpace}>
+            <Text variant="caption" color="textSecondary" align="center">
+              Hold phones together to send · or tap Pay
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.pad}>
@@ -192,10 +243,17 @@ export default function Home() {
 
       <View style={styles.actions}>
         <PillButton label="Request" onPress={() => pickPerson('request')} />
-        <PillButton label="Pay" onPress={() => pickPerson('send')} />
+        <PillButton label="Pay" primary onPress={() => pickPerson('send')} />
       </View>
     </View>
   );
+}
+
+const QUICK = [500, 1000, 2000, 5000];
+
+function greetingNow() {
+  const h = new Date().getHours();
+  return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
 }
 
 function shakeNo(shake: SharedValue<number>) {
@@ -210,7 +268,7 @@ function shakeNo(shake: SharedValue<number>) {
   );
 }
 
-function PillButton({ label, onPress }: { label: string; onPress: () => void }) {
+function PillButton({ label, onPress, primary }: { label: string; onPress: () => void; primary?: boolean }) {
   const { colors } = useTheme();
   return (
     <PressableScale
@@ -218,11 +276,15 @@ function PillButton({ label, onPress }: { label: string; onPress: () => void }) 
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      style={({ pressed }) => [
+      style={[
         styles.pill,
-        { backgroundColor: colors.surface, borderColor: colors.border },
+        primary
+          ? { backgroundColor: colors.primary, borderColor: colors.primary }
+          : { backgroundColor: 'transparent', borderColor: colors.border, borderWidth: 1.5 },
       ]}>
-      <Text variant="button">{label}</Text>
+      <Text variant="button" style={primary ? { color: colors.onPrimary } : undefined}>
+        {label}
+      </Text>
     </PressableScale>
   );
 }
@@ -230,30 +292,43 @@ function PillButton({ label, onPress }: { label: string; onPress: () => void }) 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, minHeight: 52 },
-  topRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  balance: {
+  topRight: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  flex: { flex: 1, minWidth: 0 },
+  hello: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: MIN_TAP },
+  requestWrap: { paddingHorizontal: 16, marginTop: 6 },
+  request: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
+    minHeight: 60,
+    paddingLeft: 12,
+    paddingRight: 10,
+    borderRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  payChip: { minHeight: 36, minWidth: 56, paddingHorizontal: 14, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+  requestSpace: { height: 66 },
+  source: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     minHeight: MIN_TAP,
     paddingHorizontal: 14,
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
-  },
-  pending: {
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    minHeight: MIN_TAP,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-    borderWidth: 1,
     marginTop: 6,
   },
-  pendingSpace: { height: 50 },
-  me: { width: MIN_TAP, height: MIN_TAP, alignItems: 'center', justifyContent: 'center' },
-  dot: { width: 8, height: 8, borderRadius: 4 },
+  quick: { flexDirection: 'row', gap: 8, marginTop: 16 },
+  quickChip: {
+    minHeight: MIN_TAP,
+    minWidth: 64,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickSpace: { height: MIN_TAP + 16, justifyContent: 'center' },
   display: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 4, minHeight: 130 },
   hint: { minHeight: 20 },
   pad: { paddingHorizontal: 20 },
