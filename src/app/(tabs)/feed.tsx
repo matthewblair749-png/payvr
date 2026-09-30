@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -25,7 +26,14 @@ export default function Feed() {
   const { colors } = useTheme();
   const { transactions, me } = useApp();
   const { friendsFeed, myFeed } = useSocial();
-  const [tab, setTab] = useState<Tab>('friends');
+  const params = useLocalSearchParams<{ tab?: string }>();
+  const [tab, setTab] = useState<Tab>(params.tab === 'me' ? 'me' : 'friends');
+  // Opened again (e.g. Wallet → See all) while already mounted: switch to Just me.
+  const [seenTabParam, setSeenTabParam] = useState(params.tab);
+  if (params.tab !== seenTabParam) {
+    setSeenTabParam(params.tab);
+    if (params.tab === 'me') setTab('me');
+  }
 
   // Friends: what's still open. Just me: also declined requests, so nothing disappears.
   const open = transactions.filter((t) => t.status === 'pending' || (tab === 'me' && t.status === 'declined'));

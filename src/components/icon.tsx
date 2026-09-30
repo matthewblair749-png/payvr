@@ -53,7 +53,9 @@ export type IconName =
   | 'videoOff'
   | 'mic'
   | 'micOff'
-  | 'flip';
+  | 'flip'
+  | 'eye'
+  | 'eyeOff';
 
 type Props = { name: IconName; size?: number; color: string; strokeWidth?: number };
 
@@ -239,6 +241,20 @@ function render(name: IconName, p: object, color: string) {
         <>
           <Path d="M20 11a8 8 0 0 0-14.3-4.9L4 8M4 4v4h4" {...p} />
           <Path d="M4 13a8 8 0 0 0 14.3 4.9L20 16M20 20v-4h-4" {...p} />
+        </>
+      );
+    case 'eye':
+      return (
+        <>
+          <Path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" {...p} />
+          <Circle cx="12" cy="12" r="3" {...p} />
+        </>
+      );
+    case 'eyeOff':
+      return (
+        <>
+          <Path d="M9.9 5.8A9.7 9.7 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-2.7 3.4M6.6 6.6C4 8.3 2.5 12 2.5 12S6 18.5 12 18.5a9.4 9.4 0 0 0 4.4-1.1M9.9 9.9a3 3 0 0 0 4.2 4.2" {...p} />
+          <Path d="m3 3 18 18" {...p} />
         </>
       );
     case 'phone':
