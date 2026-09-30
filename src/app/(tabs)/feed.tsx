@@ -1,30 +1,35 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Avatar } from '@/components/avatar';
 import { ChatButton } from '@/components/chat-button';
+import { Icon } from '@/components/icon';
+import { PressableScale } from '@/components/pressable-scale';
 import { Segmented } from '@/components/segmented';
 import { StoryCard } from '@/components/story-card';
 import { Text } from '@/components/text';
 import { TransactionRow } from '@/components/transaction-row';
+import type { User } from '@/data/types';
 import { describe, useApp } from '@/store/app-store';
 import { useSocial } from '@/store/social-store';
 import { useTheme } from '@/theme/theme-provider';
+import { dayLabel } from '@/utils/dates';
 import { formatCents } from '@/utils/money';
 import { listEnter, listLayout } from '@/utils/motion';
 
 type Tab = 'friends' | 'me';
 
 /**
- * Friends: payments between people you know (never their amounts). Just me: your own
- * history, with amounts. Requests waiting on you always sit on top.
+ * Friends: payments between people you know (never their amounts), with their faces on top.
+ * Just me: your own history with amounts, your month, and your requests.
  */
 export default function Feed() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const { transactions, me } = useApp();
+  const { transactions, me, userById } = useApp();
   const { friendsFeed, myFeed } = useSocial();
   const params = useLocalSearchParams<{ tab?: string }>();
   const [tab, setTab] = useState<Tab>(params.tab === 'me' ? 'me' : 'friends');
@@ -36,7 +41,23 @@ export default function Feed() {
   }
 
   // Friends: what's still open. Just me: also declined requests, so nothing disappears.
-  const open = transactions.filter((t) => t.status === 'pending' || (tab === 'me' && t.status === 'declined'));
+  // Requests live on Just me (and Home); the Friends tab stays about friends.
+  const open = tab === 'me' ? transactions.filter((t) => t.status === 'pending' || t.status === 'declined') : [];
+  // Friends with recent activity, as a row of faces.
+  const active = useMemo(() => {
+    const seen = new Set<string>();
+    const list: User[] = [];
+    for (const st of friendsFeed) {
+      for (const id of [st.fromUser, st.toUser]) {
+        const u = id === me.id ? undefined : userById(id);
+        if (u && !seen.has(id)) {
+          seen.add(id);
+          list.push(u);
+        }
+      }
+    }
+    return list.slice(0, 10);
+  }, [friendsFeed, me.id, userById]);
   const month = useMemo(() => {
     const now = new Date();
     let inCents = 0;
@@ -76,7 +97,7 @@ export default function Feed() {
         keyExtractor={(s) => s.id}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={styles.gap} />}
+        ItemSeparatorComponent={() => <View style={[styles.rowDivider, { backgroundColor: colors.border }]} />}
         ListHeaderComponent={
           <View style={styles.top}>
             {tab === 'me' ? (
@@ -110,18 +131,55 @@ export default function Feed() {
                 ))}
               </View>
             ) : null}
-            {tab === 'friends' ? (
-              <Text variant="caption" color="textSecondary" style={styles.privacyNote}>
-                Friends see who paid whom and the note. Amounts stay private.
-              </Text>
+            {tab === 'friends' && active.length ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.faces}>
+                {active.map((u, i) => (
+                  <Animated.View key={u.id} entering={listEnter(i)}>
+                    <PressableScale
+                      scaleTo={0.92}
+                      haptic="tap"
+                      accessibilityRole="button"
+                      accessibilityLabel={`${u.name}'s profile`}
+                      onPress={() => router.push({ pathname: '/person/[id]', params: { id: u.id } })}
+                      style={styles.face}>
+                      <View style={[styles.faceRing, { borderColor: colors.accent }]}>
+                        <Avatar name={u.name} uri={u.avatarUrl} size={54} />
+                      </View>
+                      <Text variant="caption" numberOfLines={1}>
+                        {u.name.split(' ')[0]}
+                      </Text>
+                    </PressableScale>
+                  </Animated.View>
+                ))}
+              </ScrollView>
             ) : null}
           </View>
         }
-        renderItem={({ item, index }) => (
-          <Animated.View entering={listEnter(index)} layout={listLayout}>
-            <StoryCard story={item} />
-          </Animated.View>
-        )}
+        ListFooterComponent={
+          tab === 'friends' && data.length ? (
+            <View style={styles.footer}>
+              <Icon name="lock" size={13} color={colors.textSecondary} />
+              <Text variant="caption" color="textSecondary">
+                Friends see who paid whom and the note, never the amount.
+              </Text>
+            </View>
+          ) : null
+        }
+        renderItem={({ item, index }) => {
+          // "Today", "Yesterday", "Mon, Sep 22" above the first post of each day.
+          const day = dayLabel(item.createdAt);
+          const newDay = index === 0 || dayLabel(data[index - 1].createdAt) !== day;
+          return (
+            <Animated.View entering={listEnter(index)} layout={listLayout}>
+              {newDay ? (
+                <Text variant="caption" color="textSecondary" style={[styles.label, styles.day]} accessibilityRole="header">
+                  {day.toUpperCase()}
+                </Text>
+              ) : null}
+              <StoryCard story={item} />
+            </Animated.View>
+          );
+        }}
         ListEmptyComponent={
           <Text color="textSecondary" align="center" style={styles.empty}>
             {tab === 'friends' ? 'When your friends pay each other, it shows up here.' : 'Your payments show up here.'}
@@ -136,11 +194,15 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   head: { paddingHorizontal: 20, gap: 14, paddingBottom: 8 },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginRight: -10 },
-  list: { paddingHorizontal: 16, paddingBottom: 32 },
-  top: { gap: 14, paddingTop: 6, paddingBottom: 14 },
-  gap: { height: 12 },
-  label: { letterSpacing: 0.8, paddingHorizontal: 4 },
-  privacyNote: { paddingHorizontal: 4 },
+  list: { paddingHorizontal: 20, paddingBottom: 32 },
+  top: { gap: 14, paddingTop: 6, paddingBottom: 4 },
+  rowDivider: { height: StyleSheet.hairlineWidth, marginLeft: 62 },
+  label: { letterSpacing: 0.8 },
+  day: { marginTop: 14, marginBottom: 2 },
+  faces: { gap: 14, paddingVertical: 4, paddingRight: 20 },
+  face: { alignItems: 'center', gap: 6, width: 64 },
+  faceRing: { borderWidth: 2, borderRadius: 32, padding: 2 },
+  footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 20 },
   summary: { flexDirection: 'row', alignItems: 'center', borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, paddingVertical: 14 },
   stat: { flex: 1, paddingHorizontal: 16, gap: 2 },
   divider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch' },
