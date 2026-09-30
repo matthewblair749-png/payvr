@@ -79,6 +79,7 @@ model Merchant {
   stripeAccountId      String?  @unique
   stripeChargesEnabled Boolean  @default(false)
   stripeDetailsSubmitted Boolean @default(false)
+  stripePayoutsEnabled Boolean  @default(false)
   country              String?
   defaultCurrency      String   @default("usd")
   /// Set once, when the first successful payment lands (drives the celebration).
@@ -257,6 +258,11 @@ model Order {
   refundedCents         Int         @default(0)
   currency              String
   stripePaymentIntentId String?     @unique
+  stripeChargeId        String?     @unique
+  applicationFeeCents   Int         @default(0)
+  /// Last decline/error message from Stripe (shown to the merchant, never raw card data).
+  failureMessage        String?
+  paidAt                DateTime?
   customerEmail         String?
   country               String?
   paymentMethod         String?
@@ -333,4 +339,12 @@ model Insight {
   dismissedAt DateTime?
 
   @@index([merchantId, createdAt])
+}
+
+/// Stripe webhook events we've processed. Makes webhook handling idempotent:
+/// Stripe retries and may deliver the same event more than once.
+model StripeEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now())
 }

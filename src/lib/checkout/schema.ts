@@ -60,13 +60,39 @@ export const blockSchema = z.discriminatedUnion("type", [
     props: z.object({ label: shortText(60), maxPercent: z.number().int().min(5).max(50) }),
   }),
   z.object({ ...base, type: z.literal("payIn4"), props: z.object({ label: shortText(60) }) }),
-  z.object({ ...base, type: z.literal("coupon"), props: z.object({ placeholder: shortText(40) }) }),
+  z.object({
+    ...base,
+    type: z.literal("coupon"),
+    props: z.object({
+      placeholder: shortText(40),
+      /** Codes this checkout accepts. Validated server-side at payment time. */
+      codes: z
+        .array(
+          z.object({
+            code: z.string().trim().toUpperCase().regex(/^[A-Z0-9_-]{2,24}$/, "Codes use letters, numbers, - and _"),
+            percentOff: z.number().int().min(1).max(100),
+          }),
+        )
+        .max(20)
+        .default([]),
+    }),
+  }),
   z.object({
     ...base,
     type: z.literal("trustBadges"),
     props: z.object({ items: z.array(z.enum(["secure", "refund", "support", "shipping"])).max(4) }),
   }),
-  z.object({ ...base, type: z.literal("payment"), props: z.object({ buttonLabel: shortText(30) }) }),
+  z.object({
+    ...base,
+    type: z.literal("payment"),
+    props: z.object({
+      buttonLabel: shortText(30),
+      /** Success celebration: a short vibration on supporting phones. */
+      haptics: z.boolean().default(true),
+      /** Success celebration: a soft two-note chime (off by default; sound should be opt-in). */
+      sound: z.boolean().default(false),
+    }),
+  }),
 ]);
 
 export type Block = z.infer<typeof blockSchema>;

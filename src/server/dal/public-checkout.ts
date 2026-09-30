@@ -37,6 +37,8 @@ export type ResolvedCheckout = {
   variantId: string | null;
   variantKey: string | null;
   acceptsPayments: boolean;
+  /** Connected account id (acct_…). Not secret; Stripe Elements needs it for `onBehalfOf`. */
+  stripeAccountId: string | null;
 };
 
 /** Pick the config this visitor should see (A/B aware). */
@@ -72,5 +74,6 @@ export async function resolveCheckout(slug: string, visitorId: string): Promise<
     variantId,
     variantKey,
     acceptsPayments: Boolean(page.merchant.stripeAccountId && page.merchant.stripeChargesEnabled),
+    stripeAccountId: page.merchant.stripeAccountId,
   };
 }

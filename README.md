@@ -3,7 +3,7 @@
 **The checkout that learns.** Stripe-grade payments for solo creators and small brands, with a
 drag-and-drop checkout studio and a built-in research assistant.
 
-> Status: **Phase 2 of 8 complete.** Landing page plus the Checkout Studio: a block editor, versions, publishing, A/B variants and brand import.
+> Status: **Phase 3 of 8 complete.** Landing page, the Checkout Studio, and Stripe Connect payments (test mode).
 
 ## Quick start
 
@@ -39,6 +39,31 @@ Requires Node 20+ and Postgres 14+.
 | `EMAIL_SERVER`, `EMAIL_FROM` | prod | SMTP URL for magic links |
 | `ANTHROPIC_API_KEY` | no | Enables Claude for brand import (falls back to heuristics without it) |
 | `LUMEN_AI_MODEL` | no | Defaults to `claude-opus-5-5` |
+| `STRIPE_SECRET_KEY` | for payments | `sk_test_…` only; live keys are refused |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | for payments | `pk_test_…` only |
+| `STRIPE_WEBHOOK_SECRET` | for payments | `whsec_…` from `stripe listen` or your endpoint |
+| `STRIPE_CONNECT_WEBHOOK_SECRET` | no | If Connect events go to a separate endpoint |
+| `LUMEN_PLATFORM_FEE_BPS` | no | Platform fee in basis points; default 0 |
+
+## Payments setup (Stripe test mode)
+
+1. In the Stripe dashboard, switch to **Test mode** and enable **Connect** (Settings → Connect).
+2. Copy the test keys into `.env` (see the table above).
+3. Forward webhooks locally with the [Stripe CLI](https://docs.stripe.com/stripe-cli):
+   ```bash
+   stripe listen \
+     --forward-to localhost:3000/api/stripe/webhook \
+     --forward-connect-to localhost:3000/api/stripe/webhook
+   ```
+   Put the `whsec_…` it prints in `STRIPE_WEBHOOK_SECRET` and restart `npm run dev`.
+4. In the Studio, go to **Payments → Connect with Stripe** and complete Stripe's test onboarding
+   (use test data; the "Use test phone number / SSN" shortcuts work).
+5. Publish a checkout, open `/pay/<slug>`, and pay with a test card (below).
+   Your first successful payment triggers the full-screen first-sale celebration in the Studio.
+
+Deployed: add a webhook endpoint at `https://<your-domain>/api/stripe/webhook` listening for
+`payment_intent.succeeded`, `payment_intent.payment_failed`, `charge.succeeded`, `charge.refunded`,
+`charge.dispute.created`, `charge.dispute.closed` and (Connect events) `account.updated`.
 
 ## What's here (Phase 1)
 
@@ -95,6 +120,38 @@ theme-color, CSS colors (brand-named CSS variables weighted up), fonts, radii, a
 maps them to a theme. With `ANTHROPIC_API_KEY`, Claude refines the result from those signals plus the
 logo image, using structured output. If Claude fails or the request is refused, it falls back to the heuristic result.
 
+## What's here (Phase 3: Payments)
+
+| Area | Where |
+| --- | --- |
+| Stripe client, test-mode guard, platform fee | `src/server/stripe.ts` |
+| Connect Express onboarding, status, dashboard link | `src/server/payments/connect.ts`, `src/app/studio/(home)/payments/*` |
+| Server-side pricing shared with the UI | `src/lib/checkout/pricing.ts` |
+| PaymentIntent preparation (hosted checkout) | `src/server/payments/checkout.ts`, `src/app/pay/[slug]/actions.ts` |
+| Payment Element themed to each checkout | `src/components/checkout/live-checkout.tsx` |
+| Webhooks (signature-verified, idempotent) | `src/app/api/stripe/webhook/route.ts`, `src/server/payments/webhooks.ts` |
+| Orders + refunds | `src/server/dal/orders.ts`, `src/app/studio/(home)/orders/*` |
+| Product/price sync to Stripe | `src/server/payments/catalog.ts` |
+| Success screen, haptics, chime | `src/components/checkout/success-check.tsx`, `src/lib/checkout/celebrate.ts` |
+| First-sale celebration | `src/components/studio/first-sale-celebration.tsx` |
+
+**Money flow:** destination charges. The PaymentIntent is created on the lumen platform with
+`on_behalf_of` and `transfer_data.destination` set to the merchant's Express account, so the merchant is
+the settlement merchant and funds land in their balance. Refunds use `reverse_transfer`, and
+`refund_application_fee` returns any platform fee.
+
+**Pay flow:** the Payment Element renders immediately using Stripe's deferred-intent mode. On Pay, the
+browser sends only the buyer's *choices* (add-on on/off, tip %, coupon code). The server re-resolves the
+published config and the visitor's A/B variant, recomputes the amount with the shared pricing module, and
+creates (or, on retry, updates) the PaymentIntent with an idempotency key. If the server's amount ever
+differs from what the buyer saw, nothing is charged and the buyer is asked to review. Card data only ever
+lives in Stripe's iframes.
+
+**Webhooks:** the signature is verified against the raw body. Each event id is stored in `StripeEvent`
+in the same transaction as its effects, so a duplicate delivery is a no-op and a failure rolls back and
+lets Stripe retry. Transitions are guarded against out-of-order delivery (a late `payment_failed` can't
+undo a success). Coupon codes are defined per checkout in the coupon block and checked on the server.
+
 ## Accessibility
 - WCAG AA contrast: button label colors are picked automatically, and accent-as-text is darkened
   until it passes 4.5:1 (`ensureContrast`), so merchants can't pick an illegible theme.
@@ -125,7 +182,7 @@ logo image, using structured output. If Claude fails or the request is refused, 
 The hero animates with CSS only (transform, no opacity), so the LCP wordmark paints before hydration.
 Framer Motion features are lazy-loaded, and Tailwind CSS is inlined into `<head>`.
 
-## Stripe test cards (for Phase 3+)
+## Stripe test cards
 | Card | Result |
 | --- | --- |
 | `4242 4242 4242 4242` | Succeeds |
@@ -138,7 +195,7 @@ Use any future expiry, any CVC and any postal code.
 ## Roadmap
 1. ✅ Design tokens, logo, landing page
 2. ✅ Studio with live preview (versions, publish, A/B variants, brand import)
-3. Stripe Connect + published checkout
+3. ✅ Stripe Connect + published checkout
 4. Event tracking + dashboard
 5. One-tap survey
 6. Research Assistant

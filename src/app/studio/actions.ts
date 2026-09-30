@@ -14,6 +14,7 @@ import { z } from "zod";
 import { checkoutConfigSchema, type CheckoutConfig } from "@/lib/checkout/schema";
 import { importBrand, type BrandImportResult } from "@/server/brand-import";
 import * as pages from "@/server/dal/checkout-pages";
+import { syncProductToStripe } from "@/server/payments/catalog";
 import { merchantForAction } from "@/server/dal/session";
 import { UserError } from "@/server/errors";
 import { LIMITS, rateLimit } from "@/server/rate-limit";
@@ -85,6 +86,8 @@ export async function updateProductAction(input: z.input<typeof productInput>) {
   return run("mutate", async (merchantId) => {
     const { pageId, ...data } = productInput.parse(input);
     const p = await pages.updateProduct(merchantId, pageId, data);
+    // Fire-and-forget: never make the merchant wait on (or fail because of) Stripe.
+    void syncProductToStripe(p.id);
     return { name: p.name, description: p.description, priceCents: p.priceCents, currency: p.currency };
   });
 }

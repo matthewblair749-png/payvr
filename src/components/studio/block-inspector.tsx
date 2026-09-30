@@ -4,7 +4,7 @@
  * Property editor for the selected block. Each block type declares its fields
  * as data, so adding a block type means adding a line here — not a new form.
  */
-import { useId } from "react";
+import { useId, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { BLOCK_META, BLOCK_TYPES, type BlockType } from "@/lib/checkout/meta";
 import type { Block } from "@/lib/checkout/schema";
@@ -15,7 +15,8 @@ type Field =
   | { kind: "number"; key: string; label: string; min: number; max: number; suffix?: string }
   | { kind: "money"; key: string; label: string }
   | { kind: "toggle"; key: string; label: string }
-  | { kind: "badges"; key: string; label: string };
+  | { kind: "badges"; key: string; label: string }
+  | { kind: "coupons"; key: string; label: string };
 
 const FIELDS: Record<BlockType, Field[]> = {
   orderSummary: [{ kind: "toggle", key: "showImage", label: "Show product image" }],
@@ -39,9 +40,16 @@ const FIELDS: Record<BlockType, Field[]> = {
     { kind: "number", key: "maxPercent", label: "Max tip", min: 5, max: 50, suffix: "%" },
   ],
   payIn4: [{ kind: "text", key: "label", label: "Label", max: 60 }],
-  coupon: [{ kind: "text", key: "placeholder", label: "Placeholder", max: 40 }],
+  coupon: [
+    { kind: "text", key: "placeholder", label: "Placeholder", max: 40 },
+    { kind: "coupons", key: "codes", label: "Codes" },
+  ],
   trustBadges: [{ kind: "badges", key: "items", label: "Badges" }],
-  payment: [{ kind: "text", key: "buttonLabel", label: "Button label", max: 30 }],
+  payment: [
+    { kind: "text", key: "buttonLabel", label: "Button label", max: 30 },
+    { kind: "toggle", key: "haptics", label: "Haptic tap on success" },
+    { kind: "toggle", key: "sound", label: "Chime on success" },
+  ],
 };
 
 const BADGE_OPTIONS = [
@@ -168,6 +176,8 @@ function FieldInput({ field, value, onChange }: { field: Field; value: unknown; 
           />
         </label>
       );
+    case "coupons":
+      return <CouponCodes value={(value as { code: string; percentOff: number }[]) ?? []} onChange={onChange} />;
     case "badges": {
       const items = (value as string[]) ?? [];
       return (
@@ -214,5 +224,74 @@ export function AddBlockPalette({ onAdd }: { onAdd: (type: BlockType) => void })
         ))}
       </div>
     </div>
+  );
+}
+
+/** Edit a checkout's coupon codes. Validated again on the server at payment time. */
+function CouponCodes({
+  value,
+  onChange,
+}: {
+  value: { code: string; percentOff: number }[];
+  onChange: (v: { code: string; percentOff: number }[]) => void;
+}) {
+  const [code, setCode] = useState("");
+  const [pct, setPct] = useState(10);
+  const valid = /^[A-Z0-9_-]{2,24}$/.test(code) && !value.some((c) => c.code === code);
+  return (
+    <fieldset>
+      <legend className="mb-1 text-xs font-semibold text-muted-strong">Codes</legend>
+      <ul className="mb-2 space-y-1">
+        {value.map((c) => (
+          <li key={c.code} className="flex items-center justify-between rounded-lg bg-white px-2.5 py-1.5 text-sm">
+            <span className="font-mono font-semibold">{c.code}</span>
+            <span className="flex items-center gap-2 text-muted-strong">
+              {c.percentOff}% off
+              <button
+                type="button"
+                aria-label={`Remove code ${c.code}`}
+                onClick={() => onChange(value.filter((x) => x.code !== c.code))}
+                className="grid h-6 w-6 place-items-center rounded hover:bg-surface"
+              >
+                <X size={13} aria-hidden="true" />
+              </button>
+            </span>
+          </li>
+        ))}
+        {value.length === 0 && <li className="text-xs text-muted-strong">No codes yet.</li>}
+      </ul>
+      <div className="flex gap-1.5">
+        <label className="sr-only" htmlFor="new-code">New code</label>
+        <input
+          id="new-code"
+          value={code}
+          maxLength={24}
+          onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""))}
+          placeholder="SPRING20"
+          className={cn(inputCls, "min-w-0 flex-1 font-mono uppercase")}
+        />
+        <label className="sr-only" htmlFor="new-pct">Percent off</label>
+        <input
+          id="new-pct"
+          type="number"
+          min={1}
+          max={100}
+          value={pct}
+          onChange={(e) => setPct(Math.max(1, Math.min(100, Math.round(Number(e.target.value) || 1))))}
+          className={cn(inputCls, "w-16")}
+        />
+        <button
+          type="button"
+          disabled={!valid || value.length >= 20}
+          onClick={() => {
+            onChange([...value, { code, percentOff: pct }]);
+            setCode("");
+          }}
+          className="rounded-xl bg-ink px-3 text-sm font-semibold text-white disabled:opacity-40"
+        >
+          Add
+        </button>
+      </div>
+    </fieldset>
   );
 }
