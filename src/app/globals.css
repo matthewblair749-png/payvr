@@ -1,0 +1,148 @@
+@import "tailwindcss";
+
+/* =========================================================================
+   lumen design tokens
+   -------------------------------------------------------------------------
+   Brand colors are fixed. Contrast notes (WCAG 2.x):
+   - white on orange #F04A1A = 3.7:1  -> large/bold text only (>=24px, or >=19px bold)
+   - ink on orange            = 5.2:1  -> any text size
+   - orange-deep on white     = 5.8:1  -> use for small orange text/links on light
+   - muted #6B6B73 on white   = 5.3:1  -> OK; on surface use muted-strong
+   ========================================================================= */
+:root {
+  --lumen-orange: #f04a1a;
+  --lumen-orange-deep: #b83a12;
+  --lumen-spark: #ffd84d;
+  --lumen-amber: #ffb100;
+  --lumen-ink: #0e0e10;
+  --lumen-white: #ffffff;
+  --lumen-surface: #ededf0;
+  --lumen-muted: #6b6b73;
+  --lumen-muted-strong: #5c5c64;
+
+  --lumen-shadow-soft: 0 1px 2px rgb(14 14 16 / 0.04), 0 8px 24px -8px rgb(14 14 16 / 0.12);
+  --lumen-shadow-lift: 0 2px 4px rgb(14 14 16 / 0.06), 0 24px 48px -16px rgb(14 14 16 / 0.22);
+
+  /* Spring-ish easing used by CSS animations (Framer handles real springs). */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@theme inline {
+  --color-orange: var(--lumen-orange);
+  --color-orange-deep: var(--lumen-orange-deep);
+  --color-spark: var(--lumen-spark);
+  --color-amber: var(--lumen-amber);
+  --color-ink: var(--lumen-ink);
+  --color-surface: var(--lumen-surface);
+  --color-muted: var(--lumen-muted);
+  --color-muted-strong: var(--lumen-muted-strong);
+
+  --font-display: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+
+  --shadow-soft: var(--lumen-shadow-soft);
+  --shadow-lift: var(--lumen-shadow-lift);
+
+  --tracking-display: -0.05em;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--lumen-white);
+  color: var(--lumen-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Visible, on-brand focus ring for keyboard users everywhere. */
+:focus-visible {
+  outline: 3px solid var(--lumen-ink);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+.on-orange :focus-visible {
+  outline-color: var(--lumen-white);
+}
+
+::selection {
+  background: var(--lumen-spark);
+  color: var(--lumen-ink);
+}
+
+/* ---------- Hero entrance (pure CSS so it runs before hydration; no LCP delay) */
+@keyframes lumen-tile-in {
+  0% { transform: scale(0.6) rotate(-12deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+@keyframes lumen-rise {
+  0% { transform: translateY(0.35em); }
+  100% { transform: translateY(0); }
+}
+@keyframes lumen-fade-up {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes lumen-spark-pop {
+  0% { transform: scale(0); }
+  60% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+@keyframes lumen-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.anim-tile-in { animation: lumen-tile-in 700ms var(--ease-spring) both; }
+.anim-rise { animation: lumen-rise 800ms var(--ease-out-soft) both; }
+.anim-fade-up { animation: lumen-fade-up 700ms var(--ease-out-soft) both; }
+.anim-spark-pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: lumen-spark-pop 600ms var(--ease-spring) 450ms both;
+}
+.anim-float { animation: lumen-float 4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* Range input styling shared by editor controls. */
+.lumen-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--lumen-surface);
+}
+.lumen-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--lumen-ink);
+  border: 3px solid var(--lumen-white);
+  box-shadow: var(--lumen-shadow-soft);
+  cursor: grab;
+}
+.lumen-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--lumen-ink);
+  border: 3px solid var(--lumen-white);
+  cursor: grab;
+}
