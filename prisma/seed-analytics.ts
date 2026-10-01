@@ -238,7 +238,7 @@ export async function seedAnalytics(db: PrismaClient, merchantId: string, pages:
             question === "nearly_stopped"
               ? pick(r, [["shipping", 34], ["price", 22], ["trust", 13], ["payment_options", 6], ["nothing", 25]])
               : pick(r, [["instagram", 41], ["friend", 22], ["tiktok", 17], ["google", 11], ["newsletter", 9]]);
-          surveys.push({ merchantId, checkoutPageId: page.id, question, answer, createdAt: new Date(t + 20_000) });
+          surveys.push({ merchantId, checkoutPageId: page.id, sessionId, variantId: variant?.id ?? null, question, answer, createdAt: new Date(t + 20_000) });
         }
       }
     }

@@ -5,6 +5,7 @@
  * owns the analytics tracker for this page view.
  */
 import { useCallback, useEffect, useRef } from "react";
+import { answerSurveyAction } from "@/app/pay/[slug]/actions";
 import type { CheckoutConfig, CheckoutProduct } from "@/lib/checkout/schema";
 import { createTracker, type Tracker } from "@/lib/tracking/tracker";
 import { CheckoutView } from "./checkout-view";
@@ -50,6 +51,15 @@ export function HostedCheckout({
     else t.paid();
   }, []);
 
+  // Answers are tied to this session's order on the server (live checkouts only).
+  const onSurveyAnswer = useCallback(
+    async (question: CheckoutConfig["survey"]["question"], answer: string) => {
+      const res = await answerSurveyAction({ slug, sessionId, question, answer });
+      return res.ok;
+    },
+    [slug, sessionId],
+  );
+
   return live ? (
     <LiveCheckout
       config={config}
@@ -59,6 +69,7 @@ export function HostedCheckout({
       publishableKey={live.publishableKey}
       stripeAccountId={live.stripeAccountId}
       onTrack={onTrack}
+      onSurveyAnswer={onSurveyAnswer}
     />
   ) : (
     <CheckoutView

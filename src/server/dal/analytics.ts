@@ -45,9 +45,9 @@ function sessionsCte(f: AnalyticsFilter) {
           ELSE 1 END) AS rank,
         MIN("createdAt") AS started,
         MAX("createdAt") AS last_seen,
-        COALESCE((array_agg(device ORDER BY "createdAt") FILTER (WHERE type = 'VIEW'))[1], 'desktop') AS device,
-        (array_agg("checkoutPageId" ORDER BY "createdAt") FILTER (WHERE type = 'VIEW'))[1] AS page_id,
-        (array_agg(field ORDER BY "createdAt" DESC) FILTER (WHERE type = 'FIELD_FOCUS'))[1] AS last_field,
+        COALESCE((array_agg(device ORDER BY "createdAt", id) FILTER (WHERE type = 'VIEW'))[1], 'desktop') AS device,
+        (array_agg("checkoutPageId" ORDER BY "createdAt", id) FILTER (WHERE type = 'VIEW'))[1] AS page_id,
+        (array_agg(field ORDER BY "createdAt" DESC, id DESC) FILTER (WHERE type = 'FIELD_FOCUS'))[1] AS last_field,
         array_agg(DISTINCT field) FILTER (WHERE type = 'FIELD_FOCUS') AS fields
       FROM "CheckoutEvent"
       WHERE "merchantId" = ${f.merchantId}

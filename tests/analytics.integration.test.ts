@@ -66,9 +66,10 @@ describe("POST /api/events", () => {
 
 describe("analytics", () => {
   beforeAll(async () => {
-    const old = new Date(Date.now() - 2 * 3_600_000);
+    // Distinct, increasing timestamps (as real sessions have), two hours ago.
+    let tick = Date.now() - 2 * 3_600_000;
     const mk = (sessionId: string, type: string, extra: Record<string, unknown> = {}) => ({
-      merchantId, checkoutPageId: pageId, sessionId, type: type as "VIEW", device: "desktop", createdAt: old, ...extra,
+      merchantId, checkoutPageId: pageId, sessionId, type: type as "VIEW", device: "desktop", createdAt: new Date(tick++), ...extra,
     });
     const paid = crypto.randomUUID();
     const leftAtCoupon = crypto.randomUUID();

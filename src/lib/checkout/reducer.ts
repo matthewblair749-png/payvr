@@ -9,6 +9,7 @@ import type { Block, CheckoutConfig, Theme } from "./schema";
 export type EditorAction =
   | { type: "theme"; patch: Partial<Theme> }
   | { type: "brand"; patch: Partial<CheckoutConfig["brand"]> }
+  | { type: "survey"; patch: Partial<CheckoutConfig["survey"]> }
   | { type: "reorder"; from: number; to: number }
   | { type: "toggle"; id: string }
   | { type: "add"; blockType: BlockType; index?: number }
@@ -22,6 +23,8 @@ export function editorReducer(state: CheckoutConfig, action: EditorAction): Chec
       return { ...state, theme: { ...state.theme, ...action.patch } };
     case "brand":
       return { ...state, brand: { ...state.brand, ...action.patch } };
+    case "survey":
+      return { ...state, survey: { ...state.survey, ...action.patch } };
     case "reorder": {
       const { from, to } = action;
       if (from === to || from < 0 || to < 0 || from >= state.blocks.length || to >= state.blocks.length) return state;

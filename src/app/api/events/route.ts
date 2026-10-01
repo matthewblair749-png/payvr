@@ -53,8 +53,12 @@ export async function POST(req: Request) {
   }
   if (!events.length) return new Response(null, { status: 204 });
 
+  // Explicit, strictly increasing timestamps keep in-batch order (a DB default
+  // would give every row the same time, making "last field touched" ambiguous).
+  const base = Date.now();
   await db.checkoutEvent.createMany({
-    data: events.map((e) => ({
+    data: events.map((e, i) => ({
+      createdAt: new Date(base + i),
       merchantId: page.merchantId,
       checkoutPageId: payload.pageId,
       variantId,

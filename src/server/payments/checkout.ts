@@ -128,5 +128,5 @@ export async function paymentResult(slug: string, paymentIntentId: string) {
   const pi = await getStripe().paymentIntents.retrieve(paymentIntentId);
   // Only reveal intents that belong to this checkout.
   if (pi.metadata?.lumen_page_id !== page.id) return null;
-  return { status: pi.status, amountCents: pi.amount, currency: pi.currency };
+  return { status: pi.status, amountCents: pi.amount, currency: pi.currency, sessionId: pi.metadata?.lumen_session_id || null };
 }

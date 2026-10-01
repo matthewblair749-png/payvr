@@ -21,6 +21,7 @@ import { themeToVars } from "@/lib/checkout/theme";
 import { CheckoutView } from "./checkout-view";
 
 type TrackFn = NonNullable<Parameters<typeof CheckoutView>[0]["onTrack"]>;
+type SurveyFn = NonNullable<Parameters<typeof CheckoutView>[0]["onSurveyAnswer"]>;
 
 /** Google Fonts stylesheets for each checkout font, loaded *inside* Stripe's iframe. */
 const FONT_CSS: Record<FontKey, string> = {
@@ -69,6 +70,7 @@ export function LiveCheckout({
   publishableKey,
   stripeAccountId,
   onTrack,
+  onSurveyAnswer,
 }: {
   config: CheckoutConfig;
   product: CheckoutProduct;
@@ -77,6 +79,7 @@ export function LiveCheckout({
   publishableKey: string;
   stripeAccountId: string;
   onTrack?: TrackFn;
+  onSurveyAnswer?: SurveyFn;
 }) {
   const initial = useMemo(() => computeTotals(config, product, EMPTY_SELECTIONS), [config, product]);
   const options: StripeElementsOptions = useMemo(
@@ -97,7 +100,7 @@ export function LiveCheckout({
 
   return (
     <Elements stripe={getStripeJs(publishableKey)} options={options}>
-      <LiveCheckoutInner config={config} product={product} slug={slug} sessionId={sessionId} onTrack={onTrack} />
+      <LiveCheckoutInner config={config} product={product} slug={slug} sessionId={sessionId} onTrack={onTrack} onSurveyAnswer={onSurveyAnswer} />
     </Elements>
   );
 }
@@ -108,12 +111,14 @@ function LiveCheckoutInner({
   slug,
   sessionId,
   onTrack,
+  onSurveyAnswer,
 }: {
   config: CheckoutConfig;
   product: CheckoutProduct;
   slug: string;
   sessionId: string;
   onTrack?: TrackFn;
+  onSurveyAnswer?: SurveyFn;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -222,6 +227,7 @@ function LiveCheckoutInner({
       onPay={onPay}
       onTotalsChange={onTotalsChange}
       onTrack={onTrack}
+      onSurveyAnswer={onSurveyAnswer}
       successMessage={email ? `A receipt is on its way to ${email}.` : undefined}
     />
   );

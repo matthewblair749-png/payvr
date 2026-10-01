@@ -62,6 +62,7 @@ export const DEMO_CONFIG: CheckoutConfig = {
     radius: 16,
     layout: "page",
   },
+  survey: { enabled: true, question: "nearly_stopped" },
   blocks: [
     defaultBlock("orderSummary", "summary"),
     defaultBlock("countdown", "countdown"),

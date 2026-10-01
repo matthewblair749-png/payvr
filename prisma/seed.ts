@@ -37,6 +37,7 @@ const workshop: CheckoutConfig = {
   schemaVersion: 1,
   brand: { name: "Kiln & Co." },
   theme: { mode: "light", accent: "#B83A12", background: "#F6EEE3", font: "fraunces", radius: 6, layout: "page" },
+  survey: { enabled: true, question: "heard_about" },
   blocks: [
     defaultBlock("orderSummary", "summary"),
     {
@@ -54,6 +55,7 @@ const giftCard: CheckoutConfig = {
   schemaVersion: 1,
   brand: { name: "Kiln & Co." },
   theme: { mode: "dark", accent: "#FFB100", background: "#0E0E10", font: "sora", radius: 18, layout: "modal" },
+  survey: { enabled: true, question: "nearly_stopped" },
   blocks: [
     defaultBlock("orderSummary", "summary"),
     { ...defaultBlock("tipSlider", "tip"), props: { label: "Add a little extra to the gift", maxPercent: 50 } } as CheckoutConfig["blocks"][number],

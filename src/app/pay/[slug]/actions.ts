@@ -5,6 +5,7 @@ import Stripe from "stripe";
 import { z } from "zod";
 import { UserError } from "@/server/errors";
 import { prepareInputSchema, preparePayment, type PreparedPayment } from "@/server/payments/checkout";
+import { recordSurveyAnswer, surveyInputSchema } from "@/server/survey";
 import { rateLimit } from "@/server/rate-limit";
 import { clientIpFromHeaders } from "@/server/request-meta";
 
@@ -34,5 +35,23 @@ export async function preparePaymentAction(raw: unknown): Promise<PayActionResul
     }
     console.error("[pay] prepare failed", e);
     return { ok: false, error: "We couldn't start the payment. Please try again." };
+  }
+}
+
+export type SurveyActionResult = { ok: true } | { ok: false; error: string };
+
+/** Buyer taps an answer on the success screen. One tap, no login. */
+export async function answerSurveyAction(raw: unknown): Promise<SurveyActionResult> {
+  try {
+    const input = surveyInputSchema.parse(raw);
+    rateLimit(`survey-ip:${await clientIp()}`, 30, 10 * 60_000);
+    const visitorId = (await cookies()).get("lumen_vid")?.value ?? "anonymous";
+    await recordSurveyAnswer(input, visitorId);
+    return { ok: true };
+  } catch (e) {
+    if (e instanceof UserError) return { ok: false, error: e.message };
+    if (e instanceof z.ZodError) return { ok: false, error: "That answer didn't go through." };
+    console.error("[survey] failed", e);
+    return { ok: false, error: "That answer didn't go through." };
   }
 }

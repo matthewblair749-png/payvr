@@ -319,11 +319,16 @@ model SurveyResponse {
   checkoutPage   CheckoutPage? @relation(fields: [checkoutPageId], references: [id], onDelete: SetNull)
   orderId        String?
   order          Order?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  /// Checkout session that answered (one answer per question per session).
+  sessionId      String?
+  /// A/B variant the buyer saw, for comparing answers across variants.
+  variantId      String?
   /// Stable question key, e.g. "nearly_stopped" or "heard_about".
   question       String
   answer         String
   createdAt      DateTime      @default(now())
 
+  @@unique([sessionId, question])
   @@index([merchantId, question, createdAt])
 }
 

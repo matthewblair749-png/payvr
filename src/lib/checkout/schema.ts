@@ -13,6 +13,7 @@ import { z } from "zod";
 // forbids. Jitless mode avoids the probe with negligible cost for our sizes.
 z.config({ jitless: true });
 
+import { SURVEY_QUESTION_KEYS } from "@/lib/survey/questions";
 import { BLOCK_META, BLOCK_TYPES, FONT_KEYS, FONTS, type BlockType, type FontKey } from "./meta";
 export { BLOCK_META, BLOCK_TYPES, FONT_KEYS, FONTS, type BlockType, type FontKey };
 
@@ -122,6 +123,13 @@ export const checkoutConfigSchema = z.object({
     logoUrl: z.string().url().startsWith("https://").max(500).optional(),
   }),
   theme: themeSchema,
+  /** One-tap question shown on the success screen after payment. */
+  survey: z
+    .object({
+      enabled: z.boolean(),
+      question: z.enum(SURVEY_QUESTION_KEYS),
+    })
+    .default({ enabled: true, question: "nearly_stopped" }),
   blocks: z
     .array(blockSchema)
     .max(20)

@@ -27,6 +27,7 @@ import {
   TrustBadgesBlock,
   UpsellBlock,
 } from "./blocks";
+import { OneTapSurvey } from "./one-tap-survey";
 import { PaymentBlock } from "./payment-block";
 import { SuccessCheck } from "./success-check";
 
@@ -41,6 +42,8 @@ export function CheckoutView({
   onPay,
   onTotalsChange,
   onTrack,
+  onSurveyAnswer,
+  showSuccess = false,
   successMessage,
   paymentsDisabledReason,
   selectedBlockId,
@@ -58,6 +61,10 @@ export function CheckoutView({
   onTotalsChange?: (totals: Totals, selections: BuyerSelections) => void;
   /** Analytics hook (hosted checkouts): which block the buyer touched, pay clicks, success. */
   onTrack?: (e: { kind: "focus"; field: string } | { kind: "pay" } | { kind: "paid" }) => void;
+  /** Hosted checkout: persist a one-tap survey answer. Without it, answers are local-only (demo/preview). */
+  onSurveyAnswer?: (question: CheckoutConfig["survey"]["question"], answer: string) => Promise<boolean>;
+  /** Studio: show the success screen (with the survey) instead of the form. */
+  showSuccess?: boolean;
   /** Live mode: success celebration details shown after payment. */
   successMessage?: string;
   /** Hosted page whose merchant can't take payments yet: pay button is disabled with this note. */
@@ -171,24 +178,41 @@ export function CheckoutView({
       className="w-full rounded-(--co-radius-card) bg-(--co-card) p-4 text-(--co-fg) shadow-[0_1px_2px_rgb(0_0_0/0.05),0_16px_40px_-12px_rgb(0_0_0/0.18)] @md:p-5"
     >
       <AnimatePresence mode="wait" initial={false}>
-        {status === "paid" ? (
+        {status === "paid" || showSuccess ? (
           <m.div
             key="paid"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="flex flex-col items-center gap-3 py-10 text-center"
-            role="status"
+            className="flex flex-col items-center gap-3 py-8 text-center"
           >
             <SuccessCheck />
-            <p className="text-xl font-semibold">Thank you!</p>
+            <p className="text-xl font-semibold" role="status">
+              Thank you!
+            </p>
             <p className="max-w-[28ch] text-sm text-(--co-muted)">
-              {mode === "live"
-                ? `Your payment of ${formatMoney(total, product.currency)} went through.`
-                : "This is a demo, so nothing was charged. On a real lumen checkout, Stripe takes it from here."}
+              {mode === "demo"
+                ? "This is a demo, so nothing was charged. On a real lumen checkout, Stripe takes it from here."
+                : `Your payment of ${formatMoney(total, product.currency)} went through.`}
               {mode === "live" && successMessage ? ` ${successMessage}` : ""}
             </p>
-            {mode !== "live" && (
+            {config.survey.enabled && (
+              <div className="mt-3 w-full">
+                <OneTapSurvey
+                  // Remount when the merchant switches questions in the Studio.
+                  key={config.survey.question}
+                  question={config.survey.question}
+                  brandName={config.brand.name.trim() || "this shop"}
+                  haptics={payment?.haptics ?? true}
+                  onAnswer={(answer) =>
+                    onSurveyAnswer
+                      ? onSurveyAnswer(config.survey.question, answer)
+                      : new Promise((resolve) => setTimeout(() => resolve(true), 350))
+                  }
+                />
+              </div>
+            )}
+            {mode !== "live" && !showSuccess && (
               <button
                 type="button"
                 onClick={() => setStatus("idle")}

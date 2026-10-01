@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { AddBlockPalette, BlockInspector } from "./block-inspector";
 import { ImportPanel } from "./import-panel";
 import { ProductPanel } from "./product-panel";
+import { SurveyPanel } from "./survey-panel";
 import { PublishDialog } from "./publish-dialog";
 import { useStudioState, type SaveStatus, type Target } from "./use-studio-state";
 import { VersionsDialog, type VersionRow } from "./versions-dialog";
@@ -44,7 +45,7 @@ export type StudioInitial = {
   appUrl: string;
 };
 
-type Tab = "blocks" | "theme" | "product" | "import";
+type Tab = "blocks" | "theme" | "product" | "survey" | "import";
 
 export function StudioEditor({ initial }: { initial: StudioInitial }) {
   const save = useCallback(
@@ -66,6 +67,7 @@ export function StudioEditor({ initial }: { initial: StudioInitial }) {
   const [versions, setVersions] = useState(initial.versions);
   const [published, setPublished] = useState({ id: initial.publishedVersionId, slug: initial.slug, status: initial.status });
   const [experiment, setExperiment] = useState({ status: initial.experimentStatus, weightB: initial.weightB });
+  const [previewSuccess, setPreviewSuccess] = useState(false);
   const [dialog, setDialog] = useState<"versions" | "publish" | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -133,6 +135,7 @@ export function StudioEditor({ initial }: { initial: StudioInitial }) {
       config={config}
       product={product}
       mode="preview"
+      showSuccess={previewSuccess}
       selectedBlockId={selectedId}
       onSelectBlock={(id) => {
         setSelectedId(id);
@@ -220,6 +223,7 @@ export function StudioEditor({ initial }: { initial: StudioInitial }) {
                 ["blocks", "Blocks"],
                 ["theme", "Theme"],
                 ["product", "Product"],
+                ["survey", "Survey"],
                 ["import", "Import"],
               ] as const
             ).map(([key, label]) => (
@@ -230,7 +234,10 @@ export function StudioEditor({ initial }: { initial: StudioInitial }) {
                 type="button"
                 aria-selected={tab === key}
                 aria-controls={`panel-${key}`}
-                onClick={() => setTab(key)}
+                onClick={() => {
+                  setTab(key);
+                  if (key !== "survey") setPreviewSuccess(false);
+                }}
                 className="relative px-3 py-2.5 text-sm font-semibold text-muted-strong aria-selected:text-ink"
               >
                 {label}
@@ -280,6 +287,9 @@ export function StudioEditor({ initial }: { initial: StudioInitial }) {
               </div>
             )}
             {tab === "product" && <ProductPanel pageId={initial.pageId} product={product} onChange={setProduct} />}
+            {tab === "survey" && (
+              <SurveyPanel config={config} edit={edit} previewing={previewSuccess} onPreview={setPreviewSuccess} />
+            )}
             {tab === "import" && (
               <ImportPanel
                 onApply={(r) =>

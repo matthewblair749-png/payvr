@@ -3,7 +3,7 @@
 **The checkout that learns.** Stripe-grade payments for solo creators and small brands, with a
 drag-and-drop checkout studio and a built-in research assistant.
 
-> Status: **Phase 4 of 8 complete.** Landing page, the Checkout Studio, Stripe Connect payments (test mode), and checkout analytics with a dashboard.
+> Status: **Phase 5 of 8 complete.** Landing page, the Checkout Studio, Stripe Connect payments (test mode), checkout analytics with a dashboard, and the one-tap post-purchase survey.
 
 ## Quick start
 
@@ -191,6 +191,28 @@ and a "Show as table" twin. A single aggregation pass per session keeps the whol
 Known limits: days are UTC (merchant time zones come later), and revenue is reported in the
 merchant's default currency only. The dashboard is designed for desktop.
 
+## What's here (Phase 5: One-tap survey)
+
+| Area | Where |
+| --- | --- |
+| Questions and answers (stable keys, labels) | `src/lib/survey/questions.ts` |
+| Buyer component (themed, animated, one tap) | `src/components/checkout/one-tap-survey.tsx` |
+| Server validation and storage | `src/server/survey.ts`, `answerSurveyAction` in `src/app/pay/[slug]/actions.ts` |
+| Studio "Survey" tab, with a thank-you screen preview | `src/components/studio/survey-panel.tsx` |
+
+Each checkout config has `survey: { enabled, question }`, which is on by default and asks "What nearly
+stopped you?". Configs saved before this field existed get the default when they're read. After payment,
+the thank-you screen shows the question as chips styled with the checkout's own theme. Buyers can tap
+once or press "No thanks", it never blocks them, and it respects reduced motion and the checkout's
+haptics setting. It also appears on the redirect return page (3-D Secure, bank redirects).
+
+**Anti-spam without accounts:** an answer is stored only if the checkout actually asks that question,
+the answer is one of its options, the browser session has a real order (PENDING counts, because the
+payment webhook may still be in flight), and it's that session's first answer
+(`@@unique([sessionId, question])`). Each answer also records the order and A/B variant, so later
+phases can compare answers across variants. On the landing demo and in Studio previews, answers stay
+local.
+
 ## Accessibility
 - WCAG AA contrast: button label colors are picked automatically, and accent-as-text is darkened
   until it passes 4.5:1 (`ensureContrast`), so merchants can't pick an illegible theme.
@@ -236,7 +258,7 @@ Use any future expiry, any CVC and any postal code.
 2. ✅ Studio with live preview (versions, publish, A/B variants, brand import)
 3. ✅ Stripe Connect + published checkout
 4. ✅ Event tracking + dashboard
-5. One-tap survey
+5. ✅ One-tap survey
 6. Research Assistant
 7. Experiments
 8. Polish, performance, accessibility
