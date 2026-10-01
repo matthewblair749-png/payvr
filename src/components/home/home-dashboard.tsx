@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/app-shell/page-header";
 import { parseRange, RANGES, type RangeValue } from "@/lib/date-range";
 import { cn } from "@/lib/utils";
+import { ExperimentCardView, LiveFeed, WhyTheyBuyCard } from "./activity-cards";
 import { FunnelCard, FunnelSkeleton, useFunnel } from "./funnel-card";
 import { KpiTiles } from "./kpi-tiles";
 import { BriefSkeleton, MorningBrief } from "./morning-brief";
@@ -51,6 +52,15 @@ export function HomeDashboard() {
       <NorthStar data={data} periodLabel={periodLabel} />
       <KpiTiles data={data} />
       <FunnelSection range={range} periodLabel={periodLabel} />
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+        <LiveFeed className="lg:row-span-2" />
+        <div className="lg:col-span-2">
+          <WhyTheyBuyCard range={range} periodLabel={periodLabel} />
+        </div>
+        <div className="lg:col-span-2">
+          <ExperimentCardView />
+        </div>
+      </div>
     </div>
   );
 }

@@ -69,7 +69,10 @@ const DECLINES = ["Your card was declined.", "Your card has insufficient funds."
 type Page = {
   id: string;
   productId: string;
+  /** Current price. */
   priceCents: number;
+  /** The price before a change (e.g. a shipped price test). */
+  priceBefore?: { daysAgo: number; priceCents: number };
   upsellCents: number;
   /** Relative daily traffic. */
   traffic: number;
@@ -78,7 +81,7 @@ type Page = {
   /** Visible block types: buyers can only touch what's on the page. */
   blocks: string[];
   /** A/B tests on this page, each live between two "days ago" marks (inclusive). */
-  experiments: { fromDaysAgo: number; toDaysAgo: number; variants: { id: string; key: string; lift: number }[] }[];
+  experiments: { fromDaysAgo: number; toDaysAgo: number; variants: { id: string; key: string; lift: number; priceCents?: number }[] }[];
 };
 
 /** The launch-day spike the North Star chart should show (inside the default 30-day view). */
@@ -138,6 +141,8 @@ export async function seedAnalytics(db: PrismaClient, merchantId: string, pages:
         const live = page.experiments.find((e) => d <= e.fromDaysAgo && d >= e.toDaysAgo);
         const variant = live ? (r() < 0.5 ? live.variants[0] : live.variants[1]) : null;
         const lift = variant?.lift ?? 1;
+        // A price test's variant price wins; otherwise the price in force that day.
+        const price = variant?.priceCents ?? (page.priceBefore && d > page.priceBefore.daysAgo ? page.priceBefore.priceCents : page.priceCents);
         const spike = dayStart === tuesday && device === "mobile" && hour >= 10;
 
         let t = start;
@@ -154,7 +159,7 @@ export async function seedAnalytics(db: PrismaClient, merchantId: string, pages:
             paymentMethod: extra.paymentMethod ?? null,
             device,
             country,
-            ...(type === "VIEW" ? { source, visitorId, valueCents: page.priceCents } : {}),
+            ...(type === "VIEW" ? { source, visitorId, valueCents: price } : {}),
             createdAt: new Date(t),
           });
         };
@@ -167,7 +172,8 @@ export async function seedAnalytics(db: PrismaClient, merchantId: string, pages:
         };
 
         // view → engaged
-        if (r() > 0.8 * Math.min(1, lift)) {
+        // A variant's lift changes how many shoppers start (e.g. social proof up front).
+        if (r() > Math.min(0.95, 0.8 * lift)) {
           ev("ABANDON", { step: "view" });
           continue;
         }
@@ -230,7 +236,7 @@ export async function seedAnalytics(db: PrismaClient, merchantId: string, pages:
         const method = methodFor(r, country, device);
         const failed = r() < failureRate(country, method, device, spike && method !== "apple_pay");
 
-        const subtotal = page.priceCents + (upsellAdded ? page.upsellCents : 0);
+        const subtotal = price + (upsellAdded ? page.upsellCents : 0);
         const discount = couponWorked ? Math.round(subtotal * 0.1) : 0;
         const tipPct = usesTip ? pick(r, [[5, 2], [10, 5], [15, 3], [20, 2]]) : 0;
         const tip = Math.round(((subtotal - discount) * tipPct) / 100);
@@ -280,11 +286,16 @@ export async function seedAnalytics(db: PrismaClient, merchantId: string, pages:
 
         // One-tap question (optional; ~42% answer).
         if (r() < 0.42) {
-          const question = r() < 0.6 ? "nearly_stopped" : "heard_about";
+          const roll = r();
+          const question = roll < 0.45 ? "why_bought" : roll < 0.8 ? "nearly_stopped" : "heard_about";
+          // Gifts surge around launch (and the email that announced it).
+          const giftBoost = launchBoost > 1.3 ? 3 : 1;
           const answer =
-            question === "nearly_stopped"
-              ? pick(r, [["shipping", 34], ["price", 22], ["trust", 13], ["payment_options", 6], ["nothing", 25]])
-              : pick(r, [["instagram", 41], ["friend", 22], ["tiktok", 17], ["google", 11], ["newsletter", 9]]);
+            question === "why_bought"
+              ? pick(r, [["design", 31], ["gift", 22 * giftBoost], ["small_maker", 19], ["reviews", 14], ["price", 6], ["other", 8]])
+              : question === "nearly_stopped"
+                ? pick(r, [["shipping", 34], ["price", 22], ["trust", 13], ["payment_options", 6], ["nothing", 25]])
+                : pick(r, [["instagram", 41], ["friend", 22], ["tiktok", 17], ["google", 11], ["newsletter", 9]]);
           surveys.push({ merchantId, checkoutPageId: page.id, sessionId, variantId: variant?.id ?? null, question, answer, createdAt: new Date(t + 20_000) });
         }
       }

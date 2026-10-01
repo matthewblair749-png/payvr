@@ -4,6 +4,17 @@
  * validation, and the dashboard.
  */
 export const SURVEY_QUESTIONS = {
+  why_bought: {
+    prompt: "What made you buy today?",
+    answers: {
+      gift: "It's a gift",
+      design: "Loved the design",
+      reviews: "Good reviews",
+      small_maker: "Supporting a small maker",
+      price: "Good price",
+      other: "Something else",
+    },
+  },
   nearly_stopped: {
     prompt: "What nearly stopped you?",
     answers: {

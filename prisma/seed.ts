@@ -111,7 +111,8 @@ async function main() {
   const mugs = await page({
     name: "Mug set launch",
     slug: "kiln-mugs",
-    product: { name: "Speckled mug set", description: "Two wheel-thrown stoneware mugs, 12oz, oatmeal glaze.", priceCents: 4800, requiresShipping: true },
+    // $52 since the price test above was shipped (it was $48 before).
+    product: { name: "Speckled mug set", description: "Two wheel-thrown stoneware mugs, 12oz, oatmeal glaze.", priceCents: 5200, requiresShipping: true },
     versions: [
       { config: { ...mugA, theme: { ...mugA.theme, radius: 8 } }, note: "First launch", daysAgo: 21 },
       { config: { ...mugA, theme: { ...mugA.theme, radius: 12 } }, note: "Softer corners", daysAgo: 14 },
@@ -121,31 +122,29 @@ async function main() {
     publish: true,
   });
 
-  // An earlier, finished test: a chattier pay button that did slightly worse.
-  const mugButton: CheckoutConfig = {
-    ...mugA,
-    blocks: mugA.blocks.map((b) => (b.type === "payment" ? { ...b, props: { ...b.props, buttonLabel: "Get my mugs" } } : b)),
-  };
+  // An earlier, finished price test: $52 earned more per visit than $48 without
+  // costing sales, so it was shipped (the mug set has cost $52 since).
   const pastTest = await db.experiment.create({
     include: { variants: { orderBy: { key: "asc" } } },
     data: {
       merchantId: merchant.id,
       checkoutPageId: mugs.id,
-      name: "Friendlier pay button",
-      hypothesis: "“Get my mugs” feels warmer than “Pay” and should lift conversion.",
+      name: "Try $52 instead of $48",
+      hypothesis: "Price is the reason buyers mention least. A $4 increase should earn more per visit without losing many sales.",
+      primaryMetric: "revenue_per_visit",
       status: "RUNNING", // finished below, once we know the winner id
       startedAt: daysAgo(70),
       variants: {
         create: [
-          { key: "A", name: "Original", isControl: true, weight: 50 },
-          { key: "B", name: "“Get my mugs” button", isControl: false, weight: 50, config: json(mugButton), publishedConfig: json(mugButton) },
+          { key: "A", name: "$48 (original)", isControl: true, weight: 50 },
+          { key: "B", name: "$52", isControl: false, weight: 50, config: json(mugA), publishedConfig: json(mugA), priceCents: 5200 },
         ],
       },
     },
   });
   await db.experiment.update({
     where: { id: pastTest.id },
-    data: { status: "COMPLETED", endedAt: daysAgo(22), winnerVariantId: pastTest.variants[0].id },
+    data: { status: "COMPLETED", endedAt: daysAgo(22), winnerVariantId: pastTest.variants[1].id },
   });
 
   const experiment = await db.experiment.create({
@@ -188,14 +187,16 @@ async function main() {
     {
       id: mugs.id,
       productId: mugs.productId!,
-      priceCents: 4800,
+      priceCents: 5200,
+      priceBefore: { daysAgo: 22, priceCents: 4800 },
       upsellCents: 1200,
       shipping: true,
       traffic: 1,
       blocks: mugA.blocks.filter((b) => !b.hidden).map((b) => b.type),
       experiments: [
-        { fromDaysAgo: 70, toDaysAgo: 22, variants: pastTest.variants.map((v) => ({ id: v.id, key: v.key, lift: v.key === "B" ? 0.9 : 1 })) },
-        { fromDaysAgo: 21, toDaysAgo: 0, variants: experiment.variants.map((v) => ({ id: v.id, key: v.key, lift: v.key === "B" ? 1.22 : 1 })) },
+        // Buyers didn't flinch at $52: same conversion, more per sale.
+        { fromDaysAgo: 70, toDaysAgo: 22, variants: pastTest.variants.map((v) => ({ id: v.id, key: v.key, lift: 1, priceCents: v.key === "B" ? 5200 : 4800 })) },
+        { fromDaysAgo: 21, toDaysAgo: 0, variants: experiment.variants.map((v) => ({ id: v.id, key: v.key, lift: v.key === "B" ? 1.145 : 1 })) },
       ],
     },
     {

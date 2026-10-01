@@ -357,14 +357,18 @@ export async function quickAnswer(ctx: ToolContext, question: string, fallbackDa
   }
 
   if (/why|reason|stopp|almost|nearly|survey|hesitat/.test(q)) {
-    const rows = (await run(ctx, "get_survey_answers", { ...range, question: "nearly_stopped" }, steps, emit)) as { answer: string; count: number }[];
+    // "Why do they buy?" vs "what nearly stopped them?"
+    const question = /stopp|almost|nearly|hesitat|didn.?t|not buy|abandon/.test(q) ? "nearly_stopped" : "why_bought";
+    const rows = (await run(ctx, "get_survey_answers", { ...range, question }, steps, emit)) as { answer: string; count: number }[];
     const total = rows.reduce((s, r) => s + r.count, 0);
-    const top = rows.find((r) => r.answer !== "nothing");
+    const top = rows.find((r) => r.answer !== "nothing" && r.answer !== "other");
+    const lead = question === "why_bought" ? "Asked what made them buy" : "Asked what nearly stopped them";
+    const title = question === "why_bought" ? `Why buyers bought, ${period}` : `What nearly stopped buyers, ${period}`;
     return {
       answer: top
-        ? `When asked what nearly stopped them, **${pct(top.count / total)}** of buyers said ${answerLabel("nearly_stopped", top.answer).toLowerCase()} (${total.toLocaleString("en-US")} answers in ${period}).`
-        : `No buyer answers yet in ${period}.`,
-      chart: { kind: "bar", title: `What nearly stopped buyers, ${period}`, unit: "percent", points: rows.map((r) => ({ label: answerLabel("nearly_stopped", r.answer), value: total ? r.count / total : 0 })), highlight: top ? answerLabel("nearly_stopped", top.answer) : null },
+        ? `${lead}, **${pct(top.count / total)}** of buyers said “${answerLabel(question, top.answer)}” (${total.toLocaleString("en-US")} answers in ${period}).`
+        : `No buyer answers to that question yet in ${period}.`,
+      chart: { kind: "bar", title, unit: "percent", points: rows.map((r) => ({ label: answerLabel(question, r.answer), value: total ? r.count / total : 0 })), highlight: top ? answerLabel(question, top.answer) : null },
       steps,
       action: null,
     };

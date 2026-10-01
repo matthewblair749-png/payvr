@@ -73,3 +73,22 @@ describe("helpers", () => {
     expect(splitLooksBroken(900, 100, 90, 10)).toBe(false);
   });
 });
+
+import { daysToDecide, normInv } from "@/lib/experiments/stats";
+
+describe("daysToDecide", () => {
+  it("inverts the normal CDF", () => {
+    expect(normInv(0.95)).toBeCloseTo(1.645, 2);
+    expect(normInv(0.5)).toBeCloseTo(0, 5);
+  });
+  it("projects time to the 95% line if the current difference holds", () => {
+    // z = 1.28 (90%) after 21 days → 21 × ((1.645/1.28)² − 1) ≈ 14 more days
+    expect(daysToDecide(0.9, 21)).toBe(14);
+    // Nearly there: 94% → a couple of days
+    expect(daysToDecide(0.94, 21)).toBeLessThanOrEqual(3);
+    // Symmetric for A leading
+    expect(daysToDecide(0.1, 21)).toBe(14);
+    // Coin flip: may never settle
+    expect(daysToDecide(0.52, 21)).toBeNull();
+  });
+});

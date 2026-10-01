@@ -8,6 +8,7 @@ import { db } from "../db";
 import { proposalChangeSchema, describeChange, createProposal } from "./proposals";
 import { funnelDrilldown, funnelOverview } from "../dal/funnel";
 import { SOURCE_LABELS, type Source } from "@/lib/tracking/source";
+import { SURVEY_QUESTION_KEYS } from "@/lib/survey/questions";
 
 /**
  * Research tools: read-only, merchant-scoped queries the Research Assistant
@@ -273,7 +274,7 @@ async function paymentFailures(ctx: ToolContext, i: z.infer<typeof failuresInput
 
 const surveyInput = z.object({
   ...rangeShape,
-  question: z.enum(["nearly_stopped", "heard_about"]).optional(),
+  question: z.enum(SURVEY_QUESTION_KEYS).optional(),
   checkout_id: checkoutId,
   by_variant: z.boolean().optional(),
 });
@@ -482,7 +483,7 @@ export const RESEARCH_TOOLS = [
   tool({
     name: "get_survey_answers",
     label: "Reading buyers' answers",
-    description: "Counts of buyers' answers to the one-tap post-purchase questions ('nearly_stopped': what nearly stopped them; 'heard_about': where they heard about the shop). Optionally split by A/B variant.",
+    description: "Counts of buyers' answers to the one-tap post-purchase questions ('why_bought': what made them buy; 'nearly_stopped': what nearly stopped them; 'heard_about': where they heard about the shop). Optionally split by A/B variant.",
     input: surveyInput,
     run: surveyAnswers,
   }),

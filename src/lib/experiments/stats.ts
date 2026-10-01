@@ -161,6 +161,31 @@ export function visitsNeeded(p: number, delta: number) {
   return Math.ceil((z * z * 2 * p * (1 - p)) / (delta * delta));
 }
 
+/** Inverse of normCdf (bisection; plenty precise for a status line). */
+export function normInv(p: number) {
+  let lo = -8;
+  let hi = 8;
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    if (normCdf(mid) < p) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+/**
+ * Days until a running test likely crosses the 95% line, if the current
+ * difference holds. Evidence (z) grows with the square root of visitors, so
+ * the remaining time is daysRunning × ((1.645 / z_now)² − 1). Null when the
+ * versions look too similar to ever settle in a reasonable time.
+ */
+export function daysToDecide(chanceBBetter: number, daysRunning: number): number | null {
+  const z = Math.abs(normInv(Math.min(0.9999, Math.max(0.0001, chanceBBetter))));
+  if (z < 0.1 || daysRunning <= 0) return null;
+  const days = Math.ceil(daysRunning * ((1.645 / z) ** 2 - 1));
+  return days > 120 ? null : Math.max(1, days);
+}
+
 export function conversionVerdict(opts: {
   result: ConversionResult;
   visitsA: number;
@@ -173,10 +198,6 @@ export function conversionVerdict(opts: {
   const per100 = (x: number) => `${x >= 0 ? "+" : "−"}${Math.abs(x * 100).toFixed(1).replace(/\.0$/, "")}`;
   const range = `somewhere between ${per100(result.diff.low)} and ${per100(result.diff.high)}`;
   const minVisits = Math.min(visitsA, visitsB);
-
-  const needed = visitsNeeded((result.rateA + result.rateB) / 2, Math.abs(result.diff.mid));
-  const daysLeft =
-    Number.isFinite(needed) && dailyPerVariant > 0 ? Math.max(0, Math.ceil((needed - minVisits) / dailyPerVariant)) : null;
 
   if (minVisits < MIN_VISITS || daysRunning < MIN_DAYS) {
     const waitDays = Math.max(MIN_DAYS - daysRunning, dailyPerVariant > 0 ? Math.ceil((MIN_VISITS - minVisits) / dailyPerVariant) : 0, 0);
@@ -218,13 +239,16 @@ export function conversionVerdict(opts: {
     };
   }
   const leaning = c >= 0.8 ? "leaning_b" : c <= 0.2 ? "leaning_a" : "keep_going";
+  const toGo = daysToDecide(c, daysRunning);
   const eta =
-    daysLeft == null ? "It may never show a clear winner; the versions look very similar." : `About ${daysLeft} more day${daysLeft === 1 ? "" : "s"} at your current traffic should settle it.`;
+    toGo == null
+      ? "It may never show a clear winner; the versions look very similar."
+      : `If the current difference holds, about ${toGo} more day${toGo === 1 ? "" : "s"} should settle it.`;
   return {
     status: leaning,
     headline: leaning === "leaning_b" ? "B is probably better, but not certain yet" : leaning === "leaning_a" ? "Your original is probably better" : "No clear winner yet",
     detail: `${Math.round(c * 100)}% chance B is better: ${range} sales per 100 visitors. ${eta}`,
-    daysLeft,
+    daysLeft: toGo,
     shipB: false,
   };
 }
@@ -254,8 +278,11 @@ export function revenueVerdict(opts: { result: RevenueResult; visitsA: number; v
   return {
     status: c >= 0.8 ? "leaning_b" : c <= 0.2 ? "leaning_a" : "keep_going",
     headline: c >= 0.8 ? "B is probably earning more" : c <= 0.2 ? "Your original is probably earning more" : "No clear winner yet",
-    detail: `${Math.round(c * 100)}% chance B earns more: ${range}. Give it more time.`,
-    daysLeft: null,
+    detail: `${Math.round(c * 100)}% chance B earns more: ${range}. ${(() => {
+      const toGo = daysToDecide(c, daysRunning);
+      return toGo == null ? "It may never show a clear winner." : `If the current difference holds, about ${toGo} more day${toGo === 1 ? "" : "s"} should settle it.`;
+    })()}`,
+    daysLeft: daysToDecide(c, daysRunning),
     shipB: false,
   };
 }
