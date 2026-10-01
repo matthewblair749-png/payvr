@@ -79,9 +79,14 @@ type Page = {
   experiments: { fromDaysAgo: number; toDaysAgo: number; variants: { id: string; key: string; lift: number }[] }[];
 };
 
+/** The launch-day spike the North Star chart should show (inside the default 30-day view). */
+export const LAUNCH_DAYS_AGO = 24;
+const LAUNCH_TAPER = [5.5, 2.6, 1.6, 1.2];
+
 export async function seedAnalytics(db: PrismaClient, merchantId: string, pages: Page[], opts: { days?: number } = {}) {
   const r = rng(20260930);
-  const days = opts.days ?? 90;
+  // 180 days, so even the 90-day view has a full previous period to compare against.
+  const days = opts.days ?? 180;
   const now = new Date();
   const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
 
@@ -99,9 +104,14 @@ export async function seedAnalytics(db: PrismaClient, merchantId: string, pages:
     const weekday = new Date(dayStart).getUTCDay();
     const growth = 0.55 + 0.45 * ((days - d) / days); // the shop is growing
     const weekly = weekday === 0 || weekday === 6 ? 1.25 : weekday === 1 ? 0.85 : 1;
+    // Launch day: the first page (the new speckled mug set) goes out to the
+    // mailing list, then interest tapers over the next few days.
+    const sinceLaunch = LAUNCH_DAYS_AGO - d;
+    const launchBoost = sinceLaunch >= 0 && sinceLaunch < LAUNCH_TAPER.length ? LAUNCH_TAPER[sinceLaunch] : 1;
 
     for (const page of pages) {
-      const expected = 70 * page.traffic * growth * weekly * (0.85 + r() * 0.3);
+      const boost = page === pages[0] ? launchBoost : 1;
+      const expected = 70 * page.traffic * growth * weekly * boost * (0.85 + r() * 0.3);
       const count = d === 0 ? Math.floor(expected * (now.getUTCHours() / 24)) : Math.round(expected);
 
       for (let i = 0; i < count; i++) {
@@ -261,5 +271,7 @@ export async function seedAnalytics(db: PrismaClient, merchantId: string, pages:
   // The merchant already celebrated their first sale long ago.
   await db.merchant.update({ where: { id: merchantId }, data: { firstSaleAt: firstSale, firstSaleCelebratedAt: firstSale } });
 
-  return { events: events.length, orders: orders.length, surveys: surveys.length, spikeDay: new Date(tuesday).toISOString().slice(0, 10) };
+  return { events: events.length, orders: orders.length, surveys: surveys.length, spikeDay: new Date(tuesday).toISOString().slice(0, 10),
+    launchDay: new Date(today - LAUNCH_DAYS_AGO * 86_400_000).toISOString().slice(0, 10),
+  };
 }

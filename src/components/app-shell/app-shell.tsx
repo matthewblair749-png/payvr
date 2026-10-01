@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { LogOut, Menu, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { LogoMark, Wordmark } from "@/components/brand/logo";
@@ -44,10 +45,14 @@ export function AppShell({
   const [search, setSearch] = useState(false);
 
   // Tell the server our timezone (for the greeting and "yesterday" in the brief).
+  const router = useRouter();
   useEffect(() => {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (tz && !document.cookie.includes(`${TZ_COOKIE}=${encodeURIComponent(tz)}`)) setCookie(TZ_COOKIE, encodeURIComponent(tz));
-  }, []);
+    if (tz && !document.cookie.includes(`${TZ_COOKIE}=${encodeURIComponent(tz)}`)) {
+      setCookie(TZ_COOKIE, encodeURIComponent(tz));
+      router.refresh(); // first visit: re-render the greeting in local time
+    }
+  }, [router]);
 
   function toggle() {
     setCollapsed((c) => {

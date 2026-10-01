@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { greetingFor, TZ_COOKIE } from "@/components/app-shell/greeting";
 import { PageHeader } from "@/components/app-shell/page-header";
+import { HomeDashboard, HomeSkeleton } from "@/components/home/home-dashboard";
 import { requireMerchant } from "@/server/dal/session";
 
 export const metadata: Metadata = { title: "Home" };
@@ -12,7 +14,9 @@ export default async function HomePage() {
   return (
     <>
       <PageHeader title={`${hello}, ${merchant.name}`} description="Here's how your business is doing." />
-      {/* Step 2+ fills this: morning brief, North Star, KPIs, funnel, live feed, why they buy, experiment. */}
+      <Suspense fallback={<HomeSkeleton />}>
+        <HomeDashboard />
+      </Suspense>
     </>
   );
 }

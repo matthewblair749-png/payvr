@@ -59,7 +59,7 @@
   --app-chart-main: var(--app-orange);
   --app-chart-main-fill: rgb(240 74 26 / 0.12);
   --app-chart-ink: #0e0e10;
-  --app-chart-gray: #a3a3ab;
+  --app-chart-gray: #808088; /* 3.9:1 on white, 3.4:1 over the orange wash */
   --app-chart-gray-soft: #d4d4da;
   --app-chart-grid: #ededf0;
   --app-chart-axis: #6b6b73;
@@ -105,7 +105,7 @@
     --app-pending: #a1a1aa;
     --app-pending-text: #c4c4cc;
     --app-pending-soft: #222226;
-    --app-chart-main-fill: rgb(240 74 26 / 0.18);
+    --app-chart-main-fill: rgb(240 74 26 / 0.13);
     --app-chart-ink: #f4f4f6;
     --app-chart-gray: #7a7a83;
     --app-chart-gray-soft: #3a3a40;
@@ -134,7 +134,7 @@
   --app-pending: #a1a1aa;
   --app-pending-text: #c4c4cc;
   --app-pending-soft: #222226;
-  --app-chart-main-fill: rgb(240 74 26 / 0.18);
+  --app-chart-main-fill: rgb(240 74 26 / 0.13);
   --app-chart-ink: #f4f4f6;
   --app-chart-gray: #7a7a83;
   --app-chart-gray-soft: #3a3a40;

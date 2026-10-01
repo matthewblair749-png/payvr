@@ -15,17 +15,8 @@ export const NAV: NavItem[] = [
   { href: "/studio/settings", label: "Settings", icon: Settings, match: under("/studio/settings", "/studio/payments") },
 ];
 
-/** Global date range, shared by every page through the `range` query param. */
-export const RANGES = [
-  { value: "7", label: "7d", long: "Last 7 days" },
-  { value: "30", label: "30d", long: "Last 30 days" },
-  { value: "90", label: "90d", long: "Last 90 days" },
-] as const;
-export type RangeValue = (typeof RANGES)[number]["value"];
-export const DEFAULT_RANGE: RangeValue = "30";
-export function parseRange(v: unknown): RangeValue {
-  return RANGES.some((r) => r.value === v) ? (v as RangeValue) : DEFAULT_RANGE;
-}
+export { DEFAULT_RANGE, parseRange, RANGES, type RangeValue } from "@/lib/date-range";
+import { DEFAULT_RANGE, type RangeValue } from "@/lib/date-range";
 
 /** Keep the global range when moving between pages. */
 export function withRange(href: string, range: RangeValue) {
