@@ -242,7 +242,7 @@ export function ResearchView({
               type="submit"
               disabled={!enabled || busy || input.trim().length < 2}
               aria-label="Send"
-              className="grid h-10 w-10 place-items-center rounded-xl bg-orange text-white disabled:opacity-40"
+              className="grid h-10 w-10 place-items-center rounded-xl bg-orange text-ink disabled:opacity-40"
             >
               {busy ? <Loader2 size={18} className="animate-spin" aria-hidden="true" /> : <ArrowUp size={18} aria-hidden="true" />}
             </button>

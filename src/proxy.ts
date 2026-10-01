@@ -40,8 +40,8 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     {
-      // Skip API routes (webhooks etc.), static assets and prefetches.
-      source: "/((?!api|_next/static|_next/image|icon.svg|favicon.ico).*)",
+      // Skip API routes (webhooks etc.), hosted assets (own CSP), static files and prefetches.
+      source: "/((?!api|assets/|_next/static|_next/image|icon.svg|favicon.ico).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

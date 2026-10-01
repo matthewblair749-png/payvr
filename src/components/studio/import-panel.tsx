@@ -45,7 +45,7 @@ export function ImportPanel({ onApply, onUndo }: { onApply: (r: BrandImportResul
   return (
     <div className="space-y-5">
       <div>
-        <h3 className="font-display text-xl font-bold tracking-[-0.03em]">Paste a link</h3>
+        <h2 className="font-display text-xl font-bold tracking-[-0.03em]">Paste a link</h2>
         <p className="mt-1 text-sm text-muted-strong">
           Your website or Instagram. We&apos;ll match your colors, type and logo in about 10 seconds.
         </p>

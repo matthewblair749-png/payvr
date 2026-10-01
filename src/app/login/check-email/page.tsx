@@ -20,7 +20,7 @@ export default function CheckEmailPage() {
           <p className="mt-1 break-all text-sm">{dev.email}</p>
           <a
             href={dev.url}
-            className="mt-3 inline-flex rounded-full bg-orange px-5 py-2.5 font-semibold text-white"
+            className="mt-3 inline-flex rounded-full bg-orange px-5 py-2.5 font-bold text-ink"
           >
             Open magic link
           </a>

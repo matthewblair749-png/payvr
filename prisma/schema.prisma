@@ -93,6 +93,7 @@ model Merchant {
   experiments     Experiment[]
   orders          Order[]
   events          CheckoutEvent[]
+  assets          Asset[]
   surveyResponses SurveyResponse[]
   insights        Insight[]
   researchThreads ResearchThread[]
@@ -384,4 +385,19 @@ model ResearchMessage {
   createdAt DateTime       @default(now())
 
   @@unique([threadId, seq])
+}
+
+/// A merchant image (logo) copied into lumen, so buyers' browsers never call a
+/// third-party host and the logo can't change or vanish under a live checkout.
+model Asset {
+  id          String   @id @default(cuid())
+  merchantId  String
+  merchant    Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  contentType String
+  sha256      String
+  bytes       Bytes
+  sourceUrl   String?
+  createdAt   DateTime @default(now())
+
+  @@unique([merchantId, sha256])
 }

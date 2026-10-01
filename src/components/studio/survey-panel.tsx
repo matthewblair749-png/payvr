@@ -22,7 +22,7 @@ export function SurveyPanel({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="font-display text-xl font-bold tracking-[-0.03em]">One-tap question</h3>
+        <h2 className="font-display text-xl font-bold tracking-[-0.03em]">One-tap question</h2>
         <p className="mt-1 text-sm text-muted-strong">
           Shown on the thank-you screen after payment. Optional for buyers, one tap to answer. Answers show up on your dashboard
           and feed the Research Assistant.

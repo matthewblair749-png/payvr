@@ -10,6 +10,7 @@
  * twin for every chart so no value is tooltip-only.
  */
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { bestText } from "@/lib/color";
 import { cn } from "@/lib/utils";
 
 export const VIZ = {
@@ -52,19 +53,20 @@ export function niceTicks(max: number, count = 4): number[] {
   return ticks;
 }
 
-/** Sequential single-hue scale (light → dark orange) for heat cells. */
-const HEAT_STOPS = ["#FFF1EB", "#FFC9B3", "#FB8A60", "#F04A1A", "#B8360F", "#7A2308"];
+/**
+ * Sequential single-hue scale for heat cells, in 5 discrete steps (light → dark
+ * orange). Steps instead of a continuous blend: mid-tone oranges exist where
+ * neither ink nor white text reaches 4.5:1, so every step here is chosen to
+ * have a text color that passes AA (ink ≥ 8.1:1 on the light three, white ≥ 5.1:1 on the dark two).
+ */
+export const HEAT_STEPS = ["#FFF1EB", "#FFC9B3", "#FB8A60", "#C2410C", "#7A2308"];
 export function heatColor(t: number): string {
-  const x = Math.max(0, Math.min(1, t)) * (HEAT_STOPS.length - 1);
-  const i = Math.min(HEAT_STOPS.length - 2, Math.floor(x));
-  const f = x - i;
-  const a = HEAT_STOPS[i].match(/\w\w/g)!.map((h) => parseInt(h, 16));
-  const b = HEAT_STOPS[i + 1].match(/\w\w/g)!.map((h) => parseInt(h, 16));
-  return `rgb(${a.map((v, k) => Math.round(v + (b[k] - v) * f)).join(",")})`;
+  const i = Math.min(HEAT_STEPS.length - 1, Math.floor(Math.max(0, Math.min(1, t)) * HEAT_STEPS.length));
+  return HEAT_STEPS[i];
 }
-/** Ink or white for text sitting inside a heat cell. */
+/** Ink or white for text inside a heat cell: whichever has more contrast with that exact fill. */
 export function heatText(t: number) {
-  return t > 0.5 ? "#FFFFFF" : VIZ.ink;
+  return bestText(heatColor(t), ["#FFFFFF", VIZ.ink]);
 }
 
 const shortDate = new Intl.DateTimeFormat("en", { month: "short", day: "numeric", timeZone: "UTC" });
@@ -467,7 +469,7 @@ export function Heatmap({
                       style={{ background: heatColor(cell.t), color: heatText(cell.t) }}
                     >
                       <span className="block font-semibold tabular-nums leading-tight">{cell.label}</span>
-                      {cell.sub && <span className="block text-[11px] leading-tight opacity-80">{cell.sub}</span>}
+                      {cell.sub && <span className="block text-[11px] leading-tight">{cell.sub}</span>}
                       <span className="sr-only">{cell.detail}</span>
                     </td>
                   );
@@ -480,7 +482,11 @@ export function Heatmap({
       <div className="mt-3 flex items-center gap-2 text-xs text-muted-strong" aria-hidden="true">
         <span>{legend.title}</span>
         <span>{legend.low}</span>
-        <span className="h-2 w-28 rounded-full" style={{ background: `linear-gradient(90deg, ${[0, 0.2, 0.4, 0.6, 0.8, 1].map(heatColor).join(",")})` }} />
+        <span className="flex gap-0.5">
+          {HEAT_STEPS.map((c) => (
+            <span key={c} className="h-2.5 w-5 rounded-sm" style={{ background: c }} />
+          ))}
+        </span>
         <span>{legend.high}</span>
       </div>
       <Tooltip tip={tip} />

@@ -8,7 +8,8 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "bg-orange text-white hover:-translate-y-px shadow-soft",
+        // Ink on brand orange is 5.2:1 (AA at any size); white would be 3.7:1.
+        primary: "bg-orange text-ink font-bold hover:-translate-y-px shadow-soft",
         ink: "bg-ink text-white hover:-translate-y-px",
         soft: "bg-surface text-ink hover:bg-black/10",
         ghost: "text-ink hover:bg-surface",

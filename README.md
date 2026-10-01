@@ -277,12 +277,35 @@ checkout. The Research Assistant's `get_experiment_results` tool and the "lumen 
 same results and verdicts, so chat, insights and the Lab always agree. The seed includes one running test
 (B ahead) and one finished test (original kept).
 
+## What's here (Phase 8: Polish, performance, accessibility)
+- **Automated audit:** axe-core (WCAG 2.0/2.1/2.2 A + AA rules) across 23 screens and states: landing,
+  sign-in, Studio home, editor (every tab, dialogs open), dashboard, research, experiments, orders,
+  payments, pay pages (idle, error, success, survey) and 404. It went from 22 violations to **0**.
+- **Keyboard walk:** every interactive element on the landing (46 stops), editor (63) and dashboard (72)
+  is reachable in a sensible order with a visible focus ring. There's a skip link on every page.
+- **Contrast fixes:** primary buttons are now ink on orange (5.2:1; white on orange was 3.7:1). The
+  dashboard heat map uses 5 discrete steps with automatically chosen cell text, plus a legend.
+- **Structure:** one `<h1>` per screen (the editor has a screen-reader-only "Editing …" heading),
+  no skipped heading levels, all content inside landmarks, and branded `not-found` and error pages.
+- **Performance:** mobile Lighthouse on the landing dropped to 84 because the hero subtitle, the real
+  LCP element, faded in from transparent. It now rises without fading, so LCP lands on first paint.
+  The live editor demo below the fold loads only when the visitor scrolls near it.
+- **Hosted logos:** publishing copies a checkout's logo into lumen (`Asset` table, served from
+  `/assets/<id>`). Live checkouts never hot-link a merchant's server, and a logo can't change or vanish
+  under a live sale. Fetches go through the SSRF-hardened client. The file type is sniffed from the bytes
+  (PNG, JPEG, GIF, WebP, ICO, or SVG without scripts), with a 512 KB cap. Files are served with
+  `nosniff` and a sandboxing CSP. If the copy fails, publishing stops with a message instead of
+  silently dropping the logo.
+
 ## Accessibility
 - WCAG AA contrast: button label colors are picked automatically, and accent-as-text is darkened
   until it passes 4.5:1 (`ensureContrast`), so merchants can't pick an illegible theme.
 - Every control is a native input with a label. Drag-and-drop works from the keyboard
   (focus a ⋮⋮ handle, press Space, use the arrow keys, then Space again), with screen-reader announcements.
 - `prefers-reduced-motion` is honored by both CSS animations and Framer Motion (`MotionConfig reducedMotion="user"`).
+- Every chart has a table twin and an arrow-key readout. Color is never the only signal: arrows, labels
+  and legends always come with it.
+- axe-core finds 0 violations across 23 screens and states (see Phase 8).
 
 ## Security
 - **Row-level access by merchant:** every DAL function takes `merchantId` from the session and filters on it.
@@ -301,10 +324,16 @@ same results and verdicts, so chat, insights and the Lab always agree. The seed 
 ## Performance (Lighthouse, production build, local)
 | | Perf | A11y | Best practices | SEO |
 | --- | --- | --- | --- | --- |
-| Desktop | 100 | 100 | 100 | 100 |
-| Mobile (simulated slow 4G) | 95–97 | 100 | 100 | 100 |
+| Landing, desktop | 100 | 100 | 100 | 100 |
+| Landing, mobile (simulated slow 4G) | 92–94 | 100 | 100 | 100 |
+| Pay page, desktop | 100 | 100 | 100* | 60† |
+| Pay page, mobile | 94–96 | 100 | 100* | 60† |
 
-The hero animates with CSS only (transform, no opacity), so the LCP wordmark paints before hydration.
+\* 96 in our sandbox, only because it blocks `js.stripe.com`. With network access that console error is gone.
+† On purpose: checkout pages send `robots: noindex` so buyers' private links never end up in search results.
+
+Desktop LCP is 0.7s on every page. On mobile, LCP lands on first paint (about 0.4s observed with 4× CPU
+throttling). The hero animates with CSS transforms only, never from transparent, so it paints before hydration.
 Framer Motion features are lazy-loaded, and Tailwind CSS is inlined into `<head>`.
 
 ## Stripe test cards
@@ -325,4 +354,4 @@ Use any future expiry, any CVC and any postal code.
 5. ✅ One-tap survey
 6. ✅ Research Assistant
 7. ✅ Experiments
-8. Polish, performance, accessibility
+8. ✅ Polish, performance, accessibility

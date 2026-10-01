@@ -119,8 +119,15 @@ export const checkoutConfigSchema = z.object({
   schemaVersion: z.literal(1),
   brand: z.object({
     name: shortText(48).min(1),
-    /** Optional https logo URL (set by brand import or upload). */
-    logoUrl: z.string().url().startsWith("https://").max(500).optional(),
+    /**
+     * Optional logo: an https URL (brand import or pasted), which publishing
+     * copies into lumen as a same-origin `/assets/<id>` path.
+     */
+    logoUrl: z
+      .string()
+      .max(500)
+      .refine((v) => /^\/assets\/[a-z0-9]{20,32}$/.test(v) || (v.startsWith("https://") && URL.canParse(v)), "Use an https link")
+      .optional(),
   }),
   theme: themeSchema,
   /** One-tap question shown on the success screen after payment. */

@@ -6,7 +6,7 @@ import { Logo, LogoMark } from "@/components/brand/logo";
 export function AuthShell({ children }: { children: ReactNode }) {
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
-      <div className="on-orange relative hidden flex-col justify-between overflow-hidden bg-orange p-10 text-white lg:flex">
+      <aside aria-label="About lumen" className="on-orange relative hidden flex-col justify-between overflow-hidden bg-orange p-10 text-white lg:flex">
         <Link href="/" aria-label="lumen home" className="w-fit">
           <Logo variant="inverted" size={36} wordmarkClassName="text-[1.75rem] text-white" />
         </Link>
@@ -17,7 +17,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
           </p>
         </div>
         <p className="text-ink">Payments by Stripe. Card numbers never touch lumen.</p>
-      </div>
+      </aside>
       <main id="main" className="flex items-center justify-center bg-white px-5 py-12">
         <div className="w-full max-w-sm">
           <Link href="/" aria-label="lumen home" className="mb-10 inline-block lg:hidden">

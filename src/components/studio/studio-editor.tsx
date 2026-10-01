@@ -148,6 +148,7 @@ export function StudioEditor({ initial }: { initial: StudioInitial }) {
     <div className="flex h-dvh flex-col bg-surface">
       {/* ------------------------------------------------ Top bar */}
       <header className="z-20 flex h-16 shrink-0 items-center gap-2 border-b border-black/8 bg-white px-3 sm:px-4">
+        <h1 className="sr-only">Editing {name || "checkout"}</h1>
         <Link href="/studio" aria-label="Back to all checkouts" className="flex items-center gap-1 rounded-xl p-1.5 hover:bg-surface">
           <ArrowLeft size={18} aria-hidden="true" />
           <LogoMark size={28} title="" />
@@ -497,7 +498,7 @@ function LogoField({ value, onChange }: { value?: string; onChange: (v: string |
               setError(null);
               return onChange(undefined);
             }
-            if (!/^https:\/\/\S+$/.test(v) || v.length > 500) return setError("Use an https:// image link");
+            if (!(/^https:\/\/\S+$/.test(v) || /^\/assets\/[a-z0-9]+$/.test(v)) || v.length > 500) return setError("Use an https:// image link");
             setError(null);
             onChange(v);
           }}

@@ -4,6 +4,7 @@ import { DEMO_CONFIG } from "@/lib/checkout/defaults";
 import { checkoutConfigSchema, type CheckoutConfig } from "@/lib/checkout/schema";
 import { slugify } from "@/lib/utils";
 import { db } from "../db";
+import { hostLogo } from "../assets";
 import { UserError } from "../errors";
 
 /**
@@ -206,17 +207,24 @@ export async function publishPage(merchantId: string, pageId: string, opts: { sl
     slug = opts.slug;
   }
 
-  const version = await createVersion(pageId, parseConfig(page.draftConfig), opts.note || "Published");
+  // Live checkouts only load same-origin logos (see server/assets.ts).
+  const draft = await withHostedLogo(merchantId, parseConfig(page.draftConfig));
+  const version = await createVersion(pageId, draft, opts.note || "Published");
+  const variantConfigs = new Map<string, CheckoutConfig>();
+  for (const exp of page.experiments) {
+    for (const v of exp.variants) {
+      if (!v.isControl && v.config) variantConfigs.set(v.id, await withHostedLogo(merchantId, parseConfig(v.config)));
+    }
+  }
   await db.$transaction(async (tx) => {
     await tx.checkoutPage.update({
       where: { id: pageId },
-      data: { slug, status: "PUBLISHED", publishedVersionId: version.id, publishedAt: new Date() },
+      data: { slug, status: "PUBLISHED", publishedVersionId: version.id, publishedAt: new Date(), draftConfig: asJson(draft) },
     });
     for (const exp of page.experiments) {
       for (const v of exp.variants) {
-        if (!v.isControl && v.config) {
-          await tx.variant.update({ where: { id: v.id }, data: { publishedConfig: v.config as Prisma.InputJsonValue } });
-        }
+        const config = variantConfigs.get(v.id);
+        if (config) await tx.variant.update({ where: { id: v.id }, data: { config: asJson(config), publishedConfig: asJson(config) } });
       }
       if (exp.status === "DRAFT") {
         await tx.experiment.update({ where: { id: exp.id }, data: { status: "RUNNING", startedAt: new Date() } });
@@ -224,6 +232,23 @@ export async function publishPage(merchantId: string, pageId: string, opts: { sl
     }
   });
   return { slug, version };
+}
+
+/**
+ * Copy a remote logo into lumen: a live checkout never hot-links a third-party
+ * host. If the copy fails, publishing stops with a fixable message rather than
+ * silently going live without the logo.
+ */
+async function withHostedLogo(merchantId: string, config: CheckoutConfig): Promise<CheckoutConfig> {
+  const logoUrl = config.brand.logoUrl;
+  if (!logoUrl) return config;
+  try {
+    const hosted = await hostLogo(merchantId, logoUrl);
+    return hosted === logoUrl ? config : { ...config, brand: { ...config.brand, logoUrl: hosted } };
+  } catch (e) {
+    const why = e instanceof UserError ? e.message : "it couldn't be downloaded";
+    throw new UserError(`Couldn't copy your logo into lumen (${why}). Try a different logo link or remove it, then publish.`);
+  }
 }
 
 /** Create a draft A/B experiment with B starting as a copy of the current draft. */
