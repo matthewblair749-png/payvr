@@ -5,7 +5,7 @@ import { cachedConnectStatus, refreshConnectStatus, type ConnectStatus } from "@
 import { stripeConfigured } from "@/server/stripe";
 import { ConnectButton, DashboardButton } from "./client";
 
-export const metadata: Metadata = { title: "Payments" };
+export const metadata: Metadata = { title: "Stripe & payouts" };
 
 const TEST_CARDS = [
   ["4242 4242 4242 4242", "Succeeds"],
@@ -28,8 +28,8 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/studio/
 
   return (
     <>
-      <h1 className="font-display text-5xl font-bold tracking-[-0.05em]">Payments</h1>
-      <p className="mt-2 text-muted-strong">Get paid through Stripe. Money goes straight to your bank.</p>
+      <h1 className="font-display text-figure font-bold tracking-[-0.03em]">Stripe &amp; payouts</h1>
+      <p className="mt-1 text-body text-app-muted">Get paid through Stripe. Money goes straight to your bank.</p>
 
       <section className="mt-10 rounded-[28px] bg-white p-6 shadow-soft ring-1 ring-black/5 sm:p-8" aria-labelledby="stripe-status">
         {!configured ? (

@@ -29,12 +29,11 @@ export default async function DashboardPage({ searchParams }: PageProps<"/studio
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-5xl font-bold tracking-[-0.05em]">Dashboard</h1>
-          <p className="mt-2 text-muted-strong">How your checkouts are doing, and where people hesitate.</p>
+          <h1 className="font-display text-figure font-bold tracking-[-0.03em]">Dashboard</h1>
+          <p className="mt-1 text-body text-app-muted">How your checkouts are doing, and where people hesitate.</p>
         </div>
       </div>
       <DashboardFilters
-        range={rangeKey}
         pageId={pageId}
         pages={pages.map((p) => ({ id: p.id, name: p.name }))}
       />

@@ -25,7 +25,7 @@ export function LiveEditor() {
 
   function makeItMine() {
     saveDraft({ ...config, brand: { ...config.brand, name: config.brand.name.trim() || "Your brand" } });
-    router.push("/studio?from=landing");
+    router.push("/studio/checkouts?from=landing");
   }
 
   return (

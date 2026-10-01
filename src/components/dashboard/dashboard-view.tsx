@@ -131,7 +131,7 @@ export function DashboardView({ data, currency, days }: { data: DashboardData; c
         <p className="font-display text-2xl font-bold tracking-[-0.03em]">No checkout visits in this period</p>
         <p className="mt-2 text-muted-strong">
           Publish a checkout and share its link. Visits, drop-offs and sales show up here within seconds.{" "}
-          <Link href="/studio" className="font-semibold text-orange-deep underline">
+          <Link href="/studio/checkouts" className="font-semibold text-orange-deep underline">
             Go to checkouts
           </Link>
         </p>

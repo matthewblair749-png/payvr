@@ -6,9 +6,14 @@ import { NotFoundError } from "./checkout-pages";
 
 /** Merchant-scoped order reads and actions. */
 
-export async function listOrders(merchantId: string, take = 50) {
+export async function listOrders(merchantId: string, take = 50, q?: string) {
+  const term = q?.trim().slice(0, 80);
   return db.order.findMany({
-    where: { merchantId, status: { not: "PENDING" } },
+    where: {
+      merchantId,
+      status: { not: "PENDING" },
+      ...(term ? { OR: [{ id: term }, { stripePaymentIntentId: term }, { customerEmail: { contains: term, mode: "insensitive" as const } }] } : {}),
+    },
     orderBy: { createdAt: "desc" },
     take,
     include: { product: { select: { name: true } }, checkoutPage: { select: { name: true, slug: true } } },
@@ -73,4 +78,48 @@ export async function uncelebratedFirstSale(merchantId: string) {
 
 export async function markFirstSaleCelebrated(merchantId: string) {
   await db.merchant.update({ where: { id: merchantId }, data: { firstSaleCelebratedAt: new Date() } });
+}
+
+/** Paid statuses: money changed hands (even if later refunded or disputed). */
+const PAID = ["SUCCEEDED", "PARTIALLY_REFUNDED", "REFUNDED", "DISPUTED"] as const;
+
+export type CustomerRow = { email: string; orders: number; spentCents: number; firstAt: Date; lastAt: Date };
+
+/** Buyers, grouped by email, most recent first. */
+export async function listCustomers(merchantId: string, opts: { q?: string; take?: number } = {}): Promise<CustomerRow[]> {
+  const term = opts.q?.trim().slice(0, 80);
+  const rows = await db.order.groupBy({
+    by: ["customerEmail"],
+    where: {
+      merchantId,
+      status: { in: [...PAID] },
+      customerEmail: term ? { contains: term, mode: "insensitive" } : { not: null },
+    },
+    _count: { _all: true },
+    _sum: { amountCents: true, refundedCents: true },
+    _min: { createdAt: true },
+    _max: { createdAt: true },
+    orderBy: { _max: { createdAt: "desc" } },
+    take: opts.take ?? 500,
+  });
+  return rows.map((r) => ({
+    email: r.customerEmail!,
+    orders: r._count._all,
+    spentCents: (r._sum.amountCents ?? 0) - (r._sum.refundedCents ?? 0),
+    firstAt: r._min.createdAt!,
+    lastAt: r._max.createdAt!,
+  }));
+}
+
+/**
+ * Drives the top bar's "Live" pulse: paid orders in the last 15 minutes.
+ * Only true activity counts, so the pulse never fakes liveliness.
+ */
+export async function liveStatus(merchantId: string) {
+  const since = new Date(Date.now() - 15 * 60_000);
+  const [recent, last] = await Promise.all([
+    db.order.count({ where: { merchantId, status: { in: [...PAID] }, createdAt: { gte: since } } }),
+    db.order.findFirst({ where: { merchantId, status: { in: [...PAID] } }, orderBy: { createdAt: "desc" }, select: { createdAt: true } }),
+  ]);
+  return { recent, lastSaleAt: last?.createdAt.toISOString() ?? null };
 }

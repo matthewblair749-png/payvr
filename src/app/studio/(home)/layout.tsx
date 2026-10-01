@@ -1,45 +1,32 @@
-import Link from "next/link";
+import { cookies, headers } from "next/headers";
 import type { ReactNode } from "react";
-import { LogOut } from "lucide-react";
-import { Logo } from "@/components/brand/logo";
+import { AppShell } from "@/components/app-shell/app-shell";
+import { SIDEBAR_COOKIE, THEME_COOKIE } from "@/components/app-shell/nav";
 import { FirstSaleCelebration } from "@/components/studio/first-sale-celebration";
 import { auth, signOut } from "@/server/auth";
 import { uncelebratedFirstSale } from "@/server/dal/orders";
 import { requireMerchant } from "@/server/dal/session";
-import { StudioNav } from "./nav";
 
-export default async function StudioHomeLayout({ children }: { children: ReactNode }) {
+export default async function MerchantAppLayout({ children }: { children: ReactNode }) {
   const merchant = await requireMerchant();
-  const [session, firstSale] = await Promise.all([auth(), uncelebratedFirstSale(merchant.id)]);
+  const [session, firstSale, jar, hdrs] = await Promise.all([auth(), uncelebratedFirstSale(merchant.id), cookies(), headers()]);
+  const theme = jar.get(THEME_COOKIE)?.value;
+
+  async function signOutAction() {
+    "use server";
+    await signOut({ redirectTo: "/" });
+  }
+
   return (
-    <div className="min-h-dvh bg-surface">
-      <header className="border-b border-black/8 bg-white">
-        <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-5 sm:gap-8 sm:px-8">
-          <Link href="/studio" aria-label="Studio home" className="shrink-0">
-            <Logo size={30} wordmarkClassName="hidden sm:inline" />
-          </Link>
-          <StudioNav />
-          <div className="ml-auto flex shrink-0 items-center gap-3">
-            <span className="hidden text-sm text-muted-strong md:inline">
-              {merchant.name} · {session?.user?.email}
-            </span>
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/" });
-              }}
-            >
-              <button type="submit" aria-label="Sign out" className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold hover:bg-surface">
-                <LogOut size={15} aria-hidden="true" /> <span className="hidden sm:inline">Sign out</span>
-              </button>
-            </form>
-          </div>
-        </div>
-      </header>
-      <main id="main" className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
-        {children}
-      </main>
+    <AppShell
+      account={{ name: merchant.name, email: session?.user?.email ?? "" }}
+      initialCollapsed={jar.get(SIDEBAR_COOKIE)?.value === "collapsed"}
+      theme={theme === "light" || theme === "dark" ? theme : "system"}
+      signOut={signOutAction}
+      mac={/Mac|iPhone|iPad/.test(hdrs.get("user-agent") ?? "")}
+    >
+      {children}
       <FirstSaleCelebration initial={firstSale} watch={Boolean(merchant.stripeChargesEnabled && !merchant.firstSaleAt)} />
-    </div>
+    </AppShell>
   );
 }

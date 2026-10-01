@@ -30,7 +30,7 @@ async function guarded<T>(fn: (merchantId: string) => Promise<T>): Promise<Actio
 export async function startProposalAction(input: { insightId: string }) {
   return guarded(async (merchantId) => {
     const r = await startProposal(merchantId, id.parse(input.insightId));
-    revalidatePath("/studio");
+    revalidatePath("/studio", "layout");
     return r;
   });
 }

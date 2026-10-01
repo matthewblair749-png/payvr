@@ -11,6 +11,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Dev-only badge: keep it off the sidebar's account row and Collapse button.
+  devIndicators: { position: "bottom-right" },
   poweredByHeader: false,
   experimental: {
     // Inline Tailwind's small atomic stylesheet into <head>: removes a

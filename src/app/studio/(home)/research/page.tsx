@@ -7,7 +7,8 @@ import { getProposal } from "@/server/research/proposals";
 
 export const metadata: Metadata = { title: "Research" };
 
-export default async function ResearchPage() {
+export default async function ResearchPage({ searchParams }: PageProps<"/studio/research">) {
+  const sp = await searchParams;
   const merchant = await requireMerchant("/studio/research");
   // Deterministic insights are cheap (~150ms); refresh them when stale.
   await ensureFreshInsights(merchant.id);
@@ -24,12 +25,14 @@ export default async function ResearchPage() {
 
   return (
     <>
-      <h1 className="font-display text-5xl font-bold tracking-[-0.05em]">Research</h1>
-      <p className="mt-2 text-muted-strong">Why people buy, why they almost didn&apos;t, and what to try next.</p>
+      <h1 className="font-display text-figure font-bold tracking-[-0.03em]">Research</h1>
+      <p className="mt-1 text-body text-app-muted">Why people buy, why they almost didn&apos;t, and what to try next.</p>
       <ResearchView
         insights={insights}
         threads={threads.map((t) => ({ id: t.id, title: t.title, updatedAt: t.updatedAt.toISOString() }))}
         enabled={assistantEnabled()}
+        initialThreadId={typeof sp.thread === "string" ? sp.thread : null}
+        initialQuestion={typeof sp.ask === "string" ? sp.ask.slice(0, 500) : ""}
       />
     </>
   );

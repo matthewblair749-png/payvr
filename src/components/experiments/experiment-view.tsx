@@ -78,7 +78,7 @@ export function ExperimentView({ data }: { data: ExperimentDetail }) {
             </Link>{" "}
             · {isRevenue ? "Price / revenue test" : "Conversion test"}
           </p>
-          <h1 className="mt-1 font-display text-5xl font-bold tracking-[-0.05em]">{data.name}</h1>
+          <h1 className="mt-1 font-display text-figure font-bold tracking-[-0.03em]">{data.name}</h1>
           {data.hypothesis && <p className="mt-3 text-lg text-muted-strong">{data.hypothesis}</p>}
           <p className="mt-2 text-sm text-muted-strong">
             {dt.format(new Date(data.startedAt))} – {data.endedAt ? dt.format(new Date(data.endedAt)) : "now"} · {Math.floor(data.daysRunning)} days ·{" "}

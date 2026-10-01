@@ -57,7 +57,7 @@ export async function saveDraftAction(input: { pageId: string; target: "A" | "B"
 export async function renamePageAction(input: { pageId: string; name: string }) {
   return run("mutate", async (merchantId) => {
     await pages.renamePage(merchantId, id.parse(input.pageId), z.string().trim().min(1, "Give it a name").max(60).parse(input.name));
-    revalidatePath("/studio");
+    revalidatePath("/studio", "layout");
     return null;
   });
 }
@@ -68,8 +68,8 @@ export async function archivePageAction(input: { pageId: string }) {
     return null;
   });
   if (res.ok) {
-    revalidatePath("/studio");
-    redirect("/studio");
+    revalidatePath("/studio", "layout");
+    redirect("/studio/checkouts");
   }
   return res;
 }
@@ -107,7 +107,7 @@ export async function publishAction(input: { pageId: string; slug?: string }) {
   return run("mutate", async (merchantId) => {
     const slug = input.slug ? z.string().trim().toLowerCase().max(48).parse(input.slug) : undefined;
     const { slug: finalSlug, version } = await pages.publishPage(merchantId, id.parse(input.pageId), { slug });
-    revalidatePath("/studio");
+    revalidatePath("/studio", "layout");
     revalidatePath(`/pay/${finalSlug}`);
     return {
       slug: finalSlug,

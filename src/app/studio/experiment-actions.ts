@@ -16,7 +16,7 @@ async function guarded<T>(fn: (merchantId: string) => Promise<T>): Promise<Actio
     rateLimit(`mutate:${m.id}`, LIMITS.mutate.limit, LIMITS.mutate.windowMs);
     const data = await fn(m.id);
     revalidatePath("/studio/experiments");
-    revalidatePath("/studio");
+    revalidatePath("/studio", "layout");
     return { ok: true, data };
   } catch (e) {
     if (e instanceof UserError) return { ok: false, error: e.message };

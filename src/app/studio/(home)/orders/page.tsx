@@ -5,7 +5,7 @@ import { listOrders } from "@/server/dal/orders";
 import { requireMerchant } from "@/server/dal/session";
 import { RefundButton } from "./refund-button";
 
-export const metadata: Metadata = { title: "Orders" };
+export const metadata: Metadata = { title: "Payments" };
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   SUCCEEDED: { label: "Paid", cls: "bg-[#DDF3E4] text-[#14532D]" },
@@ -22,16 +22,28 @@ function methodLabel(m: string | null) {
   return m.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-export default async function OrdersPage() {
+export default async function OrdersPage({ searchParams }: PageProps<"/studio/orders">) {
   const merchant = await requireMerchant("/studio/orders");
-  const orders = await listOrders(merchant.id);
+  const sp = await searchParams;
+  const q = typeof sp.q === "string" ? sp.q.slice(0, 80) : "";
+  const orders = await listOrders(merchant.id, q ? 200 : 50, q);
 
   return (
     <>
-      <h1 className="font-display text-5xl font-bold tracking-[-0.05em]">Orders</h1>
-      <p className="mt-2 text-muted-strong">Every payment through your checkouts. Refunds go back to the buyer&apos;s card.</p>
+      <h1 className="font-display text-figure font-bold tracking-[-0.03em]">Payments</h1>
+      <p className="mt-1 text-body text-app-muted">Every payment through your checkouts. Refunds go back to the buyer&apos;s card.</p>
 
-      {orders.length === 0 ? (
+      {q && (
+        <p className="mt-6 text-sm text-muted-strong">
+          Showing payments matching <strong className="text-ink">{q}</strong>.{" "}
+          <Link href="/studio/orders" className="font-semibold text-orange-deep underline">
+            Show all
+          </Link>
+        </p>
+      )}
+      {orders.length === 0 && q ? (
+        <p className="mt-6 text-muted-strong">No payments match that. Try a full email address or a payment ID.</p>
+      ) : orders.length === 0 ? (
         <div className="mt-10 rounded-[28px] border-2 border-dashed border-black/12 bg-white px-6 py-16 text-center">
           <p className="font-display text-2xl font-bold tracking-[-0.03em]">No orders yet</p>
           <p className="mt-2 text-muted-strong">

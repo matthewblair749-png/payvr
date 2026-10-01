@@ -37,10 +37,16 @@ export function ResearchView({
   insights: initialInsights,
   threads: initialThreads,
   enabled,
+  initialThreadId = null,
+  initialQuestion = "",
 }: {
   insights: InsightView[];
   threads: Thread[];
   enabled: boolean;
+  /** Open this conversation on arrival (from ⌘K search). */
+  initialThreadId?: string | null;
+  /** Prefill the question box (from ⌘K "Ask lumen"). */
+  initialQuestion?: string;
 }) {
   // Server props are the source of truth (refresh re-renders them); we only track local dismissals.
   const [dismissed, setDismissed] = useState<Set<string>>(() => new Set());
@@ -48,7 +54,7 @@ export function ResearchView({
   const [threads, setThreads] = useState(initialThreads);
   const [threadId, setThreadId] = useState<string | null>(null);
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(initialQuestion);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<{ message: string; code?: string } | null>(null);
   const [refreshing, startRefresh] = useTransition();
@@ -131,6 +137,18 @@ export function ResearchView({
     setMessages(res.data);
     setError(null);
   }
+
+  // Deep link from search: open the requested conversation once.
+  const opened = useRef(false);
+  useEffect(() => {
+    if (!initialThreadId || opened.current) return;
+    opened.current = true;
+    void loadThreadAction({ threadId: initialThreadId }).then((res) => {
+      if (!res.ok) return setError({ message: res.error });
+      setThreadId(initialThreadId);
+      setMessages(res.data);
+    });
+  }, [initialThreadId]);
 
   function newThread() {
     abort.current?.abort();

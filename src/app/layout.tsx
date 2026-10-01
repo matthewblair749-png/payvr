@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { MotionProvider } from "@/components/motion-provider";
 import { fontVariables } from "@/lib/fonts";
 import "./globals.css";
@@ -19,8 +19,15 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   // Reading request headers opts every page into per-request rendering, which
   // is required for the CSP nonce (set in src/proxy.ts) to reach Next's scripts.
   await headers();
+  // App theme: "light" | "dark" pins it; anything else follows the system.
+  const theme = (await cookies()).get("lumen_theme")?.value;
   return (
-    <html lang="en" className={fontVariables} data-scroll-behavior="smooth">
+    <html
+      lang="en"
+      className={fontVariables}
+      data-scroll-behavior="smooth"
+      data-theme={theme === "light" || theme === "dark" ? theme : undefined}
+    >
       <body className="min-h-dvh">
         <a
           href="#main"

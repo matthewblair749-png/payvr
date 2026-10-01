@@ -17,8 +17,8 @@ export default async function ExperimentsPage() {
 
   return (
     <>
-      <h1 className="font-display text-5xl font-bold tracking-[-0.05em]">Experiments</h1>
-      <p className="mt-2 text-muted-strong">A/B tests on your checkouts, explained in plain words.</p>
+      <h1 className="font-display text-figure font-bold tracking-[-0.03em]">Experiments</h1>
+      <p className="mt-1 text-body text-app-muted">A/B tests on your checkouts, explained in plain words.</p>
 
       {all.length === 0 ? (
         <div className="mt-10 rounded-[28px] border-2 border-dashed border-black/12 bg-white px-6 py-16 text-center">
