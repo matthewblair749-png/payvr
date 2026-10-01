@@ -67,7 +67,7 @@ Experiments:
 - Don't propose changes the merchant can't keep (for example, a free-shipping badge only if they actually offer free shipping; say so in the hypothesis).`;
 
 /** Tool definitions generated from the zod schemas (single source of truth). */
-function toolDefinitions(): BetaTool[] {
+export function toolDefinitions(): BetaTool[] {
   return RESEARCH_TOOLS.map((t) => {
     const schema = z.toJSONSchema(t.input, { target: "draft-7" }) as Record<string, unknown>;
     delete schema.$schema;
@@ -90,7 +90,7 @@ function anyOfOnly(v: unknown): unknown {
   return v;
 }
 
-async function shopContext(ctx: ToolContext, merchantName: string) {
+export async function shopContext(ctx: ToolContext, merchantName: string) {
   const checkouts = JSON.parse((await runTool(ctx, "list_checkouts", {})).content) as {
     id: string;
     name: string;
@@ -107,7 +107,7 @@ Checkouts: ${checkouts.map((c) => `${c.name} [${c.id}] ${c.status.toLowerCase()}
 </shop_context>`;
 }
 
-async function appendMessage(threadId: string, role: "user" | "assistant", content: unknown) {
+export async function appendMessage(threadId: string, role: "user" | "assistant", content: unknown) {
   // seq = count is safe: one turn per thread at a time (enforced by the route's per-thread lock).
   const seq = await db.researchMessage.count({ where: { threadId } });
   await db.researchMessage.create({ data: { threadId, seq, role, content: content as Prisma.InputJsonValue } });

@@ -12,10 +12,10 @@ import { n, PAID_STATUSES, sessionsCte, type AnalyticsFilter } from "./analytics
  * so the funnel, the leak and the drill-down always agree.
  */
 
-type Row = { stage: number; device: string; source: string; visitor: string; band: string; lastField: string; n: number };
+type Row = { stage: number; pageId: string; device: string; source: string; visitor: string; band: string; lastField: string; n: number };
 
 async function rows(f: AnalyticsFilter): Promise<Row[]> {
-  const raw = await db.$queryRaw<{ stage: number; device: string; source: string; visitor: string; band: string; last_field: string; n: bigint }[]>`
+  const raw = await db.$queryRaw<{ stage: number; page_id: string; device: string; source: string; visitor: string; band: string; last_field: string; n: bigint }[]>`
     WITH ${sessionsCte(f)},
     firsts AS (
       SELECT "visitorId" AS v, MIN("createdAt") AS first_seen
@@ -25,6 +25,7 @@ async function rows(f: AnalyticsFilter): Promise<Row[]> {
       GROUP BY 1
     )
     SELECT s.stage,
+      s.page_id,
       s.device,
       COALESCE(s.source, 'unknown') AS source,
       CASE WHEN s.visitor_id IS NULL THEN 'unknown'
@@ -37,8 +38,8 @@ async function rows(f: AnalyticsFilter): Promise<Row[]> {
       COALESCE(s.last_field, 'none') AS last_field,
       count(*) AS n
     FROM sessions s LEFT JOIN firsts f ON f.v = s.visitor_id
-    GROUP BY 1, 2, 3, 4, 5, 6`;
-  return raw.map((r) => ({ stage: Number(r.stage), device: r.device, source: r.source, visitor: r.visitor, band: r.band, lastField: r.last_field, n: n(r.n) }));
+    GROUP BY 1, 2, 3, 4, 5, 6, 7`;
+  return raw.map((r) => ({ stage: Number(r.stage), pageId: r.page_id, device: r.device, source: r.source, visitor: r.visitor, band: r.band, lastField: r.last_field, n: n(r.n) }));
 }
 
 async function aovCents(f: AnalyticsFilter): Promise<number> {
@@ -166,6 +167,8 @@ export type FunnelDrilldown = {
     basis: "previous" | "half";
     /** Shoppers kept if the segment hit the target rate. */
     recoverable: number;
+    /** The checkout where this segment lost the most shoppers at this step. */
+    checkout: { id: string; name: string } | null;
   } | null;
   /** Where people were when they left (last field touched). */
   lastFields: { field: string; label: string; count: number; share: number }[];
@@ -247,6 +250,7 @@ export async function funnelDrilldown(merchantId: string, currency: string, days
           targetRate,
           basis: gotWorse ? "previous" : "half",
           recoverable: r.reached * (r.dropRate - targetRate),
+          checkout: null,
         };
       }
     }
@@ -262,6 +266,14 @@ export async function funnelDrilldown(merchantId: string, currency: string, days
 
   // (TS narrows `worst` to null inside the closure-free return; re-widen it.)
   const w0 = worst as FunnelDrilldown["worst"];
+  if (w0) {
+    const dim = DIMENSIONS.find((d) => d.key === w0.dimension)!;
+    const byPage = new Map<string, number>();
+    for (const r of curPop) if (left(r) && dim.of(r) === w0.value) byPage.set(r.pageId, (byPage.get(r.pageId) ?? 0) + r.n);
+    const topId = [...byPage.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+    const page = topId ? await db.checkoutPage.findFirst({ where: { id: topId, merchantId }, select: { id: true, name: true } }) : null;
+    w0.checkout = page;
+  }
   return {
     days,
     currency,

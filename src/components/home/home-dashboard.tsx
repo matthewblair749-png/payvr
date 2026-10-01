@@ -7,6 +7,7 @@ import { parseRange, RANGES, type RangeValue } from "@/lib/date-range";
 import { cn } from "@/lib/utils";
 import { FunnelCard, FunnelSkeleton, useFunnel } from "./funnel-card";
 import { KpiTiles } from "./kpi-tiles";
+import { BriefSkeleton, MorningBrief } from "./morning-brief";
 import { NorthStar } from "./north-star";
 import { KpiSkeleton, NorthStarSkeleton } from "./skeletons";
 import { useHomeOverview } from "./use-home";
@@ -46,6 +47,7 @@ export function HomeDashboard() {
       aria-busy={isPlaceholderData || undefined}
       className={cn("mt-8 space-y-4 transition-opacity duration-200 sm:space-y-6", isPlaceholderData && "opacity-60")}
     >
+      <MorningBrief />
       <NorthStar data={data} periodLabel={periodLabel} />
       <KpiTiles data={data} />
       <FunnelSection range={range} periodLabel={periodLabel} />
@@ -80,6 +82,7 @@ function FunnelSection({ range, periodLabel }: { range: RangeValue; periodLabel:
 export function HomeSkeleton() {
   return (
     <div className="mt-8 space-y-4 sm:space-y-6" role="status" aria-label="Loading your numbers">
+      <BriefSkeleton />
       <NorthStarSkeleton />
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[0, 1, 2, 3].map((i) => (

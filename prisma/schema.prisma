@@ -94,6 +94,7 @@ model Merchant {
   orders          Order[]
   events          CheckoutEvent[]
   assets          Asset[]
+  briefs          MorningBrief[]
   surveyResponses SurveyResponse[]
   insights        Insight[]
   researchThreads ResearchThread[]
@@ -409,4 +410,22 @@ model Asset {
   createdAt   DateTime @default(now())
 
   @@unique([merchantId, sha256])
+}
+
+/// The Home "morning brief": written once per merchant per local day, then
+/// served from here (fast, stable through the day, and auditable).
+model MorningBrief {
+  id         String   @id @default(cuid())
+  merchantId String
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  /// The merchant's local date (YYYY-MM-DD) the brief is for.
+  day        String
+  sentence   String
+  /// The exact numbers the sentence was written from.
+  facts      Json
+  /// "ai" (Claude wrote it) or "template" (no AI available, or it failed).
+  source     String
+  createdAt  DateTime @default(now())
+
+  @@unique([merchantId, day])
 }

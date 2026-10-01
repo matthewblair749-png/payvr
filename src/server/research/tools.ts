@@ -6,6 +6,8 @@ import { experimentDetail } from "../dal/experiments";
 import { n, PAID_STATUSES, sessionsCte, type AnalyticsFilter } from "../dal/analytics";
 import { db } from "../db";
 import { proposalChangeSchema, describeChange, createProposal } from "./proposals";
+import { funnelDrilldown, funnelOverview } from "../dal/funnel";
+import { SOURCE_LABELS, type Source } from "@/lib/tracking/source";
 
 /**
  * Research tools: read-only, merchant-scoped queries the Research Assistant
@@ -379,6 +381,67 @@ function tool<S extends z.ZodTypeAny>(def: ToolDef<S>) {
   return def;
 }
 
+// ---------------------------------------------------------------------------
+// get_checkout_funnel (Home's five-step funnel) and get_traffic_sources
+
+const checkoutFunnelInput = z.object({
+  days: z.union([z.literal(7), z.literal(30), z.literal(90)]).describe("Period ending now: 7, 30 or 90 days"),
+  step: z
+    .enum(["start", "details", "payment", "paid"])
+    .optional()
+    .describe("Break down the drop-off before this step by device, source, new vs returning and order value"),
+});
+
+async function checkoutFunnel(ctx: ToolContext, i: z.infer<typeof checkoutFunnelInput>) {
+  const o = await funnelOverview(ctx.merchantId, ctx.currency, i.days);
+  const result: Record<string, unknown> = {
+    days: i.days,
+    stages: o.stages.map((s) => ({ stage: s.label, sessions: s.sessions, previous_period_sessions: s.prevSessions })),
+    drop_offs: o.transitions.map((t) => ({
+      between: `${t.from} → ${t.to}`,
+      left: t.lost,
+      drop_rate: round(t.dropRate),
+      previous_drop_rate: t.prevDropRate == null ? null : round(t.prevDropRate),
+    })),
+    biggest_leak_before: o.biggestLeak,
+  };
+  if (i.step) {
+    const d = await funnelDrilldown(ctx.merchantId, ctx.currency, i.days, i.step);
+    result.breakdown = {
+      step: i.step,
+      worst_segment: d.worst && {
+        dimension: d.worst.dimension,
+        segment: d.worst.label,
+        drop_rate: round(d.worst.dropRate),
+        everyone_else_drop_rate: round(d.worst.othersDropRate),
+        checkout: d.worst.checkout?.name ?? null,
+      },
+      segments: d.dimensions.flatMap((dim) =>
+        dim.rows.filter((r) => !r.small).map((r) => ({ dimension: dim.key, segment: r.label, shoppers: r.reached, drop_rate: round(r.dropRate) })),
+      ),
+      last_field_before_leaving: d.lastFields.map((f) => ({ field: f.label, share: round(f.share) })),
+      estimated_extra_revenue_cents_per_week: Math.round((d.opportunityCents / d.days) * 7),
+    };
+  }
+  return result;
+}
+
+const sourcesInput = z.object({ ...rangeShape, checkout_id: checkoutId });
+
+async function trafficSources(ctx: ToolContext, i: z.infer<typeof sourcesInput>) {
+  const f = filter(ctx, i.from, i.to, i.checkout_id);
+  const rows = await db.$queryRaw<{ source: string; sessions: bigint; paid: bigint }[]>`
+    WITH ${sessionsCte(f)}
+    SELECT COALESCE(source, 'unknown') AS source, count(*) AS sessions, count(*) FILTER (WHERE stage = 5) AS paid
+    FROM sessions GROUP BY 1 ORDER BY 2 DESC`;
+  return rows.map((r) => ({
+    source: SOURCE_LABELS[r.source as Source] ?? "Not recorded",
+    visits: n(r.sessions),
+    paid_visits: n(r.paid),
+    conversion: rate(n(r.paid), n(r.sessions)),
+  }));
+}
+
 export const RESEARCH_TOOLS = [
   tool({
     name: "list_checkouts",
@@ -429,6 +492,21 @@ export const RESEARCH_TOOLS = [
     description: "Recent A/B tests on a checkout with each variant's visits, conversion and revenue per visit.",
     input: experimentInput,
     run: experimentResults,
+  }),
+  tool({
+    name: "get_checkout_funnel",
+    label: "Walking the checkout funnel",
+    description:
+      "The five-step funnel (Visit, Start, Details, Payment, Paid) for the last 7/30/90 days with drop-off between steps vs the previous period, and the biggest leak. Pass `step` to break that drop-off down by device, traffic source, new vs returning and order value, with where shoppers were when they left.",
+    input: checkoutFunnelInput,
+    run: checkoutFunnel,
+  }),
+  tool({
+    name: "get_traffic_sources",
+    label: "Checking where shoppers come from",
+    description: "Visits, paid visits and conversion by traffic source (Instagram, TikTok, Email, Search, Facebook, Direct, Other sites).",
+    input: sourcesInput,
+    run: trafficSources,
   }),
   tool({
     name: "propose_experiment",

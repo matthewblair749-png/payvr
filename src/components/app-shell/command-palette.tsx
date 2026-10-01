@@ -137,7 +137,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
           <Command.List className="overflow-y-auto p-2">
             {term && (
               <Command.Group heading="Ask lumen">
-                <Item value={`ask:${term}`} onSelect={() => go(`/studio/research?ask=${encodeURIComponent(term)}`)} icon={Sparkles} accent>
+                <Item value={`ask:${term}`} onSelect={() => go(`/studio?ask=${encodeURIComponent(term)}`)} icon={Sparkles} accent>
                   <span className="truncate">“{term}”</span>
                   <Detail>Get a short answer from your data</Detail>
                 </Item>
