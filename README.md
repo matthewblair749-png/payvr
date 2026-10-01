@@ -3,7 +3,7 @@
 **The checkout that learns.** Stripe-grade payments for solo creators and small brands, with a
 drag-and-drop checkout studio and a built-in research assistant.
 
-> Status: **Phase 3 of 8 complete.** Landing page, the Checkout Studio, and Stripe Connect payments (test mode).
+> Status: **Phase 4 of 8 complete.** Landing page, the Checkout Studio, Stripe Connect payments (test mode), and checkout analytics with a dashboard.
 
 ## Quick start
 
@@ -15,6 +15,9 @@ npm run db:migrate              # create tables
 npm run db:seed                 # demo merchant + checkouts
 npm run dev                     # http://localhost:3000
 ```
+
+The seed also generates about 90 days of realistic checkout history for the demo merchant: roughly 43k events,
+3.5k orders and 1.4k survey answers. It is deterministic, so every run produces the same data.
 
 **Sign in:** go to `/studio` and enter `demo@lumen.test` (the seeded merchant), or any email address.
 Without `EMAIL_SERVER` set, the magic link appears on the "Check your inbox" screen and in the
@@ -152,6 +155,42 @@ in the same transaction as its effects, so a duplicate delivery is a no-op and a
 lets Stripe retry. Transitions are guarded against out-of-order delivery (a late `payment_failed` can't
 undo a success). Coupon codes are defined per checkout in the coupon block and checked on the server.
 
+## What's here (Phase 4: Tracking + dashboard)
+
+| Area | Where |
+| --- | --- |
+| Event vocabulary (steps, fields, schemas) | `src/lib/tracking/events.ts` |
+| Browser tracker (~1KB, batching, sendBeacon, honors GPC/DNT) | `src/lib/tracking/tracker.ts` |
+| Ingest endpoint | `src/app/api/events/route.ts` |
+| Hosted checkout instrumentation | `src/components/checkout/hosted-checkout.tsx` |
+| Analytics queries | `src/server/dal/analytics.ts` |
+| Dashboard | `src/app/studio/(home)/dashboard/*`, `src/components/dashboard/*` |
+| Demo history generator | `prisma/seed-analytics.ts` |
+
+**What's tracked:** checkout views, which block or field a buyer touched (by name, never what they
+typed), funnel steps (viewed → interacted → started payment → pressed pay → paid), pay clicks, and an
+abandon event when the tab is hidden or closed. `PAYMENT_SUCCEEDED` and `PAYMENT_FAILED` come only from
+verified Stripe webhooks, so revenue numbers can't be spoofed from a browser. The ingest endpoint works out
+the merchant, device (from User-Agent) and country (from a CDN geo header, when present) on the server,
+accepts a variant only if it belongs to that page's running experiment, de-dupes views, and is
+rate-limited. Buyers with Global Privacy Control or Do Not Track enabled aren't tracked.
+
+**Dashboard (`/studio/dashboard`):**
+- KPI tiles (net revenue, orders, conversion, average order) with change against the previous period.
+- Separate revenue and conversion charts, so there's never a dual axis.
+- A conversion funnel.
+- A drop-off heatmap showing the last thing touched before leaving, by device, as an exit rate.
+- A payment-success grid by country and method.
+- One-tap survey answers.
+- A per-checkout table.
+
+One filter row (7/30/90 days, checkout) scopes everything. Every chart has a keyboard-readable tooltip
+and a "Show as table" twin. A single aggregation pass per session keeps the whole dashboard around
+100ms on the seeded data.
+
+Known limits: days are UTC (merchant time zones come later), and revenue is reported in the
+merchant's default currency only. The dashboard is designed for desktop.
+
 ## Accessibility
 - WCAG AA contrast: button label colors are picked automatically, and accent-as-text is darkened
   until it passes 4.5:1 (`ensureContrast`), so merchants can't pick an illegible theme.
@@ -196,7 +235,7 @@ Use any future expiry, any CVC and any postal code.
 1. ✅ Design tokens, logo, landing page
 2. ✅ Studio with live preview (versions, publish, A/B variants, brand import)
 3. ✅ Stripe Connect + published checkout
-4. Event tracking + dashboard
+4. ✅ Event tracking + dashboard
 5. One-tap survey
 6. Research Assistant
 7. Experiments

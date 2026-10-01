@@ -11,6 +11,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, type Prisma } from "../src/generated/prisma/client";
 import { DEMO_CONFIG, defaultBlock } from "../src/lib/checkout/defaults";
 import { checkoutConfigSchema, type CheckoutConfig } from "../src/lib/checkout/schema";
+import { seedAnalytics } from "./seed-analytics";
 
 const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 const DEMO_EMAIL = "demo@lumen.test";
@@ -118,7 +119,8 @@ async function main() {
     publish: true,
   });
 
-  await db.experiment.create({
+  const experiment = await db.experiment.create({
+    include: { variants: { orderBy: { key: "asc" } } },
     data: {
       merchantId: merchant.id,
       checkoutPageId: mugs.id,
@@ -135,7 +137,7 @@ async function main() {
     },
   });
 
-  await page({
+  const workshopPage = await page({
     name: "Glaze workshop",
     slug: "kiln-workshop",
     product: { name: "Saturday glaze workshop", description: "3 hours at the wheel, clay and firing included.", priceCents: 8500 },
@@ -153,7 +155,22 @@ async function main() {
     publish: false,
   });
 
+  const stats = await seedAnalytics(db, merchant.id, [
+    {
+      id: mugs.id,
+      productId: mugs.productId!,
+      priceCents: 4800,
+      upsellCents: 1200,
+      traffic: 1,
+      variants: experiment.variants.map((v) => ({ id: v.id, key: v.key, lift: v.key === "B" ? 1.15 : 1 })),
+    },
+    { id: workshopPage.id, productId: workshopPage.productId!, priceCents: 8500, upsellCents: 0, traffic: 0.45, variants: null },
+  ]);
+
   console.log(`Seeded demo merchant ${DEMO_EMAIL} with 3 checkouts (2 live, 1 A/B test running).`);
+  console.log(
+    `  + ${stats.events.toLocaleString()} events, ${stats.orders.toLocaleString()} orders, ${stats.surveys.toLocaleString()} survey answers (decline spike on ${stats.spikeDay}).`,
+  );
 }
 
 main()

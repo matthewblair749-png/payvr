@@ -40,6 +40,7 @@ export function CheckoutView({
   paymentSlot,
   onPay,
   onTotalsChange,
+  onTrack,
   successMessage,
   paymentsDisabledReason,
   selectedBlockId,
@@ -55,6 +56,8 @@ export function CheckoutView({
   onPay?: (selections: BuyerSelections, totals: Totals) => Promise<boolean>;
   /** Live mode: called whenever totals change (to keep Stripe Elements' amount in sync). */
   onTotalsChange?: (totals: Totals, selections: BuyerSelections) => void;
+  /** Analytics hook (hosted checkouts): which block the buyer touched, pay clicks, success. */
+  onTrack?: (e: { kind: "focus"; field: string } | { kind: "pay" } | { kind: "paid" }) => void;
   /** Live mode: success celebration details shown after payment. */
   successMessage?: string;
   /** Hosted page whose merchant can't take payments yet: pay button is disabled with this note. */
@@ -94,15 +97,24 @@ export function CheckoutView({
   async function handlePay() {
     if (status !== "idle") return;
     setStatus("busy");
+    onTrack?.({ kind: "pay" });
     if (mode === "live" && onPay) {
       const ok = await onPay(selections, totals);
       setStatus(ok ? "paid" : "idle");
-      if (ok) celebrate(payment);
+      if (ok) {
+        onTrack?.({ kind: "paid" });
+        celebrate(payment);
+      }
     } else {
       await new Promise((r) => setTimeout(r, 650));
       setStatus("paid");
       celebrate(payment);
     }
+  }
+
+  function reportBlock(target: EventTarget) {
+    const type = (target as HTMLElement).closest?.("[data-block-type]")?.getAttribute("data-block-type");
+    if (type) onTrack?.({ kind: "focus", field: type });
   }
 
   function renderBlock(b: Block): ReactNode {
@@ -187,11 +199,19 @@ export function CheckoutView({
             )}
           </m.div>
         ) : (
-          <m.ul key="form" className="flex flex-col gap-3" exit={{ opacity: 0 }}>
+          <m.ul
+            key="form"
+            className="flex flex-col gap-3"
+            exit={{ opacity: 0 }}
+            // Which block did the buyer touch? (focus for keyboard, pointer for taps/clicks)
+            onFocusCapture={onTrack ? (e) => reportBlock(e.target) : undefined}
+            onPointerDownCapture={onTrack ? (e) => reportBlock(e.target) : undefined}
+          >
             <AnimatePresence initial={false}>
               {visible.map((b) => (
                 <m.li
                   key={b.id}
+                  data-block-type={b.type}
                   onPointerDownCapture={onSelectBlock ? () => onSelectBlock(b.id) : undefined}
                   className={cn(
                     onSelectBlock && "rounded-(--co-radius) outline-offset-4 transition-[outline-color]",

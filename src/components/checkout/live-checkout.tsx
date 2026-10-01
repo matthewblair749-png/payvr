@@ -20,6 +20,8 @@ import type { CheckoutConfig, CheckoutProduct } from "@/lib/checkout/schema";
 import { themeToVars } from "@/lib/checkout/theme";
 import { CheckoutView } from "./checkout-view";
 
+type TrackFn = NonNullable<Parameters<typeof CheckoutView>[0]["onTrack"]>;
+
 /** Google Fonts stylesheets for each checkout font, loaded *inside* Stripe's iframe. */
 const FONT_CSS: Record<FontKey, string> = {
   dmSans: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap",
@@ -66,6 +68,7 @@ export function LiveCheckout({
   sessionId,
   publishableKey,
   stripeAccountId,
+  onTrack,
 }: {
   config: CheckoutConfig;
   product: CheckoutProduct;
@@ -73,6 +76,7 @@ export function LiveCheckout({
   sessionId: string;
   publishableKey: string;
   stripeAccountId: string;
+  onTrack?: TrackFn;
 }) {
   const initial = useMemo(() => computeTotals(config, product, EMPTY_SELECTIONS), [config, product]);
   const options: StripeElementsOptions = useMemo(
@@ -93,7 +97,7 @@ export function LiveCheckout({
 
   return (
     <Elements stripe={getStripeJs(publishableKey)} options={options}>
-      <LiveCheckoutInner config={config} product={product} slug={slug} sessionId={sessionId} />
+      <LiveCheckoutInner config={config} product={product} slug={slug} sessionId={sessionId} onTrack={onTrack} />
     </Elements>
   );
 }
@@ -103,11 +107,13 @@ function LiveCheckoutInner({
   product,
   slug,
   sessionId,
+  onTrack,
 }: {
   config: CheckoutConfig;
   product: CheckoutProduct;
   slug: string;
   sessionId: string;
+  onTrack?: TrackFn;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -190,8 +196,12 @@ function LiveCheckoutInner({
 
   const slot = (
     <div className="space-y-3">
-      <LinkAuthenticationElement onChange={(e) => setEmail(e.value.email)} />
-      <PaymentElement options={{ layout: { type: "tabs", defaultCollapsed: false } }} />
+      {/* Stripe's fields are iframes: focus doesn't bubble to our DOM, so report it explicitly. */}
+      <LinkAuthenticationElement onChange={(e) => setEmail(e.value.email)} onFocus={() => onTrack?.({ kind: "focus", field: "email" })} />
+      <PaymentElement
+        options={{ layout: { type: "tabs", defaultCollapsed: false } }}
+        onFocus={() => onTrack?.({ kind: "focus", field: "card" })}
+      />
       <div aria-live="assertive">
         {error && (
           <p role="alert" className="rounded-(--co-radius-sm) bg-(--co-accent-soft) px-3 py-2 text-sm font-medium">
@@ -211,6 +221,7 @@ function LiveCheckoutInner({
       paymentSlot={slot}
       onPay={onPay}
       onTotalsChange={onTotalsChange}
+      onTrack={onTrack}
       successMessage={email ? `A receipt is on its way to ${email}.` : undefined}
     />
   );

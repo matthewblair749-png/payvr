@@ -14,12 +14,12 @@ export default async function StudioHomeLayout({ children }: { children: ReactNo
   return (
     <div className="min-h-dvh bg-surface">
       <header className="border-b border-black/8 bg-white">
-        <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-5 sm:gap-8 sm:px-8">
+        <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-5 sm:gap-8 sm:px-8">
           <Link href="/studio" aria-label="Studio home" className="shrink-0">
             <Logo size={30} wordmarkClassName="hidden sm:inline" />
           </Link>
           <StudioNav />
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex shrink-0 items-center gap-3">
             <span className="hidden text-sm text-muted-strong md:inline">
               {merchant.name} · {session?.user?.email}
             </span>

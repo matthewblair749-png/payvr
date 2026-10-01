@@ -6,14 +6,12 @@ import { z } from "zod";
 import { UserError } from "@/server/errors";
 import { prepareInputSchema, preparePayment, type PreparedPayment } from "@/server/payments/checkout";
 import { rateLimit } from "@/server/rate-limit";
+import { clientIpFromHeaders } from "@/server/request-meta";
 
 export type PayActionResult = { ok: true; data: PreparedPayment } | { ok: false; error: string };
 
 /** Best-effort client IP. Behind a proxy/CDN, make sure it sets x-forwarded-for. */
-async function clientIp() {
-  const h = await headers();
-  return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "unknown";
-}
+const clientIp = async () => clientIpFromHeaders(await headers());
 
 /**
  * Called when a buyer presses Pay (and on retries). Returns a PaymentIntent

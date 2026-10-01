@@ -105,9 +105,18 @@ async function onPaymentSucceeded(tx: Tx, pi: Stripe.PaymentIntent) {
 async function onPaymentFailed(tx: Tx, pi: Stripe.PaymentIntent) {
   const order = await orderForIntent(tx, pi.id);
   if (!order) return;
+  // Failed attempts matter for "payment method performance by country".
+  const pm = pi.last_payment_error?.payment_method;
+  const method = pm?.card?.wallet?.type ?? pm?.type ?? null;
+  const country = pm?.card?.country ?? pm?.billing_details?.address?.country ?? null;
   const { count } = await tx.order.updateMany({
     where: { id: order.id, status: { in: ["PENDING", "FAILED"] } },
-    data: { status: "FAILED", failureMessage: pi.last_payment_error?.message?.slice(0, 300) ?? "Payment failed" },
+    data: {
+      status: "FAILED",
+      failureMessage: pi.last_payment_error?.message?.slice(0, 300) ?? "Payment failed",
+      ...(method ? { paymentMethod: method } : {}),
+      ...(country ? { country } : {}),
+    },
   });
   if (count && order.checkoutPageId && order.sessionId) {
     await tx.checkoutEvent.create({
@@ -118,7 +127,8 @@ async function onPaymentFailed(tx: Tx, pi: Stripe.PaymentIntent) {
         sessionId: order.sessionId,
         type: "PAYMENT_FAILED",
         step: "payment",
-        paymentMethod: pi.last_payment_error?.payment_method?.type ?? null,
+        paymentMethod: method,
+        country,
         device: order.device,
       },
     });
