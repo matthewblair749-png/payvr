@@ -1,13 +1,23 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from 'react-native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeInUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
 import { GroupAvatar } from '@/components/group-avatar';
 import { Icon } from '@/components/icon';
 import { IconButton } from '@/components/icon-button';
+import { IconTile } from '@/components/list-row';
 import { PressableScale } from '@/components/pressable-scale';
 import { Text } from '@/components/text';
 import type { ChatMessage, Split } from '@/data/chat';
@@ -16,8 +26,10 @@ import { useApp } from '@/store/app-store';
 import { useChat } from '@/store/chat-store';
 import { useTheme } from '@/theme/theme-provider';
 import { Fonts, MIN_TAP } from '@/theme/typography';
+import { dayLabel } from '@/utils/dates';
 import { haptics } from '@/utils/haptics';
 import { formatCents, formatShort } from '@/utils/money';
+import { smooth } from '@/utils/motion';
 
 export default function ChatThread() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -26,6 +38,7 @@ export default function ChatThread() {
   const { me, userById } = useApp();
   const { chatById, messagesFor, sendText, markRead, typing } = useChat();
   const [text, setText] = useState('');
+  const [focused, setFocused] = useState(false);
   const list = useRef<FlatList<ChatMessage>>(null);
   const chat = chatById(id);
   const messages = messagesFor(id);
@@ -62,6 +75,8 @@ export default function ChatThread() {
     setText('');
   };
 
+  const canSend = !!text.trim();
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -70,13 +85,27 @@ export default function ChatThread() {
         <IconButton icon="chevronLeft" label="Back" onPress={() => router.back()} />
         <GroupAvatar members={others} size={40} />
         <View style={styles.flex}>
-          <Text variant="bodyMedium" numberOfLines={1} accessibilityRole="header">
+          <Text variant="bodyMedium" numberOfLines={1} accessibilityRole="header" style={styles.headTitle}>
             {chat.name}
           </Text>
           <Text variant="caption" color="textSecondary" numberOfLines={1}>
-            {members.map((u) => (u.id === me.id ? 'You' : u.name.split(' ')[0])).join(', ')}
+            {typingUser
+              ? `${typingUser.name.split(' ')[0]} is typing…`
+              : `${members.map((u) => (u.id === me.id ? 'You' : u.name.split(' ')[0])).join(', ')}`}
           </Text>
         </View>
+        <PressableScale
+          scaleTo={0.94}
+          haptic="tap"
+          accessibilityRole="button"
+          accessibilityLabel="Split a bill"
+          onPress={() => router.push({ pathname: '/chat/[id]/split', params: { id: chat.id } })}
+          style={[styles.splitBtn, { backgroundColor: colors.primary + '1F' }]}>
+          <Icon name="users" size={16} color={colors.accent} />
+          <Text variant="caption" color="accent">
+            Split
+          </Text>
+        </PressableScale>
       </View>
 
       <FlatList
@@ -89,62 +118,110 @@ export default function ChatThread() {
         keyboardDismissMode="interactive"
         renderItem={({ item, index }) => {
           const prev = messages[index - 1];
-          const firstOfRun = !prev || prev.userId !== item.userId || prev.kind === 'system' || prev.kind === 'payment';
-          return <MessageItem m={item} firstOfRun={firstOfRun} chatId={chat.id} />;
+          const next = messages[index + 1];
+          const showTime = !prev || new Date(item.createdAt).getTime() - new Date(prev.createdAt).getTime() > GAP_MS;
+          const nextShowsTime = !!next && new Date(next.createdAt).getTime() - new Date(item.createdAt).getTime() > GAP_MS;
+          const firstOfRun = showTime || !sameRun(prev, item);
+          const lastOfRun = !next || nextShowsTime || !sameRun(item, next);
+          return (
+            <>
+              {showTime ? (
+                <Text variant="caption" color="textSecondary" align="center" style={styles.time}>
+                  {timeLabel(item.createdAt)}
+                </Text>
+              ) : null}
+              <MessageItem m={item} firstOfRun={firstOfRun} lastOfRun={lastOfRun} chatId={chat.id} />
+            </>
+          );
         }}
-        ListFooterComponent={
-          typingUser ? (
-            <View style={styles.typing} accessibilityLiveRegion="polite">
-              <Avatar name={typingUser.name} uri={typingUser.avatarUrl} size={24} />
-              <Text variant="caption" color="textSecondary">
-                {typingUser.name.split(' ')[0]} is typing…
-              </Text>
-            </View>
-          ) : null
-        }
+        ListFooterComponent={typingUser ? <TypingBubble user={typingUser} /> : null}
       />
 
       <View style={[styles.composer, { borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 10) }]}>
         <PressableScale
+          scaleTo={0.92}
+          haptic="tap"
           accessibilityRole="button"
           accessibilityLabel="Split a bill"
-          onPress={() => {
-            haptics.tap();
-            router.push({ pathname: '/chat/[id]/split', params: { id: chat.id } });
-          }}
-          style={({ pressed }) => [styles.plus, { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.8 : 1 }]}>
+          onPress={() => router.push({ pathname: '/chat/[id]/split', params: { id: chat.id } })}
+          style={({ pressed }) => [styles.plus, { backgroundColor: colors.surface, opacity: pressed ? 0.8 : 1 }]}>
           <Icon name="plus" size={22} color={colors.accent} />
         </PressableScale>
-        <TextInput
-          value={text}
-          onChangeText={setText}
-          placeholder="Message"
-          placeholderTextColor={colors.textSecondary}
-          maxLength={1000}
-          returnKeyType="send"
-          onSubmitEditing={send}
-          blurOnSubmit={false}
-          accessibilityLabel="Message"
-          style={[styles.input, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.border }]}
-        />
-        <PressableScale
-          scaleTo={0.92}
-          accessibilityRole="button"
-          accessibilityLabel="Send message"
-          aria-disabled={!text.trim()}
-          onPress={send}
-          style={({ pressed }) => [
-            styles.send,
-            { backgroundColor: text.trim() ? colors.primary : colors.surface },
-          ]}>
-          <Icon name="send" size={20} color={text.trim() ? colors.onPrimary : colors.textSecondary} />
-        </PressableScale>
+        <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: focused ? colors.primary : colors.border }]}>
+          <TextInput
+            value={text}
+            onChangeText={setText}
+            placeholder={`Message ${chat.name}`}
+            placeholderTextColor={colors.textSecondary}
+            maxLength={1000}
+            returnKeyType="send"
+            onSubmitEditing={send}
+            blurOnSubmit={false}
+            accessibilityLabel="Message"
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            style={[styles.input, { color: colors.text }]}
+          />
+          <PressableScale
+            scaleTo={0.9}
+            haptic={canSend ? 'tap' : undefined}
+            accessibilityRole="button"
+            accessibilityLabel="Send message"
+            aria-disabled={!canSend}
+            onPress={send}
+            style={styles.sendTap}>
+            <View style={[styles.send, { backgroundColor: canSend ? colors.primary : colors.border }]}>
+              <Icon name="send" size={18} color={canSend ? colors.onPrimary : colors.textSecondary} strokeWidth={2.6} />
+            </View>
+          </PressableScale>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
 }
 
-function MessageItem({ m, firstOfRun, chatId }: { m: ChatMessage; firstOfRun: boolean; chatId: string }) {
+/** A new time divider appears after a quiet gap. */
+const GAP_MS = 30 * 60_000;
+
+const isBubble = (m?: ChatMessage) => !!m && (m.kind === 'text' || m.kind === 'split');
+const sameRun = (a?: ChatMessage, b?: ChatMessage) => isBubble(a) && isBubble(b) && a!.userId === b!.userId;
+
+function timeLabel(iso: string) {
+  const day = dayLabel(iso);
+  const time = new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return `${day} ${time}`;
+}
+
+/** Three softly pulsing dots in a bubble. */
+function TypingBubble({ user }: { user: User }) {
+  const { colors } = useTheme();
+  return (
+    <Animated.View entering={FadeIn.duration(200)} style={[styles.msgRow, styles.runGap]} accessibilityLiveRegion="polite">
+      <View style={styles.msgAvatar}>
+        <Avatar name={user.name} uri={user.avatarUrl} size={30} />
+      </View>
+      <View
+        accessibilityLabel={`${user.name.split(' ')[0]} is typing`}
+        style={[styles.bubble, styles.typingBubble, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        {[0, 1, 2].map((i) => (
+          <Dot key={i} delay={i * 160} />
+        ))}
+      </View>
+    </Animated.View>
+  );
+}
+
+function Dot({ delay }: { delay: number }) {
+  const { colors } = useTheme();
+  const o = useSharedValue(0.35);
+  useEffect(() => {
+    o.set(withDelay(delay, withRepeat(withSequence(withTiming(1, smooth(380)), withTiming(0.35, smooth(380))), -1)));
+  }, [delay, o]);
+  const style = useAnimatedStyle(() => ({ opacity: o.value }));
+  return <Animated.View style={[styles.dot, { backgroundColor: colors.textSecondary }, style]} />;
+}
+
+function MessageItem({ m, firstOfRun, lastOfRun, chatId }: { m: ChatMessage; firstOfRun: boolean; lastOfRun: boolean; chatId: string }) {
   const { colors } = useTheme();
   const { me, userById } = useApp();
   const mine = m.userId === me.id;
@@ -160,23 +237,38 @@ function MessageItem({ m, firstOfRun, chatId }: { m: ChatMessage; firstOfRun: bo
   }
 
   if (m.kind === 'payment') {
-    const toMe = m.toUser === me.id;
     const who = mine ? 'You' : (author?.name.split(' ')[0] ?? 'Someone');
     return (
-      <Animated.View entering={FadeInUp.duration(250)} style={[styles.payment, { borderColor: colors.border }]}>
-        <Icon name={toMe ? 'arrowDownLeft' : 'arrowUpRight'} size={16} color={toMe ? colors.successText : colors.accent} />
-        <Text variant="caption" color={toMe ? 'successText' : 'textSecondary'}>
-          {who} paid {first(m.toUser)} {formatShort(m.cents)} · {m.note}
+      <Animated.View
+        entering={FadeInUp.duration(260)}
+        accessibilityLabel={`${who} paid ${first(m.toUser)} ${formatShort(m.cents)} for ${m.note}`}
+        style={[styles.payment, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.payIcon, { backgroundColor: colors.success + '22' }]}>
+          <Icon name="check" size={13} color={colors.success} strokeWidth={3} />
+        </View>
+        <Text variant="caption" color="textSecondary" numberOfLines={1} style={styles.payText}>
+          <Text variant="caption">{who}</Text> paid <Text variant="caption">{first(m.toUser)}</Text>{' '}
+          <Text variant="caption" style={styles.payAmount}>
+            {formatShort(m.cents)}
+          </Text>{' '}
+          · {m.note}
         </Text>
       </Animated.View>
     );
   }
 
+  // Bubbles in a run hug each other: the corners facing the neighbor get tighter.
+  const tight = 6;
+  const round = 20;
+  const shape = mine
+    ? { borderTopRightRadius: firstOfRun ? round : tight, borderBottomRightRadius: lastOfRun ? round : tight }
+    : { borderTopLeftRadius: firstOfRun ? round : tight, borderBottomLeftRadius: lastOfRun ? round : tight };
+
   return (
     <Animated.View entering={FadeInUp.duration(220)} style={[styles.msgRow, mine && styles.msgRowMine, firstOfRun && styles.runGap]}>
       {!mine ? (
         <View style={styles.msgAvatar}>
-          {firstOfRun && author ? (
+          {lastOfRun && author ? (
             <PressableScale
               accessibilityRole="button"
               accessibilityLabel={`${author.name}'s profile`}
@@ -197,6 +289,7 @@ function MessageItem({ m, firstOfRun, chatId }: { m: ChatMessage; firstOfRun: bo
           <View
             style={[
               styles.bubble,
+              shape,
               mine ? { backgroundColor: colors.primary } : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: StyleSheet.hairlineWidth },
             ]}>
             <Text style={mine ? { color: colors.onPrimary } : undefined}>{m.text}</Text>
@@ -228,9 +321,7 @@ function SplitCard({ split, chatId }: { split: Split; chatId: string }) {
       style={[styles.split, { backgroundColor: colors.surface, borderColor: colors.border }]}
       accessibilityLabel={`${split.note}, ${formatCents(split.totalCents)}, split ${split.shares.length} ways. ${paid} of ${split.shares.length} paid.`}>
       <View style={styles.splitHead}>
-        <View style={[styles.splitIcon, { backgroundColor: colors.background }]}>
-          <Icon name="users" size={18} color={colors.accent} />
-        </View>
+        <IconTile icon="users" size={38} />
         <View style={styles.flex}>
           <Text variant="caption" color="textSecondary">
             {ownerFirst} paid · split {split.shares.length} ways
@@ -243,11 +334,17 @@ function SplitCard({ split, chatId }: { split: Split; chatId: string }) {
       </View>
 
       <View style={[styles.track, { backgroundColor: colors.border }]}>
-        <View style={[styles.fillBar, { backgroundColor: done ? colors.success : colors.accent, width: `${(paid / split.shares.length) * 100}%` }]} />
+        <View style={[styles.fillBar, { backgroundColor: done ? colors.success : colors.primary, width: `${(paid / split.shares.length) * 100}%` }]} />
       </View>
-      <Text variant="caption" color={done ? 'successText' : 'textSecondary'}>
-        {done ? 'Everyone’s paid' : `${paid} of ${split.shares.length} paid`}
-      </Text>
+      <View style={styles.progressLine}>
+        <Text variant="caption" color={done ? 'successText' : 'textSecondary'}>
+          {done ? 'Everyone’s paid' : `${paid} of ${split.shares.length} paid`}
+        </Text>
+        <Text variant="caption" color="textSecondary">
+          {formatShort(split.totalCents - split.shares.filter((x) => x.paidTxId || x.userId === split.ownerId).reduce((a, x) => a + x.cents, 0))} left
+        </Text>
+      </View>
+      <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
       {split.shares.map((s) => {
         const u = s.userId === me.id ? me : userById(s.userId);
@@ -272,21 +369,28 @@ function SplitCard({ split, chatId }: { split: Split; chatId: string }) {
                 </Text>
               </PressableScale>
             ) : isOwner ? (
-              <Text variant="caption" color="textSecondary" style={styles.statusText}>
-                Paid bill
-              </Text>
+              <Chip label="Paid bill" tone="muted" />
             ) : s.paidTxId ? (
-              <View style={styles.status} accessibilityLabel="Paid">
-                <Icon name="check" size={16} color={colors.accent} strokeWidth={2.6} />
-              </View>
+              <Chip label="Paid" tone="success" />
             ) : (
-              <Text variant="caption" color="textSecondary" style={styles.statusText}>
-                Waiting
-              </Text>
+              <Chip label="Waiting" tone="muted" />
             )}
           </View>
         );
       })}
+    </View>
+  );
+}
+
+function Chip({ label, tone }: { label: string; tone: 'success' | 'muted' }) {
+  const { colors } = useTheme();
+  const success = tone === 'success';
+  return (
+    <View style={[styles.chip, { backgroundColor: success ? colors.success + '22' : colors.border + '80' }]}>
+      {success ? <Icon name="check" size={12} color={colors.success} strokeWidth={3} /> : null}
+      <Text variant="caption" color={success ? 'successText' : 'textSecondary'}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -300,23 +404,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     paddingLeft: 4,
-    paddingRight: 8,
-    paddingBottom: 8,
+    paddingRight: 12,
+    paddingBottom: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  messages: { paddingHorizontal: 12, paddingVertical: 12, gap: 4 },
+  headTitle: { fontFamily: Fonts.bold },
+  splitBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: MIN_TAP, paddingHorizontal: 14, borderRadius: 999 },
+  time: { marginTop: 18, marginBottom: 6 },
+  messages: { paddingHorizontal: 12, paddingVertical: 12, gap: 2 },
   system: { marginVertical: 10 },
   payment: {
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
+    maxWidth: '92%',
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 999,
-    paddingHorizontal: 12,
+    paddingLeft: 6,
+    paddingRight: 14,
     paddingVertical: 6,
-    marginVertical: 8,
+    marginVertical: 10,
   },
+  payIcon: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  payText: { flexShrink: 1 },
+  payAmount: { fontFamily: Fonts.bold },
   msgRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, maxWidth: '100%' },
   msgRowMine: { justifyContent: 'flex-end' },
   runGap: { marginTop: 8 },
@@ -327,19 +439,23 @@ const styles = StyleSheet.create({
   msgColMine: { alignItems: 'flex-end' },
   author: { marginLeft: 12 },
   bubble: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 9 },
-  split: { width: 280, borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, padding: 14, gap: 10 },
+  typingBubble: { flexDirection: 'row', gap: 5, paddingVertical: 14, borderWidth: StyleSheet.hairlineWidth, borderBottomLeftRadius: 6 },
+  dot: { width: 7, height: 7, borderRadius: 4 },
+  split: { width: 288, borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, padding: 16, gap: 10 },
+  progressLine: { flexDirection: 'row', justifyContent: 'space-between' },
+  divider: { height: StyleSheet.hairlineWidth, marginVertical: 2 },
+  chip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, minWidth: 72, height: 26, borderRadius: 13, paddingHorizontal: 10 },
   splitHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  splitIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   splitTotal: { fontFamily: Fonts.bold, fontSize: 24, lineHeight: 28, letterSpacing: -0.8, fontVariant: ['tabular-nums'] },
-  track: { height: 6, borderRadius: 3, overflow: 'hidden' },
-  fillBar: { height: 6, borderRadius: 3 },
+  track: { height: 8, borderRadius: 4, overflow: 'hidden' },
+  fillBar: { height: 8, borderRadius: 4 },
   share: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 36 },
   payPill: { minHeight: MIN_TAP, minWidth: 64, borderRadius: 999, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14, marginVertical: -4 },
-  status: { minWidth: 64, alignItems: 'center' },
-  statusText: { minWidth: 64, textAlign: 'center' },
-  typing: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, marginLeft: 0 },
   composer: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth },
-  plus: { width: MIN_TAP, height: MIN_TAP, borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
-  input: { flex: 1, minHeight: MIN_TAP, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: 16, fontFamily: Fonts.regular, fontSize: 16 },
-  send: { width: MIN_TAP, height: MIN_TAP, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  plus: { width: MIN_TAP, height: MIN_TAP, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  inputWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', minHeight: MIN_TAP + 4, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, paddingLeft: 16, paddingRight: 2 },
+  // The pill's border shows focus, so the web's default outline is turned off.
+  input: { flex: 1, minHeight: MIN_TAP, fontFamily: Fonts.regular, fontSize: 16, outlineWidth: 0 },
+  sendTap: { width: MIN_TAP, height: MIN_TAP, alignItems: 'center', justifyContent: 'center' },
+  send: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
 });
