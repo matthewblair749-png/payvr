@@ -21,9 +21,9 @@ export type AnalyticsFilter = {
   currency: string;
 };
 
-const PAID_STATUSES = Prisma.sql`('SUCCEEDED','PARTIALLY_REFUNDED','REFUNDED','DISPUTED')`;
+export const PAID_STATUSES = Prisma.sql`('SUCCEEDED','PARTIALLY_REFUNDED','REFUNDED','DISPUTED')`;
 
-function pageFilter(f: AnalyticsFilter, col = Prisma.sql`"checkoutPageId"`) {
+export function pageFilter(f: AnalyticsFilter, col = Prisma.sql`"checkoutPageId"`) {
   return f.pageId ? Prisma.sql`AND ${col} = ${f.pageId}` : Prisma.empty;
 }
 
@@ -33,7 +33,7 @@ function pageFilter(f: AnalyticsFilter, col = Prisma.sql`"checkoutPageId"`) {
  * fields touched). Every query builds on this, so each does a single scan of
  * the (merchantId, createdAt) index instead of re-joining events.
  */
-function sessionsCte(f: AnalyticsFilter) {
+export function sessionsCte(f: AnalyticsFilter) {
   return Prisma.sql`
     sessions AS (
       SELECT "sessionId",
@@ -47,6 +47,8 @@ function sessionsCte(f: AnalyticsFilter) {
         MAX("createdAt") AS last_seen,
         COALESCE((array_agg(device ORDER BY "createdAt", id) FILTER (WHERE type = 'VIEW'))[1], 'desktop') AS device,
         (array_agg("checkoutPageId" ORDER BY "createdAt", id) FILTER (WHERE type = 'VIEW'))[1] AS page_id,
+        (array_agg(country ORDER BY "createdAt", id) FILTER (WHERE type = 'VIEW'))[1] AS country,
+        (array_agg("variantId" ORDER BY "createdAt", id) FILTER (WHERE type = 'VIEW'))[1] AS variant_id,
         (array_agg(field ORDER BY "createdAt" DESC, id DESC) FILTER (WHERE type = 'FIELD_FOCUS'))[1] AS last_field,
         array_agg(DISTINCT field) FILTER (WHERE type = 'FIELD_FOCUS') AS fields
       FROM "CheckoutEvent"
@@ -58,7 +60,7 @@ function sessionsCte(f: AnalyticsFilter) {
     )`;
 }
 
-const n = (v: bigint | number | null | undefined) => Number(v ?? 0);
+export const n = (v: bigint | number | null | undefined) => Number(v ?? 0);
 
 // ---------------------------------------------------------------------------
 

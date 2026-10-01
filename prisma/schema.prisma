@@ -95,6 +95,7 @@ model Merchant {
   events          CheckoutEvent[]
   surveyResponses SurveyResponse[]
   insights        Insight[]
+  researchThreads ResearchThread[]
 }
 
 model Product {
@@ -218,6 +219,8 @@ model Variant {
   publishedConfig Json?
   /// Relative traffic weight (0-100).
   weight          Int        @default(50)
+  /// Price test: overrides the product price for buyers in this variant.
+  priceCents      Int?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
@@ -352,4 +355,33 @@ model StripeEvent {
   id          String   @id
   type        String
   processedAt DateTime @default(now())
+}
+
+/// A Research Assistant conversation. Messages are stored exactly as the
+/// Claude API returned them (including thinking/tool blocks) and only ever
+/// appended, so the history can be replayed verbatim on the next turn.
+model ResearchThread {
+  id         String            @id @default(cuid())
+  merchantId String
+  merchant   Merchant          @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  title      String
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  messages   ResearchMessage[]
+
+  @@index([merchantId, updatedAt])
+}
+
+model ResearchMessage {
+  id        String         @id @default(cuid())
+  threadId  String
+  thread    ResearchThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  /// Position in the conversation (append-only).
+  seq       Int
+  role      String
+  /// Anthropic content blocks (or a plain string) for this message.
+  content   Json
+  createdAt DateTime       @default(now())
+
+  @@unique([threadId, seq])
 }

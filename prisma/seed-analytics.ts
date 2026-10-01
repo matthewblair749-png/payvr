@@ -58,8 +58,8 @@ function methodFor(r: () => number, country: string, device: string): string {
 }
 
 function failureRate(country: string, method: string, device: string, spike: boolean) {
-  if (spike) return country === "CA" ? 0.85 : 0.72;
-  if (method === "card") return country === "DE" ? 0.14 : country === "JP" ? 0.09 : device === "mobile" ? 0.08 : 0.05;
+  if (spike) return country === "CA" ? 0.85 : 0.75;
+  if (method === "card") return country === "DE" ? 0.2 : country === "JP" ? 0.09 : device === "mobile" ? 0.08 : 0.05;
   if (method === "klarna" || method === "ideal") return 0.03;
   return 0.02; // wallets rarely fail
 }
@@ -73,6 +73,8 @@ type Page = {
   upsellCents: number;
   /** Relative daily traffic. */
   traffic: number;
+  /** Visible block types: buyers can only touch what's on the page. */
+  blocks: string[];
   variants: { id: string; key: string; lift: number }[] | null;
 };
 
@@ -111,7 +113,7 @@ export async function seedAnalytics(db: PrismaClient, merchantId: string, pages:
         const country = pick(r, COUNTRIES);
         const variant = page.variants ? (r() < 0.5 ? page.variants[0] : page.variants[1]) : null;
         const lift = variant?.lift ?? 1;
-        const spike = dayStart === tuesday && device === "mobile" && hour >= 12;
+        const spike = dayStart === tuesday && device === "mobile" && hour >= 10;
 
         let t = start;
         const ev = (type: string, extra: { step?: string; field?: string; paymentMethod?: string } = {}) => {
@@ -144,11 +146,13 @@ export async function seedAnalytics(db: PrismaClient, merchantId: string, pages:
           continue;
         }
         ev("STEP", { step: "engaged" });
-        const upsellAdded = r() < 0.24;
-        if (upsellAdded || r() < 0.2) touch("upsell");
-        const usesTip = r() < 0.3;
-        if (usesTip || r() < 0.12) touch("tipSlider");
-        const triesCoupon = r() < 0.22;
+        const has = (b: string) => page.blocks.includes(b);
+        const upsellAdded = has("upsell") && r() < 0.24;
+        if (has("upsell") && (upsellAdded || r() < 0.2)) touch("upsell");
+        const usesTip = has("tipSlider") && r() < 0.3;
+        if (has("tipSlider") && (usesTip || r() < 0.12)) touch("tipSlider");
+        if (has("payIn4") && r() < 0.18) touch("payIn4");
+        const triesCoupon = has("coupon") && r() < 0.22;
         let couponWorked = false;
         if (triesCoupon) {
           touch("coupon");
@@ -172,7 +176,7 @@ export async function seedAnalytics(db: PrismaClient, merchantId: string, pages:
           continue;
         }
         touch("card");
-        const cardDrop = ((device === "mobile" ? 0.2 : 0.11) / lift) * (spike ? 1.8 : 1);
+        const cardDrop = ((device === "mobile" ? 0.2 : 0.11) / lift) * (spike ? 2.5 : 1);
         if (r() < cardDrop) {
           ev("ABANDON", { step: "payment", field: "card" });
           continue;
@@ -181,7 +185,7 @@ export async function seedAnalytics(db: PrismaClient, merchantId: string, pages:
         // payment → submitted → paid/failed
         ev("PAY_CLICK", { step: "submitted" });
         const method = methodFor(r, country, device);
-        const failed = r() < failureRate(country, method, device, spike && (method === "card" || method === "google_pay"));
+        const failed = r() < failureRate(country, method, device, spike && method !== "apple_pay");
 
         const subtotal = page.priceCents + (upsellAdded ? page.upsellCents : 0);
         const discount = couponWorked ? Math.round(subtotal * 0.1) : 0;

@@ -129,7 +129,7 @@ async function main() {
       name: "Mug set launch: A vs B",
       hypothesis: "Leading with a testimonial instead of a countdown will lift conversion.",
       status: "RUNNING",
-      startedAt: daysAgo(6),
+      startedAt: daysAgo(21),
       variants: {
         create: [
           { key: "A", name: "Original", isControl: true, weight: 50 },
@@ -164,9 +164,18 @@ async function main() {
       priceCents: 4800,
       upsellCents: 1200,
       traffic: 1,
-      variants: experiment.variants.map((v) => ({ id: v.id, key: v.key, lift: v.key === "B" ? 1.15 : 1 })),
+      blocks: mugA.blocks.filter((b) => !b.hidden).map((b) => b.type),
+      variants: experiment.variants.map((v) => ({ id: v.id, key: v.key, lift: v.key === "B" ? 1.22 : 1 })),
     },
-    { id: workshopPage.id, productId: workshopPage.productId!, priceCents: 8500, upsellCents: 0, traffic: 0.45, variants: null },
+    {
+      id: workshopPage.id,
+      productId: workshopPage.productId!,
+      priceCents: 8500,
+      upsellCents: 0,
+      traffic: 0.45,
+      blocks: workshop.blocks.filter((b) => !b.hidden).map((b) => b.type),
+      variants: null,
+    },
   ]);
 
   console.log(`Seeded demo merchant ${DEMO_EMAIL} with 3 checkouts (2 live, 1 A/B test running).`);

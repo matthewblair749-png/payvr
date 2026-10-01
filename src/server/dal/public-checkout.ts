@@ -21,7 +21,7 @@ export const getPublishedCheckout = cache(async (slug: string) => {
       experiments: {
         where: { status: "RUNNING" },
         take: 1,
-        select: { id: true, variants: { select: { id: true, key: true, weight: true, isControl: true, publishedConfig: true } } },
+        select: { id: true, variants: { select: { id: true, key: true, weight: true, isControl: true, publishedConfig: true, priceCents: true } } },
       },
     },
   });
@@ -49,6 +49,7 @@ export async function resolveCheckout(slug: string, visitorId: string): Promise<
   let config = parseConfig(page.publishedVersion.config);
   let variantId: string | null = null;
   let variantKey: string | null = null;
+  let priceOverride: number | null = null;
 
   const exp = page.experiments[0];
   if (exp) {
@@ -57,6 +58,9 @@ export async function resolveCheckout(slug: string, visitorId: string): Promise<
       variantId = v.id;
       variantKey = v.key;
       if (!v.isControl && v.publishedConfig) config = parseConfig(v.publishedConfig);
+      // Price tests: the variant's price replaces the product price everywhere
+      // (display AND the server-side PaymentIntent, which uses this same resolver).
+      if (v.priceCents != null) priceOverride = v.priceCents;
     }
   }
 
@@ -67,7 +71,7 @@ export async function resolveCheckout(slug: string, visitorId: string): Promise<
     product: {
       name: page.product.name,
       description: page.product.description,
-      priceCents: page.product.priceCents,
+      priceCents: priceOverride ?? page.product.priceCents,
       currency: page.product.currency.toUpperCase(),
       imageUrl: page.product.imageUrl ?? undefined,
     },

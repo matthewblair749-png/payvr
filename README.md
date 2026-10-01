@@ -3,7 +3,7 @@
 **The checkout that learns.** Stripe-grade payments for solo creators and small brands, with a
 drag-and-drop checkout studio and a built-in research assistant.
 
-> Status: **Phase 5 of 8 complete.** Landing page, the Checkout Studio, Stripe Connect payments (test mode), checkout analytics with a dashboard, and the one-tap post-purchase survey.
+> Status: **Phase 6 of 8 complete.** Landing page, the Checkout Studio, Stripe Connect payments (test mode), checkout analytics with a dashboard, the one-tap survey, and the Research Assistant.
 
 ## Quick start
 
@@ -40,7 +40,7 @@ Requires Node 20+ and Postgres 14+.
 | `AUTH_SECRET` | yes | Auth.js signing secret |
 | `NEXT_PUBLIC_APP_URL` | yes | Base URL shown in publish links |
 | `EMAIL_SERVER`, `EMAIL_FROM` | prod | SMTP URL for magic links |
-| `ANTHROPIC_API_KEY` | no | Enables Claude for brand import (falls back to heuristics without it) |
+| `ANTHROPIC_API_KEY` | no | Enables the Research Assistant chat and Claude-assisted brand import. Insights and brand import still work without it |
 | `LUMEN_AI_MODEL` | no | Defaults to `claude-opus-5-5` |
 | `STRIPE_SECRET_KEY` | for payments | `sk_test_…` only; live keys are refused |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | for payments | `pk_test_…` only |
@@ -213,6 +213,44 @@ payment webhook may still be in flight), and it's that session's first answer
 phases can compare answers across variants. On the landing demo and in Studio previews, answers stay
 local.
 
+## What's here (Phase 6: Research Assistant)
+
+| Area | Where |
+| --- | --- |
+| Research tools (8 read-only, merchant-scoped queries + `propose_experiment`) | `src/server/research/tools.ts` |
+| Proposals: allowed changes, apply/validate, one-click start | `src/server/research/proposals.ts` |
+| "lumen noticed" insight engine (deterministic) | `src/server/research/insights.ts` |
+| Claude agent loop (streaming, tool use, persisted threads) | `src/server/research/agent.ts`, `src/app/api/research/chat/route.ts` |
+| Research page | `src/app/studio/(home)/research/page.tsx`, `src/components/research/*` |
+
+**Two layers:**
+1. **lumen noticed** (no AI key needed): deterministic detectors find the biggest recent conversion dip
+   and explain it by device and payment method, the block that loses the most people, the top survey
+   objection, payment methods failing in a country, and A/B tests with a leader. Some insights carry a
+   ready-to-start experiment.
+2. **Research Assistant** (needs `ANTHROPIC_API_KEY`): plain-English questions answered by Claude
+   (`claude-opus-5-5` by default, override with `LUMEN_AI_MODEL`) using the same tools. Answers stream to
+   the browser along with "what I checked" steps. When a change is worth testing, Claude calls
+   `propose_experiment` and the merchant gets a card with **Start this test**.
+
+**How it's built:**
+- **Tools are the only data access.** Each is a zod schema plus a merchant-scoped query. Claude's tool
+  definitions are generated from those schemas, every model-supplied input is re-validated before
+  running, and breakdown dimensions come from a fixed list rather than from model text. All 8 tools return
+  in under 70ms on the seed data.
+- **The agent loop** streams through the beta Messages API with `eager_input_streaming` on each tool. It
+  handles `refusal`, `max_tokens`, `pause_turn` and malformed tool input (which goes back as an `is_error`
+  result). Server-side fallback is on (`fallbacks: "default"`), so a safeguard decline re-runs on a
+  suitable model instead of failing.
+- **Conversation history** is stored exactly as the API returns it (thinking, text, tool and fallback
+  blocks), only ever appended, and replayed verbatim, which preserved thinking requires. Shop context goes
+  in the first user message, so the system prompt stays identical across requests and can be cached.
+- **Proposals** are a closed set of changes: hide/show/move a block, set the price, change the theme, set
+  the pay-button label, set the trust badges. A dry run validates the full config before a proposal is
+  stored, and only a merchant's click starts one (`startProposal`). Starting creates a 50/50 experiment,
+  one per checkout at a time. Price tests set `Variant.priceCents`, which the checkout resolver applies to
+  both the displayed price and the server-side PaymentIntent.
+
 ## Accessibility
 - WCAG AA contrast: button label colors are picked automatically, and accent-as-text is darkened
   until it passes 4.5:1 (`ensureContrast`), so merchants can't pick an illegible theme.
@@ -259,6 +297,6 @@ Use any future expiry, any CVC and any postal code.
 3. ✅ Stripe Connect + published checkout
 4. ✅ Event tracking + dashboard
 5. ✅ One-tap survey
-6. Research Assistant
+6. ✅ Research Assistant
 7. Experiments
 8. Polish, performance, accessibility
