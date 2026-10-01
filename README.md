@@ -3,7 +3,7 @@
 **The checkout that learns.** Stripe-grade payments for solo creators and small brands, with a
 drag-and-drop checkout studio and a built-in research assistant.
 
-> Status: **Phase 6 of 8 complete.** Landing page, the Checkout Studio, Stripe Connect payments (test mode), checkout analytics with a dashboard, the one-tap survey, and the Research Assistant.
+> Status: **Phase 7 of 8 complete.** Landing page, the Checkout Studio, Stripe Connect payments (test mode), checkout analytics with a dashboard, the one-tap survey, the Research Assistant, and the Experiment Lab.
 
 ## Quick start
 
@@ -251,6 +251,32 @@ local.
   one per checkout at a time. Price tests set `Variant.priceCents`, which the checkout resolver applies to
   both the displayed price and the server-side PaymentIntent.
 
+## What's here (Phase 7: Experiment Lab)
+
+| Area | Where |
+| --- | --- |
+| Statistics + plain-language verdicts | `src/lib/experiments/stats.ts` |
+| "What B changes" describer | `src/lib/experiments/diff.ts` |
+| Results, ship/keep/stop | `src/server/dal/experiments.ts`, `src/app/studio/experiment-actions.ts` |
+| Lab pages | `src/app/studio/(home)/experiments/*`, `src/components/experiments/*` |
+
+**Results without jargon.** Each test gets one sentence, such as "B is very likely better: about +5.8 sales
+per 100 visitors (somewhere between +1.7 and +10)", plus a "chance B beats your original" meter with a 95%
+ship line and a likely-difference bar drawn around "no change".
+- Conversion tests use a Beta-Binomial model with 20,000 seeded samples, so the same data always gives the
+  same numbers.
+- Price tests compare revenue per visitor (including visitors who didn't buy) with a normal approximation,
+  and the verdict includes a monthly projection.
+- Guardrails: at least 7 days and 100 visits per version before any verdict; a "no real difference" call
+  when the whole likely range sits within ±1 sale per 100; a days-left estimate; and a warning when traffic
+  isn't splitting as configured (sample-ratio check).
+
+**Controls:** *Ship B to everyone* publishes B's design (and, for price tests, the new product price,
+synced to Stripe) as a new version. *Keep the original* and *Stop test* end the test without changing the
+checkout. The Research Assistant's `get_experiment_results` tool and the "lumen noticed" insight use the
+same results and verdicts, so chat, insights and the Lab always agree. The seed includes one running test
+(B ahead) and one finished test (original kept).
+
 ## Accessibility
 - WCAG AA contrast: button label colors are picked automatically, and accent-as-text is darkened
   until it passes 4.5:1 (`ensureContrast`), so merchants can't pick an illegible theme.
@@ -298,5 +324,5 @@ Use any future expiry, any CVC and any postal code.
 4. ✅ Event tracking + dashboard
 5. ✅ One-tap survey
 6. ✅ Research Assistant
-7. Experiments
+7. ✅ Experiments
 8. Polish, performance, accessibility

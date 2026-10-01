@@ -439,9 +439,13 @@ function VariantTabs({
         ))}
       </div>
       {running && (
-        <span className="hidden items-center gap-1 rounded-full bg-spark px-2.5 py-1 text-xs font-bold sm:inline-flex">
+        <Link
+          href="/studio/experiments"
+          className="hidden items-center gap-1 rounded-full bg-spark px-2.5 py-1 text-xs font-bold hover:brightness-95 sm:inline-flex"
+          title="See how the test is going"
+        >
           <span aria-hidden="true" className="h-1.5 w-1.5 animate-pulse rounded-full bg-orange-deep" /> Live test
-        </span>
+        </Link>
       )}
       <Button variant="ghost" size="icon" aria-label="Stop A/B test and delete variant B" title="Delete variant B" onClick={onRemove} disabled={busy}>
         <Trash2 size={16} aria-hidden="true" />

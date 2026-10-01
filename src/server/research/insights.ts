@@ -233,23 +233,18 @@ async function paymentMethodGap(ctx: ToolContext, now: Date): Promise<Draft | nu
   };
 }
 
-/** A running A/B test with a visible leader. */
+/** A running A/B test with something to say (same verdict as the Experiment Lab). */
 async function experimentLeader(ctx: ToolContext, checkouts: { id: string; name: string }[]): Promise<Draft | null> {
   for (const c of checkouts) {
-    type V = { key: string; name: string; visits: number; conversion: number | null };
-    const exps = await tool<{ name: string; status: string; variants: V[] }[]>(ctx, "get_experiment_results", { checkout_id: c.id });
+    type E = { id: string; name: string; status: string; verdict: { headline: string; detail: string } };
+    const exps = await tool<E[]>(ctx, "get_experiment_results", { checkout_id: c.id });
     const running = exps.find((e) => e.status === "RUNNING");
-    if (!running) continue;
-    const [a, b] = ["A", "B"].map((k) => running.variants.find((v) => v.key === k));
-    if (!a || !b || a.visits < 150 || b.visits < 150 || a.conversion == null || b.conversion == null) continue;
-    const lift = (b.conversion - a.conversion) / Math.max(0.001, a.conversion);
-    if (Math.abs(lift) < 0.05) continue;
-    const leader = lift > 0 ? b : a;
+    if (!running || /too early|no clear winner/i.test(running.verdict.headline)) continue;
     return {
       kind: "auto_experiment_leader",
-      title: `“${leader.name}” is ahead on ${c.name}`,
-      body: `${leader.key === "B" ? "Variant B" : "The original"} converts ${pct(leader.conversion!)} vs ${pct((leader === b ? a : b).conversion!)} so far (${a.visits + b.visits} visits). Early leads can still flip, so open the Experiments page to see how sure we are.`,
-      evidence: { running },
+      title: `“${running.name}”: ${running.verdict.headline.charAt(0).toLowerCase()}${running.verdict.headline.slice(1)}`,
+      body: `${running.verdict.detail} Open the Experiments page to ship the winner.`,
+      evidence: { experimentId: running.id, checkout: c.name },
     };
   }
   return null;

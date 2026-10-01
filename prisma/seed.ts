@@ -121,12 +121,39 @@ async function main() {
     publish: true,
   });
 
+  // An earlier, finished test: a chattier pay button that did slightly worse.
+  const mugButton: CheckoutConfig = {
+    ...mugA,
+    blocks: mugA.blocks.map((b) => (b.type === "payment" ? { ...b, props: { ...b.props, buttonLabel: "Get my mugs" } } : b)),
+  };
+  const pastTest = await db.experiment.create({
+    include: { variants: { orderBy: { key: "asc" } } },
+    data: {
+      merchantId: merchant.id,
+      checkoutPageId: mugs.id,
+      name: "Friendlier pay button",
+      hypothesis: "“Get my mugs” feels warmer than “Pay” and should lift conversion.",
+      status: "RUNNING", // finished below, once we know the winner id
+      startedAt: daysAgo(70),
+      variants: {
+        create: [
+          { key: "A", name: "Original", isControl: true, weight: 50 },
+          { key: "B", name: "“Get my mugs” button", isControl: false, weight: 50, config: json(mugButton), publishedConfig: json(mugButton) },
+        ],
+      },
+    },
+  });
+  await db.experiment.update({
+    where: { id: pastTest.id },
+    data: { status: "COMPLETED", endedAt: daysAgo(22), winnerVariantId: pastTest.variants[0].id },
+  });
+
   const experiment = await db.experiment.create({
     include: { variants: { orderBy: { key: "asc" } } },
     data: {
       merchantId: merchant.id,
       checkoutPageId: mugs.id,
-      name: "Mug set launch: A vs B",
+      name: "Social proof first",
       hypothesis: "Leading with a testimonial instead of a countdown will lift conversion.",
       status: "RUNNING",
       startedAt: daysAgo(21),
@@ -165,7 +192,10 @@ async function main() {
       upsellCents: 1200,
       traffic: 1,
       blocks: mugA.blocks.filter((b) => !b.hidden).map((b) => b.type),
-      variants: experiment.variants.map((v) => ({ id: v.id, key: v.key, lift: v.key === "B" ? 1.22 : 1 })),
+      experiments: [
+        { fromDaysAgo: 70, toDaysAgo: 22, variants: pastTest.variants.map((v) => ({ id: v.id, key: v.key, lift: v.key === "B" ? 0.9 : 1 })) },
+        { fromDaysAgo: 21, toDaysAgo: 0, variants: experiment.variants.map((v) => ({ id: v.id, key: v.key, lift: v.key === "B" ? 1.22 : 1 })) },
+      ],
     },
     {
       id: workshopPage.id,
@@ -174,11 +204,11 @@ async function main() {
       upsellCents: 0,
       traffic: 0.45,
       blocks: workshop.blocks.filter((b) => !b.hidden).map((b) => b.type),
-      variants: null,
+      experiments: [],
     },
   ]);
 
-  console.log(`Seeded demo merchant ${DEMO_EMAIL} with 3 checkouts (2 live, 1 A/B test running).`);
+  console.log(`Seeded demo merchant ${DEMO_EMAIL} with 3 checkouts (2 live), 1 A/B test running and 1 finished.`);
   console.log(
     `  + ${stats.events.toLocaleString()} events, ${stats.orders.toLocaleString()} orders, ${stats.surveys.toLocaleString()} survey answers (decline spike on ${stats.spikeDay}).`,
   );

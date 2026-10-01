@@ -2,6 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { parseConfig } from "../dal/checkout-pages";
+import { experimentDetail } from "../dal/experiments";
 import { n, PAID_STATUSES, sessionsCte, type AnalyticsFilter } from "../dal/analytics";
 import { db } from "../db";
 import { proposalChangeSchema, describeChange, createProposal } from "./proposals";
@@ -298,44 +299,37 @@ async function surveyAnswers(ctx: ToolContext, i: z.infer<typeof surveyInput>) {
 const experimentInput = z.object({ checkout_id: z.string().min(1).max(40) });
 
 async function experimentResults(ctx: ToolContext, i: z.infer<typeof experimentInput>) {
+  // Same numbers and verdicts as the Experiment Lab, so chat and UI always agree.
   const exps = await db.experiment.findMany({
-    where: { merchantId: ctx.merchantId, checkoutPageId: i.checkout_id },
+    where: { merchantId: ctx.merchantId, checkoutPageId: i.checkout_id, status: { in: ["RUNNING", "COMPLETED", "STOPPED"] } },
     orderBy: { createdAt: "desc" },
     take: 5,
-    include: { variants: true },
+    select: { id: true },
   });
   const out = [];
-  for (const e of exps) {
-    const since = e.startedAt ?? e.createdAt;
-    const rows = await db.$queryRaw<{ variant_id: string; sessions: bigint; paid: bigint }[]>`
-      WITH ${sessionsCte({ merchantId: ctx.merchantId, currency: ctx.currency, from: since, to: e.endedAt ?? new Date(Date.now() + 60_000), pageId: i.checkout_id })}
-      SELECT variant_id, count(*) AS sessions, count(*) FILTER (WHERE rank = 5) AS paid FROM sessions WHERE variant_id IS NOT NULL GROUP BY 1`;
-    const revenue = await db.order.groupBy({
-      by: ["variantId"],
-      where: { merchantId: ctx.merchantId, checkoutPageId: i.checkout_id, status: { in: ["SUCCEEDED", "PARTIALLY_REFUNDED", "REFUNDED", "DISPUTED"] }, createdAt: { gte: since } },
-      _sum: { amountCents: true, refundedCents: true },
-    });
+  for (const { id } of exps) {
+    const d = await experimentDetail(ctx.merchantId, id);
     out.push({
-      id: e.id,
-      name: e.name,
-      hypothesis: e.hypothesis,
-      status: e.status,
-      started: e.startedAt?.toISOString().slice(0, 10) ?? null,
-      variants: e.variants.map((v) => {
-        const r = rows.find((x) => x.variant_id === v.id);
-        const rev = revenue.find((x) => x.variantId === v.id);
-        const visits = n(r?.sessions);
-        const net = (rev?._sum.amountCents ?? 0) - (rev?._sum.refundedCents ?? 0);
-        return {
-          key: v.key,
-          name: v.name,
-          weight: v.weight,
-          price_cents: v.priceCents,
-          visits,
-          conversion: rate(n(r?.paid), visits),
-          revenue_per_visit_cents: visits ? Math.round(net / visits) : null,
-        };
-      }),
+      id: d.id,
+      name: d.name,
+      hypothesis: d.hypothesis,
+      status: d.status,
+      metric: d.metric,
+      started: d.startedAt.slice(0, 10),
+      ended: d.endedAt?.slice(0, 10) ?? null,
+      winner: d.winnerKey,
+      what_b_changes: d.changes,
+      variants: (["A", "B"] as const).map((k) => ({
+        key: k,
+        name: d.variants[k].name,
+        visits: d.variants[k].visits,
+        conversion: rate(d.variants[k].conversions, d.variants[k].visits),
+        revenue_per_visit_cents: d.variants[k].visits ? Math.round(d.variants[k].sumCents / d.variants[k].visits) : null,
+        price_cents: d.variants[k].priceCents,
+      })),
+      chance_b_is_better: round(d.metric === "revenue_per_visit" ? d.revenue.chanceBBetter : d.conversion.chanceBBetter),
+      verdict: { headline: d.verdict.headline, detail: d.verdict.detail, days_left: d.verdict.daysLeft },
+      traffic_split_looks_broken: d.splitBroken,
     });
   }
   return out;

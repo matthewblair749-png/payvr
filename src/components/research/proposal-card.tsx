@@ -31,8 +31,8 @@ export function ProposalCard({ proposal, tone = "light" }: { proposal: ProposalV
             <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold ${dark ? "bg-spark text-ink" : "bg-[#DDF3E4] text-[#14532D]"}`}>
               <span aria-hidden="true" className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" /> Running · 50/50
             </span>
-            <Link href={`/studio/pages/${proposal.checkoutId}`} className="text-sm font-semibold underline underline-offset-4">
-              View checkout
+            <Link href={`/studio/experiments/${started}`} className="text-sm font-semibold underline underline-offset-4">
+              View test
             </Link>
           </>
         ) : (

@@ -75,7 +75,8 @@ type Page = {
   traffic: number;
   /** Visible block types: buyers can only touch what's on the page. */
   blocks: string[];
-  variants: { id: string; key: string; lift: number }[] | null;
+  /** A/B tests on this page, each live between two "days ago" marks (inclusive). */
+  experiments: { fromDaysAgo: number; toDaysAgo: number; variants: { id: string; key: string; lift: number }[] }[];
 };
 
 export async function seedAnalytics(db: PrismaClient, merchantId: string, pages: Page[], opts: { days?: number } = {}) {
@@ -111,7 +112,8 @@ export async function seedAnalytics(db: PrismaClient, merchantId: string, pages:
         if (start > now.getTime() - 5 * 60_000) continue;
         const device = pick(r, DEVICES);
         const country = pick(r, COUNTRIES);
-        const variant = page.variants ? (r() < 0.5 ? page.variants[0] : page.variants[1]) : null;
+        const live = page.experiments.find((e) => d <= e.fromDaysAgo && d >= e.toDaysAgo);
+        const variant = live ? (r() < 0.5 ? live.variants[0] : live.variants[1]) : null;
         const lift = variant?.lift ?? 1;
         const spike = dayStart === tuesday && device === "mobile" && hour >= 10;
 
