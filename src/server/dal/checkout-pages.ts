@@ -136,7 +136,7 @@ export async function archivePage(merchantId: string, pageId: string) {
 export async function updateProduct(
   merchantId: string,
   pageId: string,
-  data: { name: string; description: string; priceCents: number; currency: string },
+  data: { name: string; description: string; priceCents: number; currency: string; requiresShipping?: boolean },
 ) {
   const page = await db.checkoutPage.findFirst({ where: { id: pageId, merchantId }, select: { productId: true } });
   if (!page) throw new NotFoundError("Checkout page not found");

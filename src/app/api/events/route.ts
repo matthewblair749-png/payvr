@@ -1,4 +1,5 @@
 import { ingestSchema } from "@/lib/tracking/events";
+import { classifySource } from "@/lib/tracking/source";
 import { db } from "@/server/db";
 import { RateLimitError, rateLimit } from "@/server/rate-limit";
 import { clientIpFromHeaders, countryFromHeaders, deviceFromUA } from "@/server/request-meta";
@@ -35,7 +36,8 @@ export async function POST(req: Request) {
     where: { id: payload.pageId, status: "PUBLISHED" },
     select: {
       merchantId: true,
-      experiments: { where: { status: "RUNNING" }, select: { variants: { select: { id: true } } } },
+      product: { select: { priceCents: true } },
+      experiments: { where: { status: "RUNNING" }, select: { variants: { select: { id: true, priceCents: true } } } },
     },
   });
   if (!page) return new Response(null, { status: 204 });
@@ -44,6 +46,13 @@ export async function POST(req: Request) {
   const variantId = payload.variantId && validVariants.has(payload.variantId) ? payload.variantId : null;
   const device = deviceFromUA(req.headers.get("user-agent"));
   const country = countryFromHeaders(req.headers);
+
+  // Visit context, recorded on the VIEW only. The value is the server's price
+  // (a price test's variant price when it has one), never one from the browser.
+  const variantPrice = page.experiments.flatMap((e) => e.variants).find((v) => v.id === variantId)?.priceCents;
+  const valueCents = variantPrice ?? page.product?.priceCents ?? null;
+  const vid = req.headers.get("cookie")?.match(/(?:^|;\s*)lumen_vid=([0-9a-f-]{36})(?:;|$)/i)?.[1] ?? null;
+  const ownHost = req.headers.get("host")?.split(":")[0] ?? null;
 
   // One VIEW per session, even if the tab is reloaded.
   let events = payload.events;
@@ -68,6 +77,7 @@ export async function POST(req: Request) {
       field: e.field ?? null,
       device,
       country,
+      ...(e.type === "VIEW" ? { source: classifySource(e.ref, e.utm, ownHost), visitorId: vid, valueCents } : {}),
     })),
   });
   return new Response(null, { status: 204 });

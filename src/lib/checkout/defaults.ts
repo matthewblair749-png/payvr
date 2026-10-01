@@ -81,4 +81,5 @@ export const DEMO_PRODUCT: CheckoutProduct = {
   description: "Two wheel-thrown stoneware mugs, 12oz, oatmeal glaze.",
   priceCents: 4800,
   currency: "USD",
+  requiresShipping: true,
 };

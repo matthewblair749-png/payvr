@@ -74,7 +74,7 @@ async function main() {
   async function page(opts: {
     name: string;
     slug: string;
-    product: { name: string; description: string; priceCents: number };
+    product: { name: string; description: string; priceCents: number; requiresShipping?: boolean };
     versions: { config: CheckoutConfig; note: string; daysAgo: number }[];
     draft: CheckoutConfig;
     publish: boolean;
@@ -111,7 +111,7 @@ async function main() {
   const mugs = await page({
     name: "Mug set launch",
     slug: "kiln-mugs",
-    product: { name: "Speckled mug set", description: "Two wheel-thrown stoneware mugs, 12oz, oatmeal glaze.", priceCents: 4800 },
+    product: { name: "Speckled mug set", description: "Two wheel-thrown stoneware mugs, 12oz, oatmeal glaze.", priceCents: 4800, requiresShipping: true },
     versions: [
       { config: { ...mugA, theme: { ...mugA.theme, radius: 8 } }, note: "First launch", daysAgo: 21 },
       { config: { ...mugA, theme: { ...mugA.theme, radius: 12 } }, note: "Softer corners", daysAgo: 14 },
@@ -190,6 +190,7 @@ async function main() {
       productId: mugs.productId!,
       priceCents: 4800,
       upsellCents: 1200,
+      shipping: true,
       traffic: 1,
       blocks: mugA.blocks.filter((b) => !b.hidden).map((b) => b.type),
       experiments: [

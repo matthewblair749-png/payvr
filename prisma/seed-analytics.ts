@@ -73,6 +73,8 @@ type Page = {
   upsellCents: number;
   /** Relative daily traffic. */
   traffic: number;
+  /** Physical goods: buyers enter a shipping address (the mobile drop-off story). */
+  shipping?: boolean;
   /** Visible block types: buyers can only touch what's on the page. */
   blocks: string[];
   /** A/B tests on this page, each live between two "days ago" marks (inclusive). */
@@ -82,6 +84,10 @@ type Page = {
 /** The launch-day spike the North Star chart should show (inside the default 30-day view). */
 export const LAUNCH_DAYS_AGO = 24;
 const LAUNCH_TAPER = [5.5, 2.6, 1.6, 1.2];
+/** Mobile shoppers started abandoning at the shipping address this many days ago. */
+const SHIPPING_TROUBLE_DAYS_AGO = 40;
+
+const SOURCE_MIX: Weighted<string> = [["instagram", 36], ["direct", 18], ["search", 13], ["tiktok", 13], ["email", 10], ["facebook", 6], ["other", 4]];
 
 export async function seedAnalytics(db: PrismaClient, merchantId: string, pages: Page[], opts: { days?: number } = {}) {
   const r = rng(20260930);
@@ -98,6 +104,8 @@ export async function seedAnalytics(db: PrismaClient, merchantId: string, pages:
   const orders: Prisma.OrderCreateManyInput[] = [];
   const surveys: Prisma.SurveyResponseCreateManyInput[] = [];
   let firstSale: Date | null = null;
+  // Anonymous visitors; about a fifth of visits come from someone who's been before.
+  const visitors: string[] = [];
 
   for (let d = days; d >= 0; d--) {
     const dayStart = today - d * 86_400_000;
@@ -116,6 +124,11 @@ export async function seedAnalytics(db: PrismaClient, merchantId: string, pages:
 
       for (let i = 0; i < count; i++) {
         const sessionId = uuid(r);
+        const returning = visitors.length > 50 && r() < 0.22;
+        const visitorId = returning ? visitors[Math.floor(r() * visitors.length)] : uuid(r);
+        if (!returning) visitors.push(visitorId);
+        // Launch days are driven by the mailing list.
+        const source = page === pages[0] && launchBoost > 1.3 && r() < 0.55 ? "email" : pick(r, SOURCE_MIX);
         // Evening-heavy arrival times.
         const hour = pick(r, [[8, 3], [10, 5], [12, 7], [14, 7], [16, 7], [18, 10], [20, 12], [22, 7], [1, 2], [5, 1]]);
         const start = dayStart + (hour + r()) * 3_600_000;
@@ -141,6 +154,7 @@ export async function seedAnalytics(db: PrismaClient, merchantId: string, pages:
             paymentMethod: extra.paymentMethod ?? null,
             device,
             country,
+            ...(type === "VIEW" ? { source, visitorId, valueCents: page.priceCents } : {}),
             createdAt: new Date(t),
           });
         };
@@ -153,7 +167,7 @@ export async function seedAnalytics(db: PrismaClient, merchantId: string, pages:
         };
 
         // view → engaged
-        if (r() > 0.74 * Math.min(1, lift)) {
+        if (r() > 0.8 * Math.min(1, lift)) {
           ev("ABANDON", { step: "view" });
           continue;
         }
@@ -180,13 +194,30 @@ export async function seedAnalytics(db: PrismaClient, merchantId: string, pages:
           continue;
         }
 
-        // engaged → payment
-        ev("STEP", { step: "payment" });
+        // engaged → details (email, plus a shipping address for physical goods)
         touch("email");
-        if (r() < 0.12) {
-          ev("ABANDON", { step: "payment", field: "email" });
+        // Typing on a phone is harder: forms lose more mobile shoppers everywhere.
+        if (r() < (device === "mobile" ? 0.22 : 0.04)) {
+          ev("ABANDON", { step: "engaged", field: "email" });
           continue;
         }
+        if (page.shipping) {
+          touch("shipping");
+          // The story: since ~6 weeks ago the shipping form is a struggle on phones.
+          const shipDrop = device === "mobile" ? (d <= SHIPPING_TROUBLE_DAYS_AGO ? 0.4 : 0.22) : 0.05;
+          if (r() < shipDrop) {
+            ev("ABANDON", { step: "engaged", field: "shipping" });
+            continue;
+          }
+        }
+        ev("STEP", { step: "details" });
+
+        // details → payment: a few see the total and think again.
+        if (r() < 0.04) {
+          ev("ABANDON", { step: "details", field: lastField });
+          continue;
+        }
+        ev("STEP", { step: "payment" });
         touch("card");
         const cardDrop = ((device === "mobile" ? 0.2 : 0.11) / lift) * (spike ? 2.5 : 1);
         if (r() < cardDrop) {

@@ -16,8 +16,14 @@ let variantId = "";
 const from = new Date(Date.now() - 86_400_000);
 const to = new Date(Date.now() + 86_400_000);
 
-async function ingest(body: unknown, ua = "Mozilla/5.0 (iPhone) Mobile") {
-  const res = await POST(new Request("http://x/api/events", { method: "POST", body: JSON.stringify(body), headers: { "user-agent": ua, "x-forwarded-for": `10.0.0.${RUN.length}` } }));
+async function ingest(body: unknown, ua = "Mozilla/5.0 (iPhone) Mobile", cookie?: string) {
+  const res = await POST(
+    new Request("http://x/api/events", {
+      method: "POST",
+      body: JSON.stringify(body),
+      headers: { "user-agent": ua, "x-forwarded-for": `10.0.0.${RUN.length}`, ...(cookie ? { cookie } : {}) },
+    }),
+  );
   return res.status;
 }
 
@@ -56,6 +62,25 @@ describe("POST /api/events", () => {
     const other = crypto.randomUUID();
     expect(await ingest({ pageId: "nope", variantId: null, sessionId: other, events: [{ type: "VIEW" }] })).toBe(204);
     expect(await db.checkoutEvent.count({ where: { sessionId: other } })).toBe(0);
+  });
+
+  it("records visit context on the VIEW: source, visitor and the server's price", async () => {
+    const sessionId = crypto.randomUUID();
+    const vid = crypto.randomUUID();
+    await ingest(
+      { pageId, variantId: null, sessionId, events: [{ type: "VIEW", step: "view", ref: "l.instagram.com" }, { type: "FIELD_FOCUS", field: "shipping" }, { type: "STEP", step: "details" }] },
+      undefined,
+      `foo=1; lumen_vid=${vid}`,
+    );
+    const rows = await db.checkoutEvent.findMany({ where: { sessionId }, orderBy: { createdAt: "asc" } });
+    expect(rows[0]).toMatchObject({ type: "VIEW", source: "instagram", visitorId: vid });
+    // Only the VIEW carries context.
+    expect(rows.slice(1).every((r) => r.source === null && r.visitorId === null)).toBe(true);
+    expect(rows.map((r) => r.step ?? r.field)).toEqual(["view", "shipping", "details"]);
+    // A referrer with a path or junk is refused outright (hostnames only).
+    expect(await ingest({ pageId, variantId: null, sessionId: crypto.randomUUID(), events: [{ type: "VIEW", ref: "evil.com/path?x=1" }] })).toBe(400);
+    // Keep this session out of the funnel counts asserted below.
+    await db.checkoutEvent.deleteMany({ where: { sessionId } });
   });
 
   it("rejects malformed payloads (and never stores field values)", async () => {

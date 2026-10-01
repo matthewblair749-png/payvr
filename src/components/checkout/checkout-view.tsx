@@ -60,7 +60,7 @@ export function CheckoutView({
   /** Live mode: called whenever totals change (to keep Stripe Elements' amount in sync). */
   onTotalsChange?: (totals: Totals, selections: BuyerSelections) => void;
   /** Analytics hook (hosted checkouts): which block the buyer touched, pay clicks, success. */
-  onTrack?: (e: { kind: "focus"; field: string } | { kind: "pay" } | { kind: "paid" }) => void;
+  onTrack?: (e: { kind: "focus"; field: string } | { kind: "details" } | { kind: "pay" } | { kind: "paid" }) => void;
   /** Hosted checkout: persist a one-tap survey answer. Without it, answers are local-only (demo/preview). */
   onSurveyAnswer?: (question: CheckoutConfig["survey"]["question"], answer: string) => Promise<boolean>;
   /** Studio: show the success screen (with the survey) instead of the form. */
@@ -164,6 +164,7 @@ export function CheckoutView({
             total={total}
             currency={product.currency}
             payIn4={usePayIn4}
+            shipping={!!product.requiresShipping}
             slot={mode === "live" ? paymentSlot : undefined}
             onPay={handlePay}
             busy={status === "busy"}

@@ -43,12 +43,22 @@ export function sessionsCte(f: AnalyticsFilter) {
           WHEN step = 'payment' OR (type = 'FIELD_FOCUS' AND field IN ('email','card','payment')) THEN 3
           WHEN step = 'engaged' OR type = 'FIELD_FOCUS' THEN 2
           ELSE 1 END) AS rank,
+        -- Home's five stages: 1 visit, 2 start, 3 details, 4 payment, 5 paid.
+        MAX(CASE
+          WHEN type = 'PAYMENT_SUCCEEDED' THEN 5
+          WHEN type IN ('PAY_CLICK', 'PAYMENT_FAILED') OR step IN ('payment', 'submitted') OR (type = 'FIELD_FOCUS' AND field IN ('card', 'payment')) THEN 4
+          WHEN step = 'details' THEN 3
+          WHEN type = 'FIELD_FOCUS' OR step = 'engaged' THEN 2
+          ELSE 1 END) AS stage,
         MIN("createdAt") AS started,
         MAX("createdAt") AS last_seen,
         COALESCE((array_agg(device ORDER BY "createdAt", id) FILTER (WHERE type = 'VIEW'))[1], 'desktop') AS device,
         (array_agg("checkoutPageId" ORDER BY "createdAt", id) FILTER (WHERE type = 'VIEW'))[1] AS page_id,
         (array_agg(country ORDER BY "createdAt", id) FILTER (WHERE type = 'VIEW'))[1] AS country,
         (array_agg("variantId" ORDER BY "createdAt", id) FILTER (WHERE type = 'VIEW'))[1] AS variant_id,
+        (array_agg(source ORDER BY "createdAt", id) FILTER (WHERE type = 'VIEW'))[1] AS source,
+        (array_agg("visitorId" ORDER BY "createdAt", id) FILTER (WHERE type = 'VIEW'))[1] AS visitor_id,
+        (array_agg("valueCents" ORDER BY "createdAt", id) FILTER (WHERE type = 'VIEW'))[1] AS value_cents,
         (array_agg(field ORDER BY "createdAt" DESC, id DESC) FILTER (WHERE type = 'FIELD_FOCUS'))[1] AS last_field,
         array_agg(DISTINCT field) FILTER (WHERE type = 'FIELD_FOCUS') AS fields
       FROM "CheckoutEvent"

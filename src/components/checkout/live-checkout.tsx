@@ -10,7 +10,7 @@
  *   3. confirm with Stripe.js.
  * Card numbers live only inside Stripe's iframes. lumen never sees them.
  */
-import { Elements, LinkAuthenticationElement, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import { AddressElement, Elements, LinkAuthenticationElement, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe, type Appearance, type Stripe as StripeJs, type StripeElementsOptions } from "@stripe/stripe-js";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { preparePaymentAction } from "@/app/pay/[slug]/actions";
@@ -128,6 +128,18 @@ function LiveCheckoutInner({
   const lastAmount = useRef<number | null>(null);
   const lastPayIn4 = useRef(false);
 
+  // "Details" is done once the email (and, for physical goods, the shipping
+  // address) is complete. Reported once, for the funnel's Details stage.
+  const emailDone = useRef(false);
+  const addressDone = useRef(!product.requiresShipping);
+  const detailsSent = useRef(false);
+  const checkDetails = useCallback(() => {
+    if (emailDone.current && addressDone.current && !detailsSent.current) {
+      detailsSent.current = true;
+      onTrack?.({ kind: "details" });
+    }
+  }, [onTrack]);
+
   // Keep Stripe's amount (and pay-later ordering) in sync with the buyer's choices.
   const onTotalsChange = useCallback(
     (totals: Totals) => {
@@ -202,7 +214,25 @@ function LiveCheckoutInner({
   const slot = (
     <div className="space-y-3">
       {/* Stripe's fields are iframes: focus doesn't bubble to our DOM, so report it explicitly. */}
-      <LinkAuthenticationElement onChange={(e) => setEmail(e.value.email)} onFocus={() => onTrack?.({ kind: "focus", field: "email" })} />
+      <LinkAuthenticationElement
+        onChange={(e) => {
+          setEmail(e.value.email);
+          emailDone.current = e.complete;
+          checkDetails();
+        }}
+        onFocus={() => onTrack?.({ kind: "focus", field: "email" })}
+      />
+      {product.requiresShipping && (
+        // Shipping mode: Stripe attaches the address to the PaymentIntent on confirm.
+        <AddressElement
+          options={{ mode: "shipping" }}
+          onChange={(e) => {
+            addressDone.current = e.complete;
+            checkDetails();
+          }}
+          onFocus={() => onTrack?.({ kind: "focus", field: "shipping" })}
+        />
+      )}
       <PaymentElement
         options={{ layout: { type: "tabs", defaultCollapsed: false } }}
         onFocus={() => onTrack?.({ kind: "focus", field: "card" })}

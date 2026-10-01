@@ -33,6 +33,7 @@ export function ProductPanel({
         description: product.description,
         priceCents: product.priceCents,
         currency: product.currency.toLowerCase() as Currency,
+        requiresShipping: !!product.requiresShipping,
       });
       setMessage(res.ok ? { ok: true, text: "Product saved" } : { ok: false, text: res.error });
     });
@@ -105,6 +106,20 @@ export function ProductPanel({
           </select>
         </div>
       </div>
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-black/12 bg-white p-3">
+        <input
+          type="checkbox"
+          checked={!!product.requiresShipping}
+          onChange={(e) => onChange({ ...product, requiresShipping: e.target.checked })}
+          className="mt-0.5 size-4 accent-ink"
+        />
+        <span>
+          <span className="block text-sm font-semibold">Ships to the buyer</span>
+          <span className="block text-xs leading-relaxed text-muted-strong">
+            Asks for a shipping address before payment. Leave off for classes, downloads and gift cards.
+          </span>
+        </span>
+      </label>
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={pending}>
           {pending ? "Saving…" : "Save product"}

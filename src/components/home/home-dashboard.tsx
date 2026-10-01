@@ -3,8 +3,9 @@
 import { RefreshCw } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/app-shell/page-header";
-import { parseRange, RANGES } from "@/lib/date-range";
+import { parseRange, RANGES, type RangeValue } from "@/lib/date-range";
 import { cn } from "@/lib/utils";
+import { FunnelCard, FunnelSkeleton, useFunnel } from "./funnel-card";
 import { KpiTiles } from "./kpi-tiles";
 import { NorthStar } from "./north-star";
 import { KpiSkeleton, NorthStarSkeleton } from "./skeletons";
@@ -47,6 +48,31 @@ export function HomeDashboard() {
     >
       <NorthStar data={data} periodLabel={periodLabel} />
       <KpiTiles data={data} />
+      <FunnelSection range={range} periodLabel={periodLabel} />
+    </div>
+  );
+}
+
+/** Loads on its own, so a slow funnel never holds back the North Star. */
+function FunnelSection({ range, periodLabel }: { range: RangeValue; periodLabel: string }) {
+  const { data, isPending, isError, isPlaceholderData, refetch } = useFunnel(range);
+  if (isPending) return <FunnelSkeleton />;
+  if (isError && !data) {
+    return (
+      <Card role="alert" className="p-6 sm:p-8">
+        <h2 className="text-ui font-semibold">The checkout funnel didn&apos;t load</h2>
+        <p className="mt-1 text-ui text-app-muted">
+          Your other numbers are fine.{" "}
+          <button type="button" onClick={() => refetch()} className="font-semibold text-app-fg underline underline-offset-4">
+            Try again
+          </button>
+        </p>
+      </Card>
+    );
+  }
+  return (
+    <div className={cn("transition-opacity duration-200", isPlaceholderData && "opacity-60")} aria-busy={isPlaceholderData || undefined}>
+      <FunnelCard data={data} range={range} periodLabel={periodLabel} />
     </div>
   );
 }
@@ -62,6 +88,7 @@ export function HomeSkeleton() {
           </li>
         ))}
       </ul>
+      <FunnelSkeleton />
     </div>
   );
 }

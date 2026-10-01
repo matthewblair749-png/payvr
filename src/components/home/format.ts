@@ -84,3 +84,10 @@ export function rollingMean(points: (number | null)[], window: number): (number 
     return slice.length ? slice.reduce((a, b) => a + b, 0) / slice.length : null;
   });
 }
+
+/** Estimates shouldn't look precise: $978.97 → "$980", $4,196 → "$4,200", $12,345 → "$12,000". */
+export function roughMoney(cents: number, currency: string) {
+  const dollars = cents / 100;
+  const step = dollars < 1_000 ? 10 : dollars < 10_000 ? 100 : 1_000;
+  return money(Math.round(dollars / step) * step * 100, currency, { cents: false });
+}

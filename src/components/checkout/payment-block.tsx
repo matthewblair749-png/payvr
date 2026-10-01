@@ -20,6 +20,7 @@ export function PaymentBlock({
   total,
   currency,
   payIn4,
+  shipping = false,
   slot,
   onPay,
   busy,
@@ -29,6 +30,8 @@ export function PaymentBlock({
   total: number;
   currency: string;
   payIn4: boolean;
+  /** Show the shipping-address look-alike in previews (live uses Stripe's Address Element). */
+  shipping?: boolean;
   slot?: ReactNode;
   onPay: () => void;
   busy?: boolean;
@@ -37,7 +40,7 @@ export function PaymentBlock({
   const amount = payIn4 ? `${formatMoney(Math.ceil(total / 4), currency)} today` : formatMoney(total, currency);
   return (
     <div className="space-y-3">
-      {slot ?? <MockFields />}
+      {slot ?? <MockFields shipping={shipping} />}
       <button
         type="button"
         onClick={onPay}
@@ -67,12 +70,18 @@ function FakeField({ label, value, className = "" }: { label: string; value: str
   );
 }
 
-function MockFields() {
+function MockFields({ shipping }: { shipping: boolean }) {
   return (
     <div className="space-y-3">
       <p className="sr-only">Preview only. On a live checkout these fields are provided securely by Stripe.</p>
       <div aria-hidden="true" className="space-y-3">
         <FakeField label="Email" value="you@example.com" />
+        {shipping && (
+          <>
+            <FakeField label="Full name" value="Alex Rivera" />
+            <FakeField label="Shipping address" value="123 Clay Street, Portland, OR 97214" />
+          </>
+        )}
         <FakeField label="Card number" value="1234 1234 1234 1234" />
         <div className="grid grid-cols-2 gap-3">
           <FakeField label="Expiry" value="MM / YY" />

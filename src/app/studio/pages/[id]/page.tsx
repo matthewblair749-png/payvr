@@ -37,8 +37,9 @@ export default async function EditorPage({ params }: PageProps<"/studio/pages/[i
           description: page.product.description,
           priceCents: page.product.priceCents,
           currency: page.product.currency.toUpperCase(),
+          requiresShipping: page.product.requiresShipping,
         }
-      : { name: "Your product", description: "", priceCents: 2900, currency: "USD" },
+      : { name: "Your product", description: "", priceCents: 2900, currency: "USD", requiresShipping: false },
     versions: page.versions.map((v) => ({ id: v.id, number: v.number, note: v.note, createdAt: v.createdAt.toISOString() })),
     appUrl: (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/$/, ""),
   };

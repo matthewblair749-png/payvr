@@ -9,7 +9,7 @@ export const NAV: NavItem[] = [
   { href: "/studio", label: "Home", icon: House, match: (p) => p === "/studio" },
   { href: "/studio/orders", label: "Payments", icon: CreditCard, match: under("/studio/orders") },
   { href: "/studio/customers", label: "Customers", icon: Users, match: under("/studio/customers") },
-  { href: "/studio/dashboard", label: "Insights", icon: ChartLine, match: under("/studio/dashboard", "/studio/research") },
+  { href: "/studio/dashboard", label: "Insights", icon: ChartLine, match: under("/studio/dashboard", "/studio/research", "/studio/funnel") },
   { href: "/studio/experiments", label: "Experiments", icon: FlaskConical, match: under("/studio/experiments") },
   { href: "/studio/checkouts", label: "Checkout Studio", icon: LayoutTemplate, match: under("/studio/checkouts", "/studio/pages") },
   { href: "/studio/settings", label: "Settings", icon: Settings, match: under("/studio/settings", "/studio/payments") },

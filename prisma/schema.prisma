@@ -109,6 +109,8 @@ model Product {
   priceCents      Int
   currency        String   @default("usd")
   imageUrl        String?
+  /// Physical goods: the checkout collects a shipping address (Stripe Address Element).
+  requiresShipping Boolean @default(false)
   stripeProductId String?
   stripePriceId   String?
   active          Boolean  @default(true)
@@ -308,9 +310,16 @@ model CheckoutEvent {
   paymentMethod  String?
   device         String?
   country        String?
+  /// VIEW only: where the visit came from (classified server-side: instagram, email, search, direct, …).
+  source         String?
+  /// VIEW only: anonymous first-party visitor id (lumen_vid cookie), for new vs returning.
+  visitorId      String?
+  /// VIEW only: the cart value shown at the start (product or test price), for order-value segments.
+  valueCents     Int?
   createdAt      DateTime          @default(now())
 
   @@index([merchantId, createdAt])
+  @@index([merchantId, visitorId, createdAt])
   @@index([checkoutPageId, createdAt])
   @@index([sessionId])
 }

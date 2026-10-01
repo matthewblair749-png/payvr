@@ -16,7 +16,7 @@ export const getPublishedCheckout = cache(async (slug: string) => {
       id: true,
       merchantId: true,
       publishedVersion: { select: { config: true } },
-      product: { select: { name: true, description: true, priceCents: true, currency: true, imageUrl: true, active: true } },
+      product: { select: { name: true, description: true, priceCents: true, currency: true, imageUrl: true, active: true, requiresShipping: true } },
       merchant: { select: { stripeAccountId: true, stripeChargesEnabled: true } },
       experiments: {
         where: { status: "RUNNING" },
@@ -74,6 +74,7 @@ export async function resolveCheckout(slug: string, visitorId: string): Promise<
       priceCents: priceOverride ?? page.product.priceCents,
       currency: page.product.currency.toUpperCase(),
       imageUrl: page.product.imageUrl ?? undefined,
+      requiresShipping: page.product.requiresShipping,
     },
     variantId,
     variantKey,

@@ -80,6 +80,7 @@ const productInput = z.object({
   description: z.string().trim().max(280),
   priceCents: z.number().int().min(50, "Minimum price is 0.50").max(99_999_99),
   currency: z.enum(["usd", "eur", "gbp", "cad", "aud"]),
+  requiresShipping: z.boolean().default(false),
 });
 
 export async function updateProductAction(input: z.input<typeof productInput>) {
@@ -88,7 +89,7 @@ export async function updateProductAction(input: z.input<typeof productInput>) {
     const p = await pages.updateProduct(merchantId, pageId, data);
     // Fire-and-forget: never make the merchant wait on (or fail because of) Stripe.
     void syncProductToStripe(p.id);
-    return { name: p.name, description: p.description, priceCents: p.priceCents, currency: p.currency };
+    return { name: p.name, description: p.description, priceCents: p.priceCents, currency: p.currency, requiresShipping: p.requiresShipping };
   });
 }
 

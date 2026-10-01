@@ -156,4 +156,6 @@ export type CheckoutProduct = {
   currency: string;
   /** Optional https image; the demo uses a built-in illustration instead. */
   imageUrl?: string;
+  /** Physical goods: collect a shipping address. */
+  requiresShipping?: boolean;
 };

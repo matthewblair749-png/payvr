@@ -12,7 +12,7 @@ import type { ClientEvent } from "./events";
 export type Tracker = {
   view(): void;
   focus(field: string): void;
-  step(step: "engaged" | "payment" | "submitted"): void;
+  step(step: "engaged" | "details" | "payment" | "submitted"): void;
   payClick(): void;
   paid(): void;
   dispose(): void;
@@ -48,7 +48,7 @@ export function createTracker(opts: { pageId: string; variantId: string | null; 
     void fetch(endpoint, { method: "POST", body: blob, keepalive: true }).catch(() => {});
   }
 
-  const ORDER = ["view", "engaged", "payment", "submitted"] as const;
+  const ORDER = ["view", "engaged", "details", "payment", "submitted"] as const;
   function advance(step: (typeof ORDER)[number]) {
     if (ORDER.indexOf(step) > ORDER.indexOf(lastStep ?? "view")) lastStep = step;
     if (step !== "view" && once(`step:${step}`)) push({ type: "STEP", step });
@@ -71,12 +71,19 @@ export function createTracker(opts: { pageId: string; variantId: string | null; 
     view() {
       if (!once("view")) return;
       viewed = true;
-      push({ type: "VIEW", step: "view" });
+      // Where the visit came from: the referrer's host only, plus utm_source.
+      let ref: string | undefined;
+      try {
+        ref = document.referrer ? new URL(document.referrer).hostname.slice(0, 100) : undefined;
+      } catch {}
+      const utm = new URLSearchParams(location.search).get("utm_source")?.replace(/[^\w.-]/g, "").slice(0, 40) || undefined;
+      push({ type: "VIEW", step: "view", ref, utm });
       flush();
     },
     focus(field) {
       lastField = field;
-      const paymentField = field === "email" || field === "card" || field === "payment";
+      // Email and shipping are "details"; card entry is "payment".
+      const paymentField = field === "card" || field === "payment";
       advance(paymentField ? "payment" : "engaged");
       if (once(`focus:${field}`)) push({ type: "FIELD_FOCUS", field });
     },

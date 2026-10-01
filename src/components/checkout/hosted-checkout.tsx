@@ -11,7 +11,7 @@ import { createTracker, type Tracker } from "@/lib/tracking/tracker";
 import { CheckoutView } from "./checkout-view";
 import { LiveCheckout } from "./live-checkout";
 
-type TrackEvent = { kind: "focus"; field: string } | { kind: "pay" } | { kind: "paid" };
+type TrackEvent = { kind: "focus"; field: string } | { kind: "details" } | { kind: "pay" } | { kind: "paid" };
 
 export function HostedCheckout({
   config,
@@ -47,6 +47,7 @@ export function HostedCheckout({
     const t = tracker.current;
     if (!t) return;
     if (e.kind === "focus") t.focus(e.field);
+    else if (e.kind === "details") t.step("details");
     else if (e.kind === "pay") t.payClick();
     else t.paid();
   }, []);
