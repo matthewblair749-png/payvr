@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
 import { Icon, type IconName } from '@/components/icon';
-import { Card, SectionLabel } from '@/components/list-row';
+import { Card, ListRow, SectionLabel } from '@/components/list-row';
 import { LogoGlyph } from '@/components/logo';
 import { PressableScale } from '@/components/pressable-scale';
 import { Text } from '@/components/text';
@@ -151,31 +151,31 @@ export default function Profile() {
       <Animated.View entering={listEnter(4)}>
         <SectionLabel>Settings</SectionLabel>
         <Card>
-          <Row icon="shield" label="Security" value="Face ID · PIN" onPress={() => router.push('/settings/security')} />
-          <Row icon="globe" label="Privacy" value={PRIVACY_LABEL[defaultPrivacy]} onPress={() => router.push('/settings/privacy')} />
-          <Row
+          <ListRow icon="shield" label="Security" value="Face ID · PIN" onPress={() => router.push('/settings/security')} />
+          <ListRow icon="globe" label="Privacy" value={PRIVACY_LABEL[defaultPrivacy]} onPress={() => router.push('/settings/privacy')} />
+          <ListRow
             icon="bell"
             label="Notifications"
             value={settings.notificationsOn ? 'On' : 'Off'}
             onPress={() => router.push('/settings/notifications')}
           />
-          <Row icon="moon" label="Appearance" value={THEME_LABEL[preference]} onPress={() => router.push('/settings/appearance')} last />
+          <ListRow icon="moon" label="Appearance" value={THEME_LABEL[preference]} onPress={() => router.push('/settings/appearance')} last />
         </Card>
       </Animated.View>
 
       <Animated.View entering={listEnter(5)}>
         <SectionLabel>Support</SectionLabel>
         <Card>
-          <Row icon="help" label="Help" onPress={() => openLegal('help')} />
-          <Row icon="file" label="Terms" onPress={() => openLegal('terms')} />
-          <Row icon="lock" label="Privacy policy" onPress={() => openLegal('privacy')} last />
+          <ListRow icon="help" label="Help" onPress={() => openLegal('help')} />
+          <ListRow icon="file" label="Terms" onPress={() => openLegal('terms')} />
+          <ListRow icon="lock" label="Privacy policy" onPress={() => openLegal('privacy')} last />
         </Card>
       </Animated.View>
 
       <Animated.View entering={listEnter(6)}>
         <SectionLabel>Try it out</SectionLabel>
         <Card>
-          <Row
+          <ListRow
             icon="arrowDownLeft"
             label="Jake pays you $20"
             onPress={() => {
@@ -183,9 +183,9 @@ export default function Profile() {
               simulateIncomingPayment();
             }}
           />
-          <Row icon="request" label="Priya requests $14.50" onPress={simulateIncomingRequest} />
-          <Row icon="video" label="Sofia video-calls you" onPress={() => simulateIncomingCall('u_sofia', 'video')} />
-          <Row icon="call" label="Leo calls you" onPress={() => simulateIncomingCall('u_leo', 'audio')} last />
+          <ListRow icon="request" label="Priya requests $14.50" onPress={simulateIncomingRequest} />
+          <ListRow icon="video" label="Sofia video-calls you" onPress={() => simulateIncomingCall('u_sofia', 'video')} />
+          <ListRow icon="call" label="Leo calls you" onPress={() => simulateIncomingCall('u_leo', 'audio')} last />
         </Card>
       </Animated.View>
 
@@ -238,35 +238,6 @@ function Stat({ value, label, icon, onPress }: { value: number; label: string; i
   );
 }
 
-/** Settings row with the icon on a soft tinted tile. */
-function Row({ icon, label, value, onPress, last }: { icon: IconName; label: string; value?: string; onPress: () => void; last?: boolean }) {
-  const { colors } = useTheme();
-  return (
-    <PressableScale
-      scaleTo={0.985}
-      haptic="tap"
-      accessibilityRole="button"
-      accessibilityLabel={value ? `${label}, ${value}` : label}
-      onPress={onPress}
-      style={({ pressed }) => [styles.row, { opacity: pressed ? 0.85 : 1 }]}>
-      <View style={[styles.rowIcon, { backgroundColor: colors.primary + '1F' }]}>
-        <Icon name={icon} size={18} color={colors.accent} />
-      </View>
-      <View style={[styles.rowMain, !last && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
-        <Text variant="bodyMedium" style={styles.rowLabel}>
-          {label}
-        </Text>
-        {value ? (
-          <Text variant="small" color="textSecondary">
-            {value}
-          </Text>
-        ) : null}
-        <Icon name="chevronRight" size={18} color={colors.textSecondary} />
-      </View>
-    </PressableScale>
-  );
-}
-
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 48 },
 
@@ -309,10 +280,6 @@ const styles = StyleSheet.create({
   friend: { width: 60, alignItems: 'center', gap: 6 },
   addFriend: { width: 56, height: 56, borderRadius: 28, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
 
-  row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingLeft: 14, minHeight: 56 },
-  rowIcon: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 56, paddingRight: 14 },
-  rowLabel: { flex: 1 },
 
   logout: {
     flexDirection: 'row',
