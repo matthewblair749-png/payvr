@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, FadeOut, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
@@ -142,18 +142,16 @@ export default function Tap() {
               style={styles.rings}
               accessible
               accessibilityLabel={phase === 'searching' && !starting ? `Searching nearby. ${remaining} seconds left` : undefined}>
-              <PulseRings size={170} spread={0.9} thickness={2} glow active={phase === 'searching' && !starting}>
-                <TappingPhone
-                  size={132}
-                  active={phase === 'searching' && !starting}
-                  progress={starting ? 1 : remaining / (TAP_SESSION_MS / 1000)}
-                />
+              <PulseRings size={132} spread={1.1} active={phase === 'searching' && !starting}>
+                <TappingPhone size={132} active={phase === 'searching' && !starting} />
               </PulseRings>
             </View>
             <Text variant="title" align="center" style={styles.title} accessibilityRole="header" accessibilityLiveRegion="polite">
               {phase === 'found' ? 'Found them' : starting ? 'Getting ready…' : 'Hold phones together'}
             </Text>
-            {phase === 'searching' && !starting ? <Hints /> : <View style={styles.hintSpace} />}
+            <Text color="textSecondary" align="center" style={styles.hint}>
+              {phase === 'searching' && !starting ? `Keep Payvr open on both phones · ${remaining}s` : ' '}
+            </Text>
             <PressableScale accessibilityRole="link" onPress={showQr} style={styles.qrLink}>
               <Icon name="qr" size={18} color={colors.accent} />
               <Text variant="bodyMedium" color="accent">
@@ -328,36 +326,13 @@ function Notice({
   );
 }
 
-const HINTS = [
-  'Keep Payvr open on both phones',
-  'Their name pops up in a second',
-  'Nothing sends until you confirm',
-];
-
-/** Gentle tips that fade from one to the next while searching. */
-function Hints() {
-  const [i, setI] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setI((n) => (n + 1) % HINTS.length), 3200);
-    return () => clearInterval(t);
-  }, []);
-  return (
-    <Animated.View key={i} entering={FadeIn.duration(500)} exiting={FadeOut.duration(250)} style={styles.hint}>
-      <Text color="textSecondary" align="center" numberOfLines={1} adjustsFontSizeToFit>
-        {HINTS[i]}
-      </Text>
-    </Animated.View>
-  );
-}
-
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   stretch: { alignSelf: 'stretch' },
   top: { alignItems: 'center', gap: 2, paddingHorizontal: 24 },
   verb: { letterSpacing: 1.2 },
   notePill: { marginTop: 6, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, maxWidth: '80%' },
-  hint: { height: 24, justifyContent: 'center', paddingHorizontal: 24 },
-  hintSpace: { height: 24 },
+  hint: { paddingHorizontal: 24, fontVariant: ['tabular-nums'] },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   // The rings fill the screen and may run off its edges.
   rings: { height: 300, alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
