@@ -14,11 +14,8 @@ import Svg, { Rect } from 'react-native-svg';
 
 import { useTheme } from '@/theme/theme-provider';
 
-/** One full tap: lift, hover, dip down onto the other phone, settle. */
-const LIFT = 520;
-const HOVER = 260;
-const DIP = 150;
-const SETTLE = 270;
+/** One smooth swing: tilt down toward the other phone, then back up. */
+const HALF = 1100;
 
 /** A phone outline, like the Tap button's glyph but drawn bigger. */
 function PhoneGlyph({ size, color }: { size: number; color: string }) {
@@ -32,85 +29,57 @@ function PhoneGlyph({ size, color }: { size: number; color: string }) {
 }
 
 /**
- * The glowing blue orb on the Tap screen, with a phone that bobs up and taps down as if
- * touching another phone. Each tap sends out a quick flash ring. Still when Reduce Motion is on.
+ * The glowing blue orb on the Tap screen, with a phone that smoothly tips down and back up,
+ * like pointing your phone at the other one. The glow brightens gently as it points down.
+ * Still when Reduce Motion is on.
  */
 export function TappingPhone({ size = 132, active = true }: { size?: number; active?: boolean }) {
   const { colors } = useTheme();
   const reduceMotion = useReducedMotion();
-  const y = useSharedValue(0);
-  const tilt = useSharedValue(0);
-  const flash = useSharedValue(0);
+  // 0 = upright, 1 = pointing down.
+  const t = useSharedValue(0);
   const animate = active && !reduceMotion;
 
   useEffect(() => {
     if (!animate) {
-      cancelAnimation(y);
-      cancelAnimation(tilt);
-      cancelAnimation(flash);
-      y.value = withTiming(0, { duration: 200 });
-      tilt.value = withTiming(0, { duration: 200 });
-      flash.value = 0;
+      cancelAnimation(t);
+      t.value = withTiming(0, { duration: 300, easing: Easing.inOut(Easing.sin) });
       return;
     }
-    const lift = Easing.bezier(0.22, 1, 0.36, 1);
-    const dip = Easing.in(Easing.cubic);
-    const up = -size * 0.14;
-    y.value = withRepeat(
-      withSequence(
-        withTiming(up, { duration: LIFT, easing: lift }),
-        withTiming(up, { duration: HOVER }),
-        withTiming(size * 0.03, { duration: DIP, easing: dip }),
-        withTiming(0, { duration: SETTLE, easing: lift }),
-      ),
-      -1,
-    );
-    // A slight forward lean on the way down, like reaching toward the other phone.
-    tilt.value = withRepeat(
-      withSequence(
-        withTiming(-6, { duration: LIFT, easing: lift }),
-        withTiming(-6, { duration: HOVER }),
-        withTiming(2, { duration: DIP, easing: dip }),
-        withTiming(0, { duration: SETTLE, easing: lift }),
-      ),
-      -1,
-    );
-    // The flash fires the instant the phone touches down.
-    flash.value = withRepeat(
-      withSequence(
-        withTiming(0, { duration: LIFT + HOVER + DIP }),
-        withTiming(1, { duration: 0 }),
-        withTiming(0, { duration: SETTLE + 280, easing: Easing.out(Easing.cubic) }),
-      ),
-      -1,
-    );
-    return () => {
-      cancelAnimation(y);
-      cancelAnimation(tilt);
-      cancelAnimation(flash);
-    };
-  }, [animate, size, y, tilt, flash]);
+    const ease = Easing.inOut(Easing.sin);
+    t.value = withRepeat(withSequence(withTiming(1, { duration: HALF, easing: ease }), withTiming(0, { duration: HALF, easing: ease })), -1);
+    return () => cancelAnimation(t);
+  }, [animate, t]);
 
   const phoneStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: y.value }, { rotate: `${tilt.value}deg` }],
+    transform: [
+      { perspective: 400 },
+      { translateY: t.value * size * 0.06 },
+      // Top tips away from you, so the phone points down.
+      { rotateX: `${t.value * 42}deg` },
+    ],
   }));
-  const flashStyle = useAnimatedStyle(() => ({
-    opacity: flash.value * 0.7,
-    transform: [{ scale: 1 + (1 - flash.value) * 0.35 }],
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: 0.25 + t.value * 0.35,
+    transform: [{ scale: 1 + t.value * 0.08 }],
   }));
-  // The orb swells a touch on each tap.
-  const orbStyle = useAnimatedStyle(() => ({ transform: [{ scale: 1 + flash.value * 0.04 }] }));
 
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
       <Animated.View
         style={[
-          styles.flash,
-          { width: size, height: size, borderRadius: size / 2, borderColor: colors.onPrimary },
-          flashStyle,
+          styles.glow,
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            backgroundColor: colors.primary,
+            boxShadow: `0 0 ${Math.round(size * 0.6)}px ${Math.round(size * 0.22)}px ${colors.primary}`,
+          },
+          glowStyle,
         ]}
       />
-      <Animated.View
+      <View
         style={[
           styles.orb,
           {
@@ -120,17 +89,17 @@ export function TappingPhone({ size = 132, active = true }: { size?: number; act
             backgroundColor: colors.primary,
             boxShadow: `0 0 ${Math.round(size * 0.45)}px ${Math.round(size * 0.12)}px ${colors.primary}99`,
           },
-          orbStyle,
         ]}>
         <Animated.View style={phoneStyle}>
           <PhoneGlyph size={size * 0.46} color={colors.onPrimary} />
         </Animated.View>
-      </Animated.View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   orb: { alignItems: 'center', justifyContent: 'center' },
-  flash: { position: 'absolute', borderWidth: 3, pointerEvents: 'none' },
+  // Extra halo behind the orb that brightens as the phone points down.
+  glow: { position: 'absolute', pointerEvents: 'none' },
 });
