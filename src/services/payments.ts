@@ -20,7 +20,10 @@ import { collectPayment } from '@/services/stripe/payment-sheet';
 import { isSupabaseConfigured, supabase } from '@/services/supabase';
 import * as WebBrowser from 'expo-web-browser';
 
-export const DAILY_SEND_LIMIT_CENTS = 500_00;
+import { dailyLimitFor, getAccount } from '@/store/account';
+
+/** Rolling 24h send limit for the signed-in account's tier (the server enforces its own copy). */
+export const dailySendLimitCents = () => dailyLimitFor(getAccount().kyc);
 export const STARTING_TEST_BALANCE_CENTS = 500_00;
 export const MAX_ADD_MONEY_CENTS = 1_000_00;
 export const TEST_MODE = true;
@@ -57,7 +60,7 @@ function paymentError(code: string, hint?: string | null): PaymentError {
       return new PaymentError(code, "You don't have enough test money for that.");
     case 'daily_limit': {
       const left = Math.max(0, Number(hint ?? 0));
-      return new PaymentError(code, `That's over your $500 daily limit. You can send ${fmt(left)} more today.`);
+      return new PaymentError(code, `That's over your ${fmt(dailySendLimitCents())} daily limit. You can send ${fmt(left)} more today.`);
     }
     case 'invalid_amount':
       return new PaymentError(code, hint || 'Enter an amount above $0.');
@@ -130,8 +133,9 @@ function moveOut(amountCents: number) {
   if (!Number.isInteger(amountCents) || amountCents <= 0) throw paymentError('invalid_amount');
   if (amountCents > mockDb.balanceCents) throw paymentError('insufficient_funds');
   const sent = sentLast24h();
-  if (sent + amountCents > DAILY_SEND_LIMIT_CENTS) {
-    throw paymentError('daily_limit', String(DAILY_SEND_LIMIT_CENTS - sent));
+  const limit = dailySendLimitCents();
+  if (sent + amountCents > limit) {
+    throw paymentError('daily_limit', String(limit - sent));
   }
   mockDb.balanceCents -= amountCents;
 }

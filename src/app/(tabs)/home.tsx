@@ -20,7 +20,7 @@ import { PressableScale } from '@/components/pressable-scale';
 import { Text } from '@/components/text';
 import type { TapMode } from '@/data/types';
 import { useCountUp } from '@/hooks/use-count-up';
-import { DAILY_SEND_LIMIT_CENTS } from '@/services/payments';
+import { useAccount } from '@/store/account';
 import { describe, useApp } from '@/store/app-store';
 import { useCards } from '@/store/cards-store';
 import { setTapHandler } from '@/store/tap-intent';
@@ -38,6 +38,7 @@ export default function Home() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { me, balanceCents, transactions, sentTodayCents, setDraft, userById } = useApp();
+  const { dailyLimitCents } = useAccount();
   // With a card connected, amounts above the balance are fine: the card pays.
   const { cards, defaultSource, sourceLabel } = useCards();
   const canUseCard = cards.length > 0;
@@ -52,7 +53,7 @@ export default function Home() {
   const requester = request ? userById(request.toUser) : undefined;
   const payWith = defaultSource === 'balance' ? `Balance ${formatCents(shownBalance)}` : `Pay with ${sourceLabel(defaultSource)}`;
 
-  const leftToday = DAILY_SEND_LIMIT_CENTS - sentTodayCents;
+  const leftToday = dailyLimitCents - sentTodayCents;
   const sendError =
     cents > balanceCents && !canUseCard
       ? 'More than your balance'

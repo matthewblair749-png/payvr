@@ -32,6 +32,7 @@ export const SEED_TRANSACTIONS: Transaction[] = [
   { id: 'tx_9f2a41', fromUser: 'u_me', toUser: 'u_priya', amountCents: 1800, note: 'Tacos', type: 'request', status: 'pending', createdAt: minutesAgo(12) },
   { id: 'tx_8c1e07', fromUser: 'u_jake', toUser: 'u_me', amountCents: 2000, note: 'Pizza', type: 'send', status: 'completed', createdAt: minutesAgo(48), completedAt: minutesAgo(48) },
   { id: 'tx_7b33d9', fromUser: 'u_me', toUser: 'u_sofia', amountCents: 4250, note: 'Concert tickets', type: 'send', status: 'completed', createdAt: minutesAgo(190), completedAt: minutesAgo(190) },
+  { id: 'tx_6b2c11', fromUser: 'u_leo', toUser: 'u_me', amountCents: 1400, note: 'Movie tickets', type: 'request', status: 'pending', createdAt: minutesAgo(60 * 20) },
   { id: 'tx_6a904c', fromUser: 'u_me', toUser: 'u_leo', amountCents: 650, note: 'Coffee', type: 'send', status: 'completed', createdAt: daysAgo(1, 9), completedAt: daysAgo(1, 9) },
   { id: 'tx_5d12e8', fromUser: 'u_ava', toUser: 'u_me', amountCents: 3500, note: 'Cab home', type: 'send', status: 'completed', createdAt: daysAgo(1, 23), completedAt: daysAgo(1, 23) },
   { id: 'tx_4e77b2', fromUser: 'u_sam', toUser: 'u_me', amountCents: 1200, note: 'Lunch', type: 'request', status: 'declined', createdAt: daysAgo(2, 13) },

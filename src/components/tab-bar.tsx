@@ -23,7 +23,7 @@ import { Text } from './text';
 
 const TABS: Record<string, { label: string; icon: IconName }> = {
   home: { label: 'Home', icon: 'home' },
-  feed: { label: 'Feed', icon: 'feed' },
+  activity: { label: 'Activity', icon: 'activity' },
   wallet: { label: 'Wallet', icon: 'wallet' },
   profile: { label: 'Profile', icon: 'user' },
 };
@@ -68,7 +68,7 @@ export function TabBar({ state, navigation, insets }: BottomTabBarProps) {
         { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 10) },
       ]}>
       {item('home')}
-      {item('feed')}
+      {item('activity')}
       <View style={styles.item}>
         <PressableScale
           scaleTo={0.92}

@@ -10,8 +10,8 @@ import { Screen } from '@/components/screen';
 import { Figure, Footnote, Meter, Section, SettingsHero } from '@/components/settings-ui';
 import { Text } from '@/components/text';
 import { biometricKind, type BiometricKind } from '@/services/biometrics';
-import { DAILY_SEND_LIMIT_CENTS } from '@/services/payments';
 import { storage, StorageKeys } from '@/services/storage';
+import { useAccount } from '@/store/account';
 import { useApp } from '@/store/app-store';
 import { useAuthorize } from '@/store/authorize';
 import { useTheme } from '@/theme/theme-provider';
@@ -21,6 +21,7 @@ const DEVICE_NAME = Platform.OS === 'ios' ? 'iPhone' : Platform.OS === 'android'
 
 export default function Security() {
   const { settings, updateSettings, sentTodayCents } = useApp();
+  const { dailyLimitCents } = useAccount();
   const authorize = useAuthorize();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -33,7 +34,7 @@ export default function Security() {
     biometricKind().then(setKind);
   }, []);
   const bioOn = settings.biometricsOn && !!kind;
-  const left = Math.max(0, DAILY_SEND_LIMIT_CENTS - sentTodayCents);
+  const left = Math.max(0, dailyLimitCents - sentTodayCents);
 
   return (
     <Screen back="back" scroll>
@@ -48,7 +49,7 @@ export default function Security() {
         </View>
         {[
           `${bioOn ? kind : 'PIN'} confirms every payment`,
-          `Sending is capped at ${formatShort(DAILY_SEND_LIMIT_CENTS)} a day`,
+          `Sending is capped at ${formatShort(dailyLimitCents)} a day`,
           'Tap-to-pay sessions close after 60 seconds',
         ].map((line) => (
           <View key={line} style={styles.check}>
@@ -90,7 +91,7 @@ export default function Security() {
         <SectionLabel>Daily limit</SectionLabel>
         <View
           accessible
-          accessibilityLabel={`${formatShort(left)} left to send today, out of ${formatShort(DAILY_SEND_LIMIT_CENTS)}`}
+          accessibilityLabel={`${formatShort(left)} left to send today, out of ${formatShort(dailyLimitCents)}`}
           style={[styles.limit, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.limitHead}>
             <View>
@@ -100,10 +101,10 @@ export default function Security() {
               </Text>
             </View>
             <Text variant="small" color="textSecondary">
-              of {formatShort(DAILY_SEND_LIMIT_CENTS)}
+              of {formatShort(dailyLimitCents)}
             </Text>
           </View>
-          <Meter value={sentTodayCents} max={DAILY_SEND_LIMIT_CENTS} />
+          <Meter value={sentTodayCents} max={dailyLimitCents} />
           <Text variant="caption" color="textSecondary">
             {formatShort(sentTodayCents)} sent in the last 24 hours
           </Text>

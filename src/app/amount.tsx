@@ -12,7 +12,7 @@ import { PressableScale } from '@/components/pressable-scale';
 import { Segmented } from '@/components/segmented';
 import { Text } from '@/components/text';
 import type { TapMode } from '@/data/types';
-import { DAILY_SEND_LIMIT_CENTS } from '@/services/payments';
+import { useAccount } from '@/store/account';
 import { useApp } from '@/store/app-store';
 import { useCards } from '@/store/cards-store';
 import { useTheme } from '@/theme/theme-provider';
@@ -28,6 +28,7 @@ export default function Amount() {
   const { colors } = useTheme();
   const params = useLocalSearchParams<{ mode?: TapMode; to?: string; source?: string }>();
   const { setDraft, balanceCents, sentTodayCents, userById } = useApp();
+  const { dailyLimitCents } = useAccount();
   const { cards } = useCards();
   // With a card connected, amounts above the balance are fine: the card pays.
   const canUseCard = cards.length > 0;
@@ -37,7 +38,7 @@ export default function Amount() {
   const peer = params.to ? userById(params.to) : undefined;
 
   const cents = toCents(amount);
-  const leftToday = DAILY_SEND_LIMIT_CENTS - sentTodayCents;
+  const leftToday = dailyLimitCents - sentTodayCents;
   const overLimit = (c: number) => mode === 'send' && ((!canUseCard && c > balanceCents) || c > leftToday);
   const error =
     mode === 'send' && !canUseCard && cents > balanceCents

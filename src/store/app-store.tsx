@@ -60,6 +60,8 @@ type AppState = {
   verifyCode: (phoneE164: string, code: string) => Promise<{ needsProfile: boolean }>;
   completeSignUp: (profile: ProfileInput) => Promise<void>;
   signOut: () => Promise<void>;
+  /** Changes your name or photo (the @handle stays the same). */
+  updateProfile: (patch: { name: string; avatarUrl?: string | null }) => Promise<void>;
   updateSettings: (patch: Partial<Settings>) => void;
   saveTheme: (theme: ThemePreference) => void;
 
@@ -283,6 +285,14 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     [userId, load],
   );
 
+  const updateProfile = useCallback(
+    async (patch: { name: string; avatarUrl?: string | null }) => {
+      const saved = await backend.saveProfile(me.id, { name: patch.name, handle: me.handle, avatarUri: patch.avatarUrl === undefined ? (me.avatarUrl ?? null) : patch.avatarUrl });
+      setMe(saved);
+    },
+    [me],
+  );
+
   const signOut = useCallback(async () => {
     // Stop pushes to this phone for the account that's leaving.
     if (pushToken.current) await backend.unregisterPushToken(pushToken.current).catch(() => {});
@@ -356,6 +366,7 @@ export function AppStoreProvider({ children }: { children: React.ReactNode }) {
     verifyCode,
     completeSignUp,
     signOut,
+    updateProfile,
     updateSettings,
     saveTheme,
     setDraft,

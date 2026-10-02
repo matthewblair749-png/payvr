@@ -50,7 +50,7 @@ export default function SecuritySetup() {
           />
         </>
       }>
-      <StepHeader step={4} total={5} title={`Pay with ${label}`} subtitle="Every payment needs your face, fingerprint or PIN. Nobody can send your money but you." />
+      <StepHeader step={6} total={6} title={`Pay with ${label}`} subtitle="Every payment needs your face, fingerprint or PIN. Nobody can send your money but you." />
       <View style={styles.art}>
         <View style={[styles.circle, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Icon name="faceId" size={72} color={colors.accent} strokeWidth={1.6} />

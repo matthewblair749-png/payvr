@@ -63,7 +63,7 @@ export default function CodeStep() {
       footer={<Button label="Verify" disabled={code.length !== LEN} loading={busy} onPress={verify} />}>
       <StepHeader
         step={login ? undefined : 2}
-        total={login ? undefined : 5}
+        total={login ? undefined : 6}
         title="Enter the code"
         subtitle={`Sent to ${signupDraft.phone || 'your phone'}`}
       />

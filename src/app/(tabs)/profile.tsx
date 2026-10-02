@@ -14,10 +14,12 @@ import { Text } from '@/components/text';
 import type { User } from '@/data/types';
 import { buildQr } from '@/services/qr';
 import { useCall } from '@/store/call-store';
+import { useAccount } from '@/store/account';
 import { useApp } from '@/store/app-store';
 import { PRIVACY_LABEL, useSocial } from '@/store/social-store';
 import { useTheme } from '@/theme/theme-provider';
 import { Fonts, MIN_TAP } from '@/theme/typography';
+import { formatShort } from '@/utils/money';
 import { listEnter } from '@/utils/motion';
 
 const THEME_LABEL = { dark: 'Dark', light: 'Light', system: 'System' } as const;
@@ -28,6 +30,7 @@ export default function Profile() {
   const { simulateIncomingCall } = useCall();
   const { me, contacts, transactions, userById, signOut, settings, simulateIncomingPayment, simulateIncomingRequest } = useApp();
   const { defaultPrivacy } = useSocial();
+  const account = useAccount();
 
   const friends = useMemo(
     () => contacts.map((c) => userById(c.userId)).filter((u): u is User => !!u && u.id !== me.id),
@@ -149,6 +152,24 @@ export default function Profile() {
 
       {/* Settings */}
       <Animated.View entering={listEnter(4)}>
+        <SectionLabel>Account</SectionLabel>
+        <Card>
+          <ListRow icon="user" label="Edit profile" onPress={() => router.push('/settings/profile')} />
+          <ListRow
+            icon="check"
+            label="Identity"
+            value={account.kyc === 'verified' ? 'Verified' : account.kyc === 'pending' ? 'In review' : 'Not verified'}
+            onPress={account.kyc === 'verified' ? undefined : () => router.push('/verify')}
+          />
+          <ListRow
+            icon="bank"
+            label="Linked accounts"
+            value={account.linked === 'bank' ? 'Bank' : account.linked === 'card' ? 'Debit card' : 'None'}
+            onPress={() => router.push('/settings/bank')}
+          />
+          <ListRow icon="bolt" label="Limits" value={`${formatShort(account.dailyLimitCents)}/day`} onPress={() => router.push('/settings/limits')} last />
+        </Card>
+
         <SectionLabel>Settings</SectionLabel>
         <Card>
           <ListRow icon="shield" label="Security" value="Face ID · PIN" onPress={() => router.push('/settings/security')} />
@@ -167,6 +188,7 @@ export default function Profile() {
         <SectionLabel>Support</SectionLabel>
         <Card>
           <ListRow icon="help" label="Help" onPress={() => openLegal('help')} />
+          <ListRow icon="comment" label="Report a problem" onPress={() => router.push('/support/report')} />
           <ListRow icon="file" label="Terms" onPress={() => openLegal('terms')} />
           <ListRow icon="lock" label="Privacy policy" onPress={() => openLegal('privacy')} last />
         </Card>
@@ -203,6 +225,16 @@ export default function Profile() {
           <Icon name="logout" size={20} color={colors.error} />
           <Text variant="bodyMedium" style={{ color: colors.error }}>
             Log out
+          </Text>
+        </PressableScale>
+
+        <PressableScale
+          accessibilityRole="button"
+          accessibilityLabel="Delete account"
+          onPress={() => router.push('/settings/delete-account')}
+          style={styles.deleteLink}>
+          <Text variant="small" color="textSecondary">
+            Delete account
           </Text>
         </PressableScale>
 
@@ -291,5 +323,6 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
   },
-  footer: { alignItems: 'center', gap: 8, marginTop: 24 },
+  deleteLink: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, marginTop: 8 },
+  footer: { alignItems: 'center', gap: 8, marginTop: 16 },
 });

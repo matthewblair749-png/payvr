@@ -16,8 +16,9 @@ import { TransactionRow } from '@/components/transaction-row';
 import { WalletCard } from '@/components/wallet-card';
 import { cardLabel } from '@/data/cards';
 import { useCountUp } from '@/hooks/use-count-up';
-import { DAILY_SEND_LIMIT_CENTS, STRIPE_MODE, TEST_FUNDING_SOURCES } from '@/services/payments';
+import { STRIPE_MODE, TEST_FUNDING_SOURCES } from '@/services/payments';
 import { storage } from '@/services/storage';
+import { useAccount } from '@/store/account';
 import { describe, useApp } from '@/store/app-store';
 import { useCards } from '@/store/cards-store';
 import { useTheme } from '@/theme/theme-provider';
@@ -32,6 +33,7 @@ export default function Wallet() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { me, balanceCents, sentTodayCents, transactions, setDraft } = useApp();
+  const { dailyLimitCents } = useAccount();
   const shown = useCountUp(balanceCents);
   const [hidden, setHidden] = useState(false);
   const { cards, defaultSource } = useCards();
@@ -127,7 +129,7 @@ export default function Wallet() {
 
           <Animated.View entering={enter(2)} style={styles.tiles}>
             <MonthTile label={month.label} inCents={month.inCents} outCents={month.outCents} hidden={hidden} />
-            <LimitTile sent={sentTodayCents} limit={DAILY_SEND_LIMIT_CENTS} />
+            <LimitTile sent={sentTodayCents} limit={dailyLimitCents} />
           </Animated.View>
 
           {recent.length ? (
@@ -138,7 +140,7 @@ export default function Wallet() {
                   scaleTo={0.94}
                   accessibilityRole="link"
                   accessibilityLabel="See all activity"
-                  onPress={() => router.navigate({ pathname: '/feed', params: { tab: 'me' } })}
+                  onPress={() => router.navigate({ pathname: '/activity', params: { tab: 'me' } })}
                   style={styles.seeAll}>
                   <Text variant="caption" color="accent">
                     See all
@@ -211,7 +213,7 @@ function MonthTile({ label, inCents, outCents, hidden }: { label: string; inCent
   );
 }
 
-/** How much of today's $500 sending limit is used. */
+/** How much of today's sending limit is used. */
 function LimitTile({ sent, limit }: { sent: number; limit: number }) {
   const { colors } = useTheme();
   const used = Math.min(1, sent / limit);

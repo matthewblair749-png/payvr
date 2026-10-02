@@ -11,6 +11,7 @@ import { PressableScale } from '@/components/pressable-scale';
 import { Screen } from '@/components/screen';
 import { StepHeader } from '@/components/step-header';
 import { Text } from '@/components/text';
+import { resetAccountForSignup } from '@/store/account';
 import { useApp } from '@/store/app-store';
 import { signupDraft } from '@/store/signup-draft';
 import { useTheme } from '@/theme/theme-provider';
@@ -71,11 +72,12 @@ export default function ProfileSetup() {
           disabled={!valid}
           onPress={() => {
             Object.assign(signupDraft, { name: name.trim(), handle, avatarUrl: photo });
-            router.push('/security-setup');
+            resetAccountForSignup();
+            router.push('/verify');
           }}
         />
       }>
-      <StepHeader step={3} total={5} title="Make it yours" subtitle="This is what people see when you tap phones." />
+      <StepHeader step={3} total={6} title="Make it yours" subtitle="This is what people see when you tap phones." />
 
       <PressableScale
         accessibilityRole="button"

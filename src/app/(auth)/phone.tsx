@@ -60,7 +60,7 @@ export default function PhoneStep() {
       }>
       <StepHeader
         step={login ? undefined : 1}
-        total={login ? undefined : 5}
+        total={login ? undefined : 6}
         title={login ? 'Welcome back' : 'What’s your number?'}
         subtitle={login ? 'Log in with your phone number.' : 'Your phone number is your Payvr account.'}
       />
