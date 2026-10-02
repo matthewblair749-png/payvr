@@ -15,7 +15,23 @@ import { useTheme } from '@/theme/theme-provider';
 
 const DURATION = 2400;
 
-function Ring({ delay, size, active, index, spread }: { delay: number; size: number; active: boolean; index: number; spread: number }) {
+function Ring({
+  delay,
+  size,
+  active,
+  index,
+  spread,
+  thickness,
+  glow,
+}: {
+  delay: number;
+  size: number;
+  active: boolean;
+  index: number;
+  spread: number;
+  thickness: number;
+  glow: boolean;
+}) {
   const { colors } = useTheme();
   const reduceMotion = useReducedMotion();
   const t = useSharedValue(0);
@@ -36,7 +52,7 @@ function Ring({ delay, size, active, index, spread }: { delay: number; size: num
   }, [active, delay, t, reduceMotion, index]);
 
   const style = useAnimatedStyle(() => ({
-    opacity: 0.55 * (1 - t.value),
+    opacity: 0.8 * (1 - t.value),
     transform: [{ scale: 1 + t.value * spread }],
   }));
 
@@ -44,7 +60,8 @@ function Ring({ delay, size, active, index, spread }: { delay: number; size: num
     <Animated.View
       style={[{ pointerEvents: 'none' }, 
         styles.ring,
-        { width: size, height: size, borderRadius: size / 2, borderColor: colors.ring },
+        { width: size, height: size, borderRadius: size / 2, borderColor: colors.ring, borderWidth: thickness },
+        glow && { boxShadow: `0 0 18px ${colors.ring}88, inset 0 0 18px ${colors.ring}55` },
         style,
       ]}
     />
@@ -56,17 +73,23 @@ export function PulseRings({
   size,
   active = true,
   spread = 1.6,
+  thickness = 2,
+  glow = false,
   children,
 }: {
   size: number;
   active?: boolean;
   spread?: number;
+  /** Ring stroke width. */
+  thickness?: number;
+  /** A soft blue halo on each ring. */
+  glow?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <View style={[styles.wrap, { width: size * (1 + spread) * 1.08, height: size * (1 + spread) * 1.08 }]}>
       {[0, DURATION / 3, (DURATION * 2) / 3].map((d, i) => (
-        <Ring key={d} delay={d} size={size} active={active} index={i} spread={spread} />
+        <Ring key={d} delay={d} size={size} active={active} index={i} spread={spread} thickness={thickness} glow={glow} />
       ))}
       {children}
     </View>
@@ -75,5 +98,5 @@ export function PulseRings({
 
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center', justifyContent: 'center' },
-  ring: { position: 'absolute', borderWidth: 2 },
+  ring: { position: 'absolute' },
 });

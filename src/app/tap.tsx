@@ -9,6 +9,7 @@ import { Icon } from '@/components/icon';
 import { LogoGlyph } from '@/components/logo';
 import { PressableScale } from '@/components/pressable-scale';
 import { PulseRings } from '@/components/pulse-rings';
+import { TappingPhone } from '@/components/tapping-phone';
 import { SendPanel } from '@/components/send-panel';
 import { Text } from '@/components/text';
 import type { Draft } from '@/data/types';
@@ -133,16 +134,14 @@ export default function Tap() {
           <BlockedNotice blocked={blocked} onRetry={restart} onQr={showQr} onSimulate={simulateTap} />
         ) : (
           <>
-            <Text variant="title" align="center" style={styles.title} accessibilityRole="header">
-              {phase === 'found' ? 'Found them' : starting ? 'Getting ready…' : 'Hold your phone\nnear theirs'}
-            </Text>
             <View style={styles.rings}>
-            <PulseRings size={140} spread={2.6} active={phase === 'searching' && !starting}>
-              <View style={[styles.logo, { backgroundColor: colors.primary }]}>
-                <LogoGlyph size={84} color={colors.onPrimary} />
-              </View>
-            </PulseRings>
+              <PulseRings size={140} spread={1.5} thickness={3} glow active={phase === 'searching' && !starting}>
+                <TappingPhone size={132} active={phase === 'searching' && !starting} />
+              </PulseRings>
             </View>
+            <Text variant="title" align="center" style={styles.title} accessibilityRole="header" accessibilityLiveRegion="polite">
+              {phase === 'found' ? 'Found them' : starting ? 'Getting ready…' : 'Hold phones together'}
+            </Text>
             <PressableScale accessibilityRole="link" onPress={showQr} style={styles.qrLink}>
               <Icon name="qr" size={18} color={colors.accent} />
               <Text variant="bodyMedium" color="accent">
@@ -324,8 +323,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   // The rings fill the screen and may run off its edges.
   rings: { height: 300, alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
-  title: { marginBottom: 8 },
-  logo: { width: 132, height: 132, borderRadius: 66, alignItems: 'center', justifyContent: 'center' },
+  title: { marginTop: 8, marginBottom: 4 },
   qrLink: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: MIN_TAP, paddingHorizontal: 12 },
   cancel: { marginHorizontal: 24 },
   notice: { alignItems: 'center', paddingHorizontal: 24, gap: 10, alignSelf: 'stretch' },
