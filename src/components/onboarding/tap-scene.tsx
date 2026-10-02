@@ -16,7 +16,7 @@ import { Fonts } from '@/theme/typography';
 
 import { Avatar } from '../avatar';
 import { Icon } from '../icon';
-import { LogoGlyph } from '../logo';
+import { PayvrLogo } from '../payvr-logo';
 import { Text } from '../text';
 
 /** One loop of the story, in ms: phones meet, money moves, it lands, they part. */
@@ -146,7 +146,7 @@ export function TapScene({ active }: { active: boolean }) {
 
       {/* The p where they meet */}
       <Animated.View style={[styles.bond, { backgroundColor: colors.primary, borderColor: colors.background }, bond]}>
-        <LogoGlyph size={26} color="#FFFFFF" />
+        <PayvrLogo size={26} color="#FFFFFF" cutColor={colors.primary} />
       </Animated.View>
 
       {/* $20 hopping across */}

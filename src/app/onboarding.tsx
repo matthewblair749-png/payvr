@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { Button } from '@/components/button';
-import { LogoMark } from '@/components/logo';
+import { PayvrAppIcon } from '@/components/payvr-logo';
 import { FoundScene } from '@/components/onboarding/found-scene';
 import { TapScene } from '@/components/onboarding/tap-scene';
 import { TrustScene } from '@/components/onboarding/trust-scene';
@@ -80,7 +80,7 @@ export default function Onboarding() {
   return (
     <View style={[styles.fill, { backgroundColor: colors.background, paddingTop: insets.top + 8, paddingBottom: Math.max(insets.bottom, 16) }]}>
       <View style={styles.brand} accessibilityRole="header" accessibilityLabel="payvr">
-        <LogoMark size={30} />
+        <PayvrAppIcon size={30} />
         <Text style={[styles.wordmark, { color: colors.text }]}>payvr</Text>
       </View>
 

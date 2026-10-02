@@ -6,7 +6,7 @@ import { useTheme } from '@/theme/theme-provider';
 import { Fonts } from '@/theme/typography';
 
 import { Icon, type IconName } from './icon';
-import { LogoGlyph } from './logo';
+import { PayvrLogo } from './payvr-logo';
 import { Text } from './text';
 
 /** `icon: 'payvr'` is the tapped-in-person mark: the p logo on brand blue. */
@@ -76,7 +76,7 @@ export function Avatar({ name, uri, size = 44, ring, badge }: Props) {
             },
           ]}>
           {badge.icon === 'payvr' ? (
-            <LogoGlyph size={badgeSize * 0.8} color={colors.onPrimary} />
+            <PayvrLogo size={badgeSize * 0.8} color={colors.onPrimary} cutColor={colors.primary} />
           ) : (
             <Icon name={badge.icon} size={badgeSize * 0.62} color={badge.color} strokeWidth={2.6} />
           )}

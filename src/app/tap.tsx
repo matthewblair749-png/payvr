@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
-import { LogoGlyph } from '@/components/logo';
+import { PayvrLogo } from '@/components/payvr-logo';
 import { PressableScale } from '@/components/pressable-scale';
 import { PulseRings } from '@/components/pulse-rings';
 import { TappingPhone } from '@/components/tapping-phone';
@@ -313,7 +313,7 @@ function Notice({
   return (
     <View style={styles.notice}>
       <View style={[styles.noticeIcon, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        {icon ? <Icon name={icon} size={44} color={colors.textSecondary} strokeWidth={1.6} /> : <LogoGlyph size={56} color={colors.textSecondary} />}
+        {icon ? <Icon name={icon} size={44} color={colors.textSecondary} strokeWidth={1.6} /> : <PayvrLogo size={56} color={colors.textSecondary} />}
       </View>
       <Text variant="title" align="center" accessibilityRole="header">
         {title}

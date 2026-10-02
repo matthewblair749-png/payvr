@@ -2,7 +2,7 @@ import { Linking, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card, ToggleRow } from '@/components/list-row';
-import { LogoGlyph } from '@/components/logo';
+import { PayvrLogo } from '@/components/payvr-logo';
 import { Screen } from '@/components/screen';
 import { Footnote, Section, SettingsHero } from '@/components/settings-ui';
 import { Text } from '@/components/text';
@@ -38,7 +38,7 @@ export default function Notifications() {
           accessibilityLabel={previewOn ? 'Example notification: Jake paid you $20 for pizza' : 'Notifications for money received are off'}
           style={[styles.banner, { backgroundColor: colors.surface, borderColor: colors.border, opacity: previewOn ? 1 : 0.45 }]}>
           <View style={styles.appIcon}>
-            <LogoGlyph size={22} color="#FFFFFF" />
+            <PayvrLogo size={22} color="#FFFFFF" cutColor={BRAND_BLUE} />
           </View>
           <View style={styles.flex}>
             <View style={styles.bannerTop}>

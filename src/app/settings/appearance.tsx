@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { LogoGlyph } from '@/components/logo';
+import { PayvrLogo } from '@/components/payvr-logo';
 import { PressableScale } from '@/components/pressable-scale';
 import { Screen } from '@/components/screen';
 import { Footnote, Radio, Section, SettingsHero } from '@/components/settings-ui';
@@ -81,7 +81,7 @@ function MiniPhone({ scheme, offset }: { scheme: ColorScheme; offset?: boolean }
       <View style={styles.buttons}>
         <View style={[styles.btn, { borderColor: c.border, borderWidth: 1 }]} />
         <View style={[styles.btn, { backgroundColor: BRAND_BLUE }]}>
-          <LogoGlyph size={10} color="#FFFFFF" />
+          <PayvrLogo size={10} color="#FFFFFF" cutColor={BRAND_BLUE} />
         </View>
       </View>
     </View>

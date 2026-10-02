@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
-import { LogoMark } from '@/components/logo';
+import { PayvrAppIcon } from '@/components/payvr-logo';
 import { Text } from '@/components/text';
 import { useApp } from '@/store/app-store';
 import { Fonts } from '@/theme/typography';
@@ -23,7 +23,7 @@ export default function Splash() {
   return (
     <View style={styles.wrap}>
       <Animated.View entering={FadeIn.duration(400)}>
-        <LogoMark size={104} />
+        <PayvrAppIcon size={104} />
       </Animated.View>
       <Animated.View entering={FadeInDown.delay(200).duration(400)}>
         <Text style={styles.wordmark}>payvr</Text>

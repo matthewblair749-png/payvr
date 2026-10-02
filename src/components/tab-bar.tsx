@@ -17,7 +17,7 @@ import { haptics } from '@/utils/haptics';
 import { smooth } from '@/utils/motion';
 
 import { Icon, type IconName } from './icon';
-import { LogoGlyph } from './logo';
+import { PayvrLogo } from './payvr-logo';
 import { PressableScale } from './pressable-scale';
 import { Text } from './text';
 
@@ -88,7 +88,7 @@ export function TabBar({ state, navigation, insets }: BottomTabBarProps) {
               shadowColor: colors.primary,
             },
           ]}>
-          <LogoGlyph size={34} color={colors.onPrimary} />
+          <PayvrLogo size={34} color={colors.onPrimary} cutColor={colors.primary} />
         </PressableScale>
         <Text variant="caption" color="textSecondary" style={styles.tapLabel}>
           Tap

@@ -9,7 +9,7 @@ import { formatCents } from '@/utils/money';
 import { smooth } from '@/utils/motion';
 
 import { Icon } from './icon';
-import { LogoGlyph } from './logo';
+import { PayvrLogo } from './payvr-logo';
 import { PressableScale } from './pressable-scale';
 import { Text } from './text';
 
@@ -57,7 +57,7 @@ export function WalletCard({ name, balanceCents, hidden }: { name: string; balan
         <Rings />
         <View style={styles.row}>
           <View style={styles.brand}>
-            <LogoGlyph size={26} color={WHITE} />
+            <PayvrLogo size={26} color={WHITE} />
             <Text style={styles.wordmark}>payvr</Text>
           </View>
           <Text variant="caption" style={{ color: SOFT }}>

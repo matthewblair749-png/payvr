@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/avatar';
 import { Icon, type IconName } from '@/components/icon';
 import { Card, ListRow, SectionLabel } from '@/components/list-row';
-import { LogoGlyph } from '@/components/logo';
+import { PayvrLogo } from '@/components/payvr-logo';
 import { PressableScale } from '@/components/pressable-scale';
 import { Text } from '@/components/text';
 import type { User } from '@/data/types';
@@ -63,7 +63,7 @@ export default function Profile() {
           accessibilityLabel={`@${me.handle}. Show my QR code`}
           onPress={() => router.push('/qr')}
           style={[styles.handle, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <LogoGlyph size={14} color={colors.accent} />
+          <PayvrLogo size={14} color={colors.accent} />
           <Text variant="bodyMedium" color="text">
             @{me.handle}
           </Text>
@@ -239,7 +239,7 @@ export default function Profile() {
         </PressableScale>
 
         <View style={styles.footer}>
-          <LogoGlyph size={18} color={colors.textSecondary} />
+          <PayvrLogo size={18} color={colors.textSecondary} />
           <Text variant="caption" color="textSecondary" align="center">
             Payvr prototype · test mode · no real money
           </Text>
