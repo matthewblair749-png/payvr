@@ -121,17 +121,23 @@ async function dailyMetrics(ctx: ToolContext, i: z.infer<typeof dailyInput>) {
       ${i.country ? Prisma.sql`AND country = ${i.country}` : Prisma.empty}
     GROUP BY 1`;
   const byDay = new Map(orders.map((o) => [o.day.toISOString().slice(0, 10), o]));
+  const sessionsByDay = new Map(rows.map((r) => [r.day.toISOString().slice(0, 10), r]));
+  // Every day in the range, quiet ones included (zero visits is still a day).
+  const days: string[] = [];
+  for (let t = Date.UTC(f.from.getUTCFullYear(), f.from.getUTCMonth(), f.from.getUTCDate()); t < f.to.getTime(); t += 86_400_000) {
+    days.push(new Date(t).toISOString().slice(0, 10));
+  }
   return {
     currency: ctx.currency,
-    days: rows.map((r) => {
-      const d = r.day.toISOString().slice(0, 10);
+    days: days.map((d) => {
+      const r = sessionsByDay.get(d);
       const o = byDay.get(d);
       return {
         day: d,
-        weekday: r.day.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" }),
-        visits: n(r.sessions),
-        paid_visits: n(r.paid),
-        conversion: rate(n(r.paid), n(r.sessions)),
+        weekday: new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" }),
+        visits: n(r?.sessions),
+        paid_visits: n(r?.paid),
+        conversion: rate(n(r?.paid), n(r?.sessions)),
         revenue_cents: n(o?.revenue),
         failed_payments: n(o?.failed),
       };

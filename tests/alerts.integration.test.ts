@@ -2,7 +2,7 @@
  * Critical alerts (real Postgres): only real emergencies, never noise.
  */
 import "dotenv/config";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 import { db } from "@/server/db";
 import { criticalAlerts } from "@/server/dal/alerts";

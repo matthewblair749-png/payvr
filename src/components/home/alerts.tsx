@@ -3,30 +3,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, OctagonAlert, X } from "lucide-react";
 import Link from "next/link";
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
+import { DISMISSED_ALERTS_COOKIE } from "@/components/app-shell/nav";
 import type { Alert } from "@/server/dal/alerts";
 
-const KEY = "lumen:dismissed-alerts";
-const read = (): string[] => {
-  try {
-    return JSON.parse(localStorage.getItem(KEY) ?? "[]");
-  } catch {
-    return [];
-  }
-};
-const noop = () => () => {};
-
 /** Critical alerts at the top of Home. Dismissing one hides it until something new happens. */
-export function Alerts() {
+export function Alerts({ initial, dismissed: initialDismissed }: { initial: Alert[]; dismissed: string[] }) {
   const { data } = useQuery({
     queryKey: ["home", "alerts"],
     queryFn: async (): Promise<Alert[]> => (await (await fetch("/api/app/alerts")).json()).alerts,
+    initialData: initial,
+    staleTime: 60_000,
     refetchInterval: 60_000,
   });
-  const stored = useSyncExternalStore(noop, () => localStorage.getItem(KEY) ?? "[]", () => "[]");
-  const [dismissed, setDismissed] = useState<string[] | null>(null);
-  const hidden = new Set(dismissed ?? (JSON.parse(stored) as string[]));
-  const shown = (data ?? []).filter((a) => !hidden.has(a.id));
+  const [dismissed, setDismissed] = useState(initialDismissed);
+  const shown = data.filter((a) => !dismissed.includes(a.id));
   if (!shown.length) return null;
 
   return (
@@ -48,10 +39,8 @@ export function Alerts() {
             type="button"
             aria-label={`Dismiss: ${a.title}`}
             onClick={() => {
-              const next = [...new Set([...read(), a.id])].slice(-50);
-              try {
-                localStorage.setItem(KEY, JSON.stringify(next));
-              } catch {}
+              const next = [...new Set([...dismissed, a.id])].slice(-20);
+              document.cookie = `${DISMISSED_ALERTS_COOKIE}=${encodeURIComponent(next.join(" "))}; path=/studio; max-age=${60 * 60 * 24 * 180}; samesite=lax`;
               setDismissed(next);
             }}
             className="-m-1 grid size-8 shrink-0 place-items-center rounded-control hover:bg-app-card"

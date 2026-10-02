@@ -25,6 +25,8 @@ export function withRange(href: string, range: RangeValue) {
 
 export const SIDEBAR_COOKIE = "lumen_sidebar";
 export const THEME_COOKIE = "lumen_theme";
+/** Dismissed Home alert ids, space-separated, so the server leaves them out and nothing jumps on load. */
+export const DISMISSED_ALERTS_COOKIE = "lumen_dismissed_alerts";
 export type ThemePref = "system" | "light" | "dark";
 
 export function setCookie(name: string, value: string) {

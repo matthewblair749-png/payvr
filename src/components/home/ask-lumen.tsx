@@ -160,7 +160,7 @@ export function AskLumen({ currency }: { currency: string }) {
             e.preventDefault();
             void submit(input);
           }}
-          className="flex items-center gap-2 rounded-card border border-app-hairline bg-app-card py-2 pl-4 pr-2 shadow-pop focus-within:border-app-muted"
+          className="flex items-center gap-2 rounded-card border border-app-hairline bg-app-card py-2 pl-4 pr-2 shadow-pop focus-within:border-app-fg focus-within:ring-1 focus-within:ring-app-fg"
         >
           <Sparkles size={18} aria-hidden="true" className="shrink-0 text-app-muted" />
           <label htmlFor="ask-lumen" className="sr-only">

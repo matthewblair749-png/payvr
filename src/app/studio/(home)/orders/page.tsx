@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { VirtualTbody } from "@/components/ui/virtual-tbody";
 import { formatMoney } from "@/lib/utils";
 import { listOrders } from "@/server/dal/orders";
 import { requireMerchant } from "@/server/dal/session";
@@ -26,7 +27,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/studio/or
   const merchant = await requireMerchant("/studio/orders");
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q.slice(0, 80) : "";
-  const orders = await listOrders(merchant.id, q ? 200 : 50, q);
+  const orders = await listOrders(merchant.id, 500, q);
 
   return (
     <>
@@ -52,8 +53,8 @@ export default async function OrdersPage({ searchParams }: PageProps<"/studio/or
         </div>
       ) : (
         <div className="mt-10 overflow-x-auto rounded-[28px] bg-white shadow-soft ring-1 ring-black/5">
-          <table className="w-full min-w-[720px] text-left text-sm">
-            <caption className="sr-only">Recent orders</caption>
+          <table className="w-full min-w-[720px] text-left text-sm" aria-rowcount={orders.length + 1}>
+            <caption className="sr-only">Recent payments, newest first</caption>
             <thead className="text-xs uppercase tracking-wider text-muted-strong">
               <tr>
                 <th scope="col" className="px-5 py-4 font-semibold">Date</th>
@@ -65,7 +66,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/studio/or
                 <th scope="col" className="px-5 py-4"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
-            <tbody>
+            <VirtualTbody estimate={70} columns={7}>
               {orders.map((o) => {
                 const s = STATUS[o.status] ?? { label: o.status, cls: "bg-surface" };
                 return (
@@ -97,7 +98,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/studio/or
                   </tr>
                 );
               })}
-            </tbody>
+            </VirtualTbody>
           </table>
         </div>
       )}

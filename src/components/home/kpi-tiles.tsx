@@ -54,7 +54,7 @@ const TILES: Tile[] = [
   },
 ];
 
-export function KpiTiles({ data }: { data: HomeOverview }) {
+export function KpiTiles({ data, stagger = 2 }: { data: HomeOverview; stagger?: number }) {
   return (
     <section aria-labelledby="kpi-heading">
       <h2 id="kpi-heading" className="sr-only">
@@ -62,7 +62,7 @@ export function KpiTiles({ data }: { data: HomeOverview }) {
       </h2>
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {TILES.map((t, i) => (
-          <li key={t.key} className="app-reveal" style={{ "--i": 2 + i } as React.CSSProperties}>
+          <li key={t.key} className="app-reveal" style={{ "--i": stagger + i } as React.CSSProperties}>
             <KpiTile tile={t} data={data} />
           </li>
         ))}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, PageHeader } from "@/components/app-shell/page-header";
+import { VirtualTbody } from "@/components/ui/virtual-tbody";
 import { formatMoney } from "@/lib/utils";
 import { listCustomers } from "@/server/dal/orders";
 import { requireMerchant } from "@/server/dal/session";
@@ -54,7 +55,7 @@ export default async function CustomersPage({ searchParams }: PageProps<"/studio
         </Card>
       ) : (
         <Card className="mt-6 overflow-x-auto">
-          <table className="w-full min-w-[560px] text-left text-ui">
+          <table className="w-full min-w-[560px] text-left text-ui" aria-rowcount={customers.length + 1}>
             <caption className="sr-only">Customers, most recent purchase first</caption>
             <thead className="text-cap text-app-muted">
               <tr>
@@ -65,7 +66,7 @@ export default async function CustomersPage({ searchParams }: PageProps<"/studio
                 <th scope="col" className="px-5 py-3 font-semibold">Last bought</th>
               </tr>
             </thead>
-            <tbody>
+            <VirtualTbody estimate={45} columns={5}>
               {customers.map((c) => (
                 <tr key={c.email} className="border-t border-app-hairline">
                   <td className="px-5 py-3 font-medium">
@@ -79,7 +80,7 @@ export default async function CustomersPage({ searchParams }: PageProps<"/studio
                   <td className="px-5 py-3 text-app-muted">{dt.format(c.lastAt)}</td>
                 </tr>
               ))}
-            </tbody>
+            </VirtualTbody>
           </table>
         </Card>
       )}

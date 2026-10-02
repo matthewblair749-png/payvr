@@ -4,7 +4,7 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
 import { FIELD_LABELS, STAGES, type StageKey } from "@/lib/tracking/events";
-import { addDays, localDate, localDayRange, safeTimeZone } from "@/lib/zoned";
+import { addDays, localDate, localDayRange, localMidnight, safeTimeZone } from "@/lib/zoned";
 import { AI_MODEL } from "../brand-import/ai";
 import { funnelDrilldown, funnelOverview } from "../dal/funnel";
 import { db } from "../db";
@@ -286,8 +286,19 @@ export async function getBrief(merchantId: string, currency: string, timeZone: s
   }
 
   const facts = await briefFacts(merchantId, currency, tz, now);
-  const anySales = await db.order.count({ where: { merchantId, status: { in: ["SUCCEEDED", "PARTIALLY_REFUNDED", "REFUNDED", "DISPUTED"] } }, take: 1 });
+  const paid = { merchantId, status: { in: ["SUCCEEDED" as const, "PARTIALLY_REFUNDED" as const, "REFUNDED" as const, "DISPUTED" as const] } };
+  const anySales = await db.order.count({ where: paid, take: 1 });
   if (!anySales) return null; // first-run: the onboarding checklist takes this spot
+
+  // Day one: "No sales yesterday" would be true and deflating. Greet the first
+  // sales instead, and don't store it, so later sales today still count.
+  const before = await db.order.count({ where: { ...paid, createdAt: { lt: localMidnight(tz, day) } }, take: 1 });
+  if (!before) {
+    const today = await db.order.aggregate({ where: paid, _count: { _all: true }, _sum: { amountCents: true } });
+    const n = today._count._all;
+    const sentence = `Your first ${n === 1 ? "sale" : `${n} sales`} came in today: ${fmt(today._sum.amountCents ?? 0, currency)}${n === 1 ? "" : " in all"}. From tomorrow, this brief compares each day with the one before.`;
+    return { day, sentence, source: "template", facts, actions: await actionsFor(merchantId, facts) };
+  }
 
   const aiSentence = assistantEnabled() ? await writeWithClaude(facts) : null;
   const sentence = aiSentence ?? templateSentence(facts);

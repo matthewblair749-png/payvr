@@ -40,7 +40,7 @@ Requires Node 20+ and Postgres 14+.
 | `AUTH_SECRET` | yes | Auth.js signing secret |
 | `NEXT_PUBLIC_APP_URL` | yes | Base URL shown in publish links |
 | `EMAIL_SERVER`, `EMAIL_FROM` | prod | SMTP URL for magic links |
-| `ANTHROPIC_API_KEY` | no | Enables the Research Assistant chat and Claude-assisted brand import. Insights and brand import still work without it |
+| `ANTHROPIC_API_KEY` | no | Enables the Research Assistant chat, Claude-written morning briefs and Ask lumen answers, and Claude-assisted brand import. Insights, briefs, common Ask questions and brand import still work without it |
 | `LUMEN_AI_MODEL` | no | Defaults to `claude-opus-5-5` |
 | `STRIPE_SECRET_KEY` | for payments | `sk_test_…` only; live keys are refused |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | for payments | `pk_test_…` only |
@@ -296,6 +296,68 @@ same results and verdicts, so chat, insights and the Lab always agree. The seed 
   (PNG, JPEG, GIF, WebP, ICO, or SVG without scripts), with a 512 KB cap. Files are served with
   `nosniff` and a sandboxing CSP. If the copy fails, publishing stops with a message instead of
   silently dropping the logo.
+
+## The Home dashboard (`/studio`)
+The first screen a merchant sees. The aim is calm: one glance tells you how the shop is doing and the
+one thing worth fixing.
+
+**Sections, in default order:** morning brief → revenue (North Star, orange area chart vs the previous
+period) → four KPI tiles (orders, conversion, average order value, refund and dispute rate, each with a
+delta and a monochrome sparkline) → checkout funnel (Visit → Start → Details → Payment → Paid, biggest
+leak in orange, click a step to drill into device, source, new vs returning and order value) → live
+sales → "Why they buy" → the current experiment, in plain English. "Ask lumen" docks at the bottom.
+
+**Design tokens: one file.** Every color, radius, shadow, type size and motion timing lives in
+`src/styles/theme.css` as `--app-*` custom properties, with light and dark values and the contrast ratio
+of each pairing noted next to it. Tailwind utilities (`bg-app-card`, `text-app-muted`, `text-figure`…)
+are generated from them via `@theme inline`. Orange is reserved for the primary action, the selected nav
+item, the main chart series and the single biggest problem; status colors only ever mean status, always
+with an icon or word. Dark mode follows the system and can be pinned with the toggle in the top bar
+(`lumen_theme` cookie, so there's no flash on load). Older app pages are remapped to the same tokens.
+
+**Global filters.** The top bar's date range (7, 30 or 90 days) lives in the URL (`?range=`), so it's
+shareable and works with back and forward. Every comparison is like-for-like: the previous period ends at
+the same time of day, so a half-finished today is never compared with a full day.
+
+**Rearranging and saved views.** "Customize" lets a merchant reorder sections with up and down buttons
+(no drag needed, so it works from the keyboard and announces each move), hide sections, and save the
+layout plus date range as a named view (up to 8). It's stored per merchant (`Merchant.homeLayout`,
+`Merchant.homeViews`) and validated on read and write (`src/lib/home-layout.ts`). It's a viewing
+preference, so it works on sample data too.
+
+**Morning brief.** The facts (yesterday vs the same weekday last week, and the biggest drop-off with who,
+where and a conservative weekly value) are computed in SQL. With `ANTHROPIC_API_KEY`, Claude writes the
+sentence from those facts only; any dollar amount it writes that isn't in the facts gets the sentence
+rejected, and the template is used instead. It's written once per local day (`MorningBrief`). On day one
+it greets the first sale instead of saying "no sales yesterday". "What this is based on" shows the facts.
+
+**Ask lumen.** Questions go to Claude with the same read-only research tools as the Research Assistant,
+plus funnel and traffic-source tools. The answer is a short narrative, an optional small chart (direct
+labels), "How I calculated this" (the actual tool calls, recorded server-side) and one next action, often
+"Start a test" in one click. Without an API key, common questions (revenue, devices, drop-off, sources,
+survey answers) are answered directly from the data. Each question is saved as a research thread.
+
+**First run and sample data.** Until their first sale, a new merchant sees the demo shop's numbers,
+clearly labelled "Sample data" and strictly read-only (no tests can be started, no proposals). They can
+turn it off on Home or in Settings, which shows a 4-step checklist instead (publish, connect Stripe,
+share your link, first sale), never empty charts. The first sale gets a full-screen celebration, then
+Home switches to the merchant's own numbers. The seeded demo shop (Kiln & Co.) tells a story: a launch
+spike 24 days ago, mobile shoppers dropping off at shipping, and a $48 → $52 price test that won.
+
+**Alerts** appear only for things that need action: a spike in failed payments, a new dispute, or a
+payout problem. Each can be dismissed.
+
+**Motion.** Skeletons match each card's final size (no layout shift); cards rise in 40ms apart; big
+numbers count up over about 600ms; chart lines draw in. All of it is CSS or a single
+`requestAnimationFrame`, and `prefers-reduced-motion` turns every bit of it off. New sales slide into the
+live feed; no confetti there.
+
+**Accessibility and speed.** Every chart has a screen-reader summary (the revenue chart also has "Show as table");
+the gist is in visible text, so hover is never needed. axe reports 0 violations on every app page in light
+and dark. The Payments and Customers tables (up to 500 rows) are virtualized with TanStack Virtual: only
+the rows near the viewport are mounted, while the table keeps real rows and `aria-rowcount`. Home's data
+comes from several small, parallel, merchant-scoped endpoints (`/api/app/*`); in a production build the
+page is complete in about half a second.
 
 ## Accessibility
 - WCAG AA contrast: button label colors are picked automatically, and accent-as-text is darkened

@@ -307,7 +307,13 @@ export async function seedAnalytics(db: PrismaClient, merchantId: string, pages:
     for (let i = 0; i < rows.length; i += 5_000) await insert(rows.slice(i, i + 5_000));
   };
   await chunk(events, (c) => db.checkoutEvent.createMany({ data: c }));
-  await chunk(orders, (c) => db.order.createMany({ data: c }));
+  // Orders last changed when they were placed; a dispute lands about 12 days after the sale (so the
+  // "disputed" alert reflects recent disputes, not the moment the seed ran).
+  const touched = (o: (typeof orders)[number]) => {
+    const at = new Date(o.createdAt ?? Date.now());
+    return o.status === "DISPUTED" ? new Date(Math.min(Date.now(), at.getTime() + 12 * 86_400_000)) : at;
+  };
+  await chunk(orders, (c) => db.order.createMany({ data: c.map((o) => ({ ...o, updatedAt: touched(o) })) }));
   await chunk(surveys, (c) => db.surveyResponse.createMany({ data: c }));
 
   // The merchant already celebrated their first sale long ago.

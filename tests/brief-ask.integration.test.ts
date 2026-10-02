@@ -84,6 +84,15 @@ describe("getBrief", () => {
     expect(await getBrief(emptyMerchantId, "usd", TZ)).toBeNull();
   });
 
+  it("greets the first sales on day one instead of 'no sales yesterday', without storing it", async () => {
+    const id = await newMerchant("dayone");
+    await db.order.create({ data: { merchantId: id, amountCents: 4800, currency: "usd", status: "SUCCEEDED", createdAt: new Date() } });
+    expect((await getBrief(id, "usd", TZ))!.sentence).toBe("Your first sale came in today: $48. From tomorrow, this brief compares each day with the one before.");
+    await db.order.create({ data: { merchantId: id, amountCents: 5200, currency: "usd", status: "SUCCEEDED", createdAt: new Date() } });
+    expect((await getBrief(id, "usd", TZ))!.sentence).toMatch(/^Your first 2 sales came in today: \$100 in all\./);
+    expect(await db.morningBrief.count({ where: { merchantId: id } })).toBe(0);
+  });
+
   it("uses the merchant's local yesterday, writes once per day, and keeps it", async () => {
     const b = await getBrief(merchantId, "usd", TZ);
     expect(b!.source).toBe("template"); // no AI configured in tests
