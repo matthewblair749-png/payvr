@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
@@ -112,14 +112,18 @@ export default function Tap() {
   return (
     <View style={[styles.fill, { backgroundColor: colors.background, paddingTop: insets.top + 12, paddingBottom: Math.max(insets.bottom, 16) }]}>
       <View style={styles.top}>
-        <Text variant="caption" color="textSecondary">
-          {verb} {formatShort(draft.amountCents)}
-          {draft.note ? ` · ${draft.note}` : ''}
+        <Text variant="caption" color="textSecondary" style={styles.verb}>
+          {verb.toUpperCase()}
         </Text>
-        {phase === 'searching' && !starting ? (
-          <Text variant="caption" color="textSecondary" accessibilityLabel={`Session expires in ${remaining} seconds`}>
-            {`0:${String(remaining).padStart(2, '0')}`}
-          </Text>
+        <Text variant="display" accessibilityLabel={`${verb} ${formatShort(draft.amountCents)}`}>
+          {formatShort(draft.amountCents)}
+        </Text>
+        {draft.note ? (
+          <View style={[styles.notePill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text variant="small" color="textSecondary" numberOfLines={1}>
+              {draft.note}
+            </Text>
+          </View>
         ) : null}
       </View>
 
@@ -134,14 +138,22 @@ export default function Tap() {
           <BlockedNotice blocked={blocked} onRetry={restart} onQr={showQr} onSimulate={simulateTap} />
         ) : (
           <>
-            <View style={styles.rings}>
-              <PulseRings size={140} spread={1.5} thickness={3} glow active={phase === 'searching' && !starting}>
-                <TappingPhone size={132} active={phase === 'searching' && !starting} />
+            <View
+              style={styles.rings}
+              accessible
+              accessibilityLabel={phase === 'searching' && !starting ? `Searching nearby. ${remaining} seconds left` : undefined}>
+              <PulseRings size={170} spread={0.9} thickness={2} glow active={phase === 'searching' && !starting}>
+                <TappingPhone
+                  size={132}
+                  active={phase === 'searching' && !starting}
+                  progress={starting ? 1 : remaining / (TAP_SESSION_MS / 1000)}
+                />
               </PulseRings>
             </View>
             <Text variant="title" align="center" style={styles.title} accessibilityRole="header" accessibilityLiveRegion="polite">
               {phase === 'found' ? 'Found them' : starting ? 'Getting ready…' : 'Hold phones together'}
             </Text>
+            {phase === 'searching' && !starting ? <Hints /> : <View style={styles.hintSpace} />}
             <PressableScale accessibilityRole="link" onPress={showQr} style={styles.qrLink}>
               <Icon name="qr" size={18} color={colors.accent} />
               <Text variant="bodyMedium" color="accent">
@@ -316,14 +328,40 @@ function Notice({
   );
 }
 
+const HINTS = [
+  'Keep Payvr open on both phones',
+  'Their name pops up in a second',
+  'Nothing sends until you confirm',
+];
+
+/** Gentle tips that fade from one to the next while searching. */
+function Hints() {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setI((n) => (n + 1) % HINTS.length), 3200);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <Animated.View key={i} entering={FadeIn.duration(500)} exiting={FadeOut.duration(250)} style={styles.hint}>
+      <Text color="textSecondary" align="center" numberOfLines={1} adjustsFontSizeToFit>
+        {HINTS[i]}
+      </Text>
+    </Animated.View>
+  );
+}
+
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   stretch: { alignSelf: 'stretch' },
-  top: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 24, minHeight: 24 },
+  top: { alignItems: 'center', gap: 2, paddingHorizontal: 24 },
+  verb: { letterSpacing: 1.2 },
+  notePill: { marginTop: 6, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, maxWidth: '80%' },
+  hint: { height: 24, justifyContent: 'center', paddingHorizontal: 24 },
+  hintSpace: { height: 24 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   // The rings fill the screen and may run off its edges.
   rings: { height: 300, alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
-  title: { marginTop: 8, marginBottom: 4 },
+  title: { marginTop: 4, marginBottom: 6 },
   qrLink: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: MIN_TAP, paddingHorizontal: 12 },
   cancel: { marginHorizontal: 24 },
   notice: { alignItems: 'center', paddingHorizontal: 24, gap: 10, alignSelf: 'stretch' },
