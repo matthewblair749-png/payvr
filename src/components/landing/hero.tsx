@@ -45,8 +45,9 @@ export function Hero() {
           </span>
         </h1>
         <p
-          className="anim-fade-up mt-5 max-w-xl text-lg leading-relaxed text-ink sm:text-xl"
-          style={{ animationDelay: "300ms" }}
+          // Rise only, never transparent: this paragraph is the mobile LCP element,
+          // and an opacity-0 start would hold LCP until the fade finishes.
+          className="anim-rise mt-5 max-w-xl text-lg leading-relaxed text-ink sm:text-xl"
         >
           Design a payment page that looks exactly like your brand. Take payments with Stripe. Then find out why people
           buy — and why they almost didn&apos;t.

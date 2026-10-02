@@ -10,7 +10,9 @@
  */
 import { AnimatePresence, m } from "framer-motion";
 import { X } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { celebrate } from "@/lib/checkout/celebrate";
+import { computeTotals, findCoupon, type BuyerSelections, type Totals } from "@/lib/checkout/pricing";
 import type { Block, CheckoutConfig, CheckoutProduct } from "@/lib/checkout/schema";
 import { themeToVars } from "@/lib/checkout/theme";
 import { cn, formatMoney } from "@/lib/utils";
@@ -25,13 +27,12 @@ import {
   TrustBadgesBlock,
   UpsellBlock,
 } from "./blocks";
+import { OneTapSurvey } from "./one-tap-survey";
 import { PaymentBlock } from "./payment-block";
 import { SuccessCheck } from "./success-check";
 
 export type CheckoutMode = "demo" | "preview" | "live";
 
-/** Demo-only coupon so visitors can try the coupon block. */
-const DEMO_COUPONS: Record<string, number> = { LUMEN10: 10, HELLO: 15 };
 
 export function CheckoutView({
   config,
@@ -39,6 +40,14 @@ export function CheckoutView({
   mode = "demo",
   paymentSlot,
   onPay,
+  onTotalsChange,
+  onTrack,
+  onSurveyAnswer,
+  showSuccess = false,
+  successMessage,
+  paymentsDisabledReason,
+  selectedBlockId,
+  onSelectBlock,
   className,
 }: {
   config: CheckoutConfig;
@@ -46,8 +55,23 @@ export function CheckoutView({
   mode?: CheckoutMode;
   /** Live mode: the Stripe Payment Element. */
   paymentSlot?: ReactNode;
-  /** Live mode: confirm the payment. Resolve true on success. */
-  onPay?: (totalCents: number) => Promise<boolean>;
+  /** Live mode: confirm the payment with the buyer's choices. Resolve true on success. */
+  onPay?: (selections: BuyerSelections, totals: Totals) => Promise<boolean>;
+  /** Live mode: called whenever totals change (to keep Stripe Elements' amount in sync). */
+  onTotalsChange?: (totals: Totals, selections: BuyerSelections) => void;
+  /** Analytics hook (hosted checkouts): which block the buyer touched, pay clicks, success. */
+  onTrack?: (e: { kind: "focus"; field: string } | { kind: "details" } | { kind: "pay" } | { kind: "paid" }) => void;
+  /** Hosted checkout: persist a one-tap survey answer. Without it, answers are local-only (demo/preview). */
+  onSurveyAnswer?: (question: CheckoutConfig["survey"]["question"], answer: string) => Promise<boolean>;
+  /** Studio: show the success screen (with the survey) instead of the form. */
+  showSuccess?: boolean;
+  /** Live mode: success celebration details shown after payment. */
+  successMessage?: string;
+  /** Hosted page whose merchant can't take payments yet: pay button is disabled with this note. */
+  paymentsDisabledReason?: string;
+  /** Studio: highlight + click-to-select blocks in the preview. */
+  selectedBlockId?: string | null;
+  onSelectBlock?: (id: string) => void;
   className?: string;
 }) {
   const vars = useMemo(() => themeToVars(config.theme), [config.theme]);
@@ -60,32 +84,44 @@ export function CheckoutView({
   const [payIn4, setPayIn4] = useState(false);
   const [status, setStatus] = useState<"idle" | "busy" | "paid">("idle");
 
-  const has = (t: Block["type"]) => visible.some((b) => b.type === t);
-  const upsell = visible.find((b) => b.type === "upsell");
+  // One pricing implementation shared with the server (which recomputes it
+  // from the published config when creating the PaymentIntent).
+  const selections: BuyerSelections = useMemo(
+    () => ({ upsellAdded, tipPercent, couponCode: coupon, payIn4 }),
+    [upsellAdded, tipPercent, coupon, payIn4],
+  );
+  const totals = useMemo(() => computeTotals(config, product, selections), [config, product, selections]);
+  const { totalCents: total, tipCents: tip, lines } = totals;
+  const usePayIn4 = totals.payIn4;
 
-  // Totals — the server recomputes all of this in live mode; never trust the client.
-  const upsellCents = upsell && upsellAdded && upsell.type === "upsell" ? upsell.props.priceCents : 0;
-  const subtotal = product.priceCents + upsellCents;
-  const discount = coupon && has("coupon") ? Math.round((subtotal * (DEMO_COUPONS[coupon] ?? 0)) / 100) : 0;
-  const tip = has("tipSlider") ? Math.round(((subtotal - discount) * tipPercent) / 100) : 0;
-  const total = subtotal - discount + tip;
-  const usePayIn4 = payIn4 && has("payIn4");
+  const paymentBlock = visible.find((b) => b.type === "payment");
+  const payment = paymentBlock?.type === "payment" ? paymentBlock.props : undefined;
 
-  const lines = [
-    ...(upsellCents && upsell?.type === "upsell" ? [{ label: upsell.props.title, cents: upsellCents }] : []),
-    ...(discount ? [{ label: `Code ${coupon}`, cents: -discount }] : []),
-    ...(tip ? [{ label: "Tip", cents: tip }] : []),
-  ];
+  useEffect(() => {
+    onTotalsChange?.(totals, selections);
+  }, [totals, selections, onTotalsChange]);
 
   async function handlePay() {
     if (status !== "idle") return;
     setStatus("busy");
+    onTrack?.({ kind: "pay" });
     if (mode === "live" && onPay) {
-      setStatus((await onPay(total)) ? "paid" : "idle");
+      const ok = await onPay(selections, totals);
+      setStatus(ok ? "paid" : "idle");
+      if (ok) {
+        onTrack?.({ kind: "paid" });
+        celebrate(payment);
+      }
     } else {
       await new Promise((r) => setTimeout(r, 650));
       setStatus("paid");
+      celebrate(payment);
     }
+  }
+
+  function reportBlock(target: EventTarget) {
+    const type = (target as HTMLElement).closest?.("[data-block-type]")?.getAttribute("data-block-type");
+    if (type) onTrack?.({ kind: "focus", field: type });
   }
 
   function renderBlock(b: Block): ReactNode {
@@ -112,9 +148,9 @@ export function CheckoutView({
             block={b}
             applied={coupon}
             onApply={(code) => {
-              const c = code.trim().toUpperCase();
-              if (!(c in DEMO_COUPONS)) return false;
-              setCoupon(c);
+              const hit = findCoupon(config, code);
+              if (!hit) return false;
+              setCoupon(hit.code);
               return true;
             }}
           />
@@ -128,9 +164,11 @@ export function CheckoutView({
             total={total}
             currency={product.currency}
             payIn4={usePayIn4}
+            shipping={!!product.requiresShipping}
             slot={mode === "live" ? paymentSlot : undefined}
             onPay={handlePay}
             busy={status === "busy"}
+            disabledReason={paymentsDisabledReason}
           />
         );
     }
@@ -141,23 +179,41 @@ export function CheckoutView({
       className="w-full rounded-(--co-radius-card) bg-(--co-card) p-4 text-(--co-fg) shadow-[0_1px_2px_rgb(0_0_0/0.05),0_16px_40px_-12px_rgb(0_0_0/0.18)] @md:p-5"
     >
       <AnimatePresence mode="wait" initial={false}>
-        {status === "paid" ? (
+        {status === "paid" || showSuccess ? (
           <m.div
             key="paid"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="flex flex-col items-center gap-3 py-10 text-center"
-            role="status"
+            className="flex flex-col items-center gap-3 py-8 text-center"
           >
             <SuccessCheck />
-            <p className="text-xl font-semibold">Thank you!</p>
-            <p className="max-w-[28ch] text-sm text-(--co-muted)">
-              {mode === "live"
-                ? `Your payment of ${formatMoney(total, product.currency)} went through. A receipt is on its way.`
-                : "This is a demo, so nothing was charged. On a real lumen checkout, Stripe takes it from here."}
+            <p className="text-xl font-semibold" role="status">
+              Thank you!
             </p>
-            {mode !== "live" && (
+            <p className="max-w-[28ch] text-sm text-(--co-muted)">
+              {mode === "demo"
+                ? "This is a demo, so nothing was charged. On a real lumen checkout, Stripe takes it from here."
+                : `Your payment of ${formatMoney(total, product.currency)} went through.`}
+              {mode === "live" && successMessage ? ` ${successMessage}` : ""}
+            </p>
+            {config.survey.enabled && (
+              <div className="mt-3 w-full">
+                <OneTapSurvey
+                  // Remount when the merchant switches questions in the Studio.
+                  key={config.survey.question}
+                  question={config.survey.question}
+                  brandName={config.brand.name.trim() || "this shop"}
+                  haptics={payment?.haptics ?? true}
+                  onAnswer={(answer) =>
+                    onSurveyAnswer
+                      ? onSurveyAnswer(config.survey.question, answer)
+                      : new Promise((resolve) => setTimeout(() => resolve(true), 350))
+                  }
+                />
+              </div>
+            )}
+            {mode !== "live" && !showSuccess && (
               <button
                 type="button"
                 onClick={() => setStatus("idle")}
@@ -168,11 +224,24 @@ export function CheckoutView({
             )}
           </m.div>
         ) : (
-          <m.ul key="form" className="flex flex-col gap-3" exit={{ opacity: 0 }}>
+          <m.ul
+            key="form"
+            className="flex flex-col gap-3"
+            exit={{ opacity: 0 }}
+            // Which block did the buyer touch? (focus for keyboard, pointer for taps/clicks)
+            onFocusCapture={onTrack ? (e) => reportBlock(e.target) : undefined}
+            onPointerDownCapture={onTrack ? (e) => reportBlock(e.target) : undefined}
+          >
             <AnimatePresence initial={false}>
               {visible.map((b) => (
                 <m.li
                   key={b.id}
+                  data-block-type={b.type}
+                  onPointerDownCapture={onSelectBlock ? () => onSelectBlock(b.id) : undefined}
+                  className={cn(
+                    onSelectBlock && "rounded-(--co-radius) outline-offset-4 transition-[outline-color]",
+                    onSelectBlock && (selectedBlockId === b.id ? "outline-2 outline-dashed outline-[#F04A1A]" : "outline-2 outline-transparent hover:outline-dashed hover:outline-[#F04A1A]/40"),
+                  )}
                   layout="position"
                   initial={{ opacity: 0, scale: 0.96 }}
                   animate={{ opacity: 1, scale: 1 }}

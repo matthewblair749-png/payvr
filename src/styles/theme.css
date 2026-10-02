@@ -1,0 +1,323 @@
+/* =========================================================================
+   lumen app theme: the single source of design tokens for the merchant app
+   (sidebar shell, Home, and every dashboard surface).
+
+   Rules this file encodes:
+   - Orange is scarce: primary action, selected nav item, the main chart
+     series, and the single biggest-problem highlight. Nothing else.
+   - Status colors are only for status, and are always paired with an icon
+     or a label. Pending is neutral gray + clock, never amber.
+   - Six type sizes, no more. Tabular numerals on every figure.
+   - Flat: white cards, 16px radius, hairline borders, very soft shadows.
+
+   Contrast (WCAG 2.x, measured), light:
+     ink on page            18.0:1    muted on card           5.3:1
+     muted on page           4.9:1    ink on orange           5.2:1 (button labels)
+     accent-text on card     5.8:1    success-text on card    5.7:1
+     failure-text on card    6.6:1    pending-text on card    7.7:1
+   Dark:
+     fg on page             17.6:1    muted on card           7.0:1
+     orange on page          5.2:1    success-text on card    8.6:1
+   The spec's success green (#12B76A) is 2.6:1 on white, so on light surfaces
+   it is only ever an icon or dot next to a success-text label (the label
+   carries the meaning). Text in a status color always uses the *-text token.
+   ========================================================================= */
+
+:root {
+  /* Brand */
+  --app-orange: #f04a1a;
+  --app-spark: #ffd84d;
+
+  /* Surfaces */
+  --app-page: #f7f7f8;
+  --app-card: #ffffff;
+  --app-sunken: #f1f1f3; /* inputs, skeletons, hover rows */
+  --app-hairline: #e6e6ea;
+
+  /* Text */
+  --app-fg: #0e0e10;
+  --app-muted: #6b6b73;
+
+  /* Accent roles */
+  --app-accent: var(--app-orange);
+  --app-accent-fg: #0e0e10; /* label color on an orange fill */
+  --app-accent-text: #b83a12; /* orange as small text on light surfaces */
+  --app-accent-soft: #fdeee8; /* selected-nav wash */
+
+  /* Status (only for status, always with an icon or label) */
+  --app-success: #12b76a;
+  --app-success-text: #067647;
+  --app-success-soft: #e7f8ef;
+  --app-failure: #d92d20;
+  --app-failure-text: #b42318;
+  --app-failure-soft: #fdecea;
+  --app-pending: #6b6b73;
+  --app-pending-text: #52525a;
+  --app-pending-soft: #f1f1f3;
+
+  /* Charts: one orange series; everything else ink and grays */
+  --app-chart-main: var(--app-orange);
+  --app-chart-main-fill: rgb(240 74 26 / 0.12);
+  --app-chart-ink: #0e0e10;
+  --app-chart-gray: #808088; /* 3.9:1 on white, 3.4:1 over the orange wash */
+  --app-chart-gray-soft: #d4d4da;
+  --app-chart-grid: #ededf0;
+  --app-chart-axis: #6b6b73;
+
+  /* Elevation */
+  --app-shadow-card: 0 1px 2px rgb(14 14 16 / 0.04), 0 4px 16px -8px rgb(14 14 16 / 0.08);
+  --app-shadow-pop: 0 2px 6px rgb(14 14 16 / 0.06), 0 20px 48px -16px rgb(14 14 16 / 0.24);
+  --app-scrim: rgb(14 14 16 / 0.32);
+
+  /* Shape */
+  --app-radius-card: 16px;
+  --app-radius-control: 10px;
+
+  /* Layout */
+  --app-sidebar: 240px;
+  --app-sidebar-collapsed: 72px;
+  --app-topbar: 64px;
+
+  /* Motion */
+  --app-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --app-stagger: 40ms;
+  --app-count-up: 600ms;
+}
+
+/* Dark: ink base, same hierarchy, orange stays the accent. Follows the system
+   unless the merchant picked light or dark (data-theme on <html>). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --app-page: #0e0e10;
+    --app-card: #17171a;
+    --app-sunken: #202024;
+    --app-hairline: #2a2a2f;
+    --app-fg: #f4f4f6;
+    --app-muted: #a1a1aa;
+    --app-accent-fg: #0e0e10;
+    --app-accent-text: #ff7a52;
+    --app-accent-soft: #2a1710;
+    --app-success-text: #3ccb87;
+    --app-success-soft: #0f2a1d;
+    --app-failure: #f04438;
+    --app-failure-text: #ff8a80;
+    --app-failure-soft: #2c1412;
+    --app-pending: #a1a1aa;
+    --app-pending-text: #c4c4cc;
+    --app-pending-soft: #222226;
+    --app-chart-main-fill: rgb(240 74 26 / 0.13);
+    --app-chart-ink: #f4f4f6;
+    --app-chart-gray: #7a7a83;
+    --app-chart-gray-soft: #3a3a40;
+    --app-chart-grid: #232328;
+    --app-chart-axis: #a1a1aa;
+    --app-shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
+    --app-shadow-pop: 0 2px 6px rgb(0 0 0 / 0.4), 0 20px 48px -16px rgb(0 0 0 / 0.7);
+    --app-scrim: rgb(0 0 0 / 0.6);
+  }
+}
+:root[data-theme="dark"] {
+  --app-page: #0e0e10;
+  --app-card: #17171a;
+  --app-sunken: #202024;
+  --app-hairline: #2a2a2f;
+  --app-fg: #f4f4f6;
+  --app-muted: #a1a1aa;
+  --app-accent-fg: #0e0e10;
+  --app-accent-text: #ff7a52;
+  --app-accent-soft: #2a1710;
+  --app-success-text: #3ccb87;
+  --app-success-soft: #0f2a1d;
+  --app-failure: #f04438;
+  --app-failure-text: #ff8a80;
+  --app-failure-soft: #2c1412;
+  --app-pending: #a1a1aa;
+  --app-pending-text: #c4c4cc;
+  --app-pending-soft: #222226;
+  --app-chart-main-fill: rgb(240 74 26 / 0.13);
+  --app-chart-ink: #f4f4f6;
+  --app-chart-gray: #7a7a83;
+  --app-chart-gray-soft: #3a3a40;
+  --app-chart-grid: #232328;
+  --app-chart-axis: #a1a1aa;
+  --app-shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
+  --app-shadow-pop: 0 2px 6px rgb(0 0 0 / 0.4), 0 20px 48px -16px rgb(0 0 0 / 0.7);
+  --app-scrim: rgb(0 0 0 / 0.6);
+}
+
+/* Tailwind utilities generated from the tokens above:
+   bg-app-card, text-app-muted, border-app-hairline, text-hero, rounded-card… */
+@theme inline {
+  --color-app-page: var(--app-page);
+  --color-app-card: var(--app-card);
+  --color-app-sunken: var(--app-sunken);
+  --color-app-hairline: var(--app-hairline);
+  --color-app-fg: var(--app-fg);
+  --color-app-muted: var(--app-muted);
+  --color-app-accent: var(--app-accent);
+  --color-app-accent-fg: var(--app-accent-fg);
+  --color-app-accent-text: var(--app-accent-text);
+  --color-app-accent-soft: var(--app-accent-soft);
+  --color-app-success: var(--app-success);
+  --color-app-success-text: var(--app-success-text);
+  --color-app-success-soft: var(--app-success-soft);
+  --color-app-failure: var(--app-failure);
+  --color-app-failure-text: var(--app-failure-text);
+  --color-app-failure-soft: var(--app-failure-soft);
+  --color-app-pending: var(--app-pending);
+  --color-app-pending-text: var(--app-pending-text);
+  --color-app-pending-soft: var(--app-pending-soft);
+  --color-app-spark: var(--app-spark);
+
+  /* The six type sizes. Nothing in the app shell uses any other size. */
+  --text-cap: 0.75rem; /* 12: captions, axis labels, badges */
+  --text-cap--line-height: 1rem;
+  --text-ui: 0.875rem; /* 14: nav, buttons, table cells */
+  --text-ui--line-height: 1.25rem;
+  --text-body: 1rem; /* 16: the brief, answers */
+  --text-body--line-height: 1.5rem;
+  --text-title: 1.25rem; /* 20: card titles */
+  --text-title--line-height: 1.75rem;
+  --text-figure: 2rem; /* 32: KPI numbers, greeting */
+  --text-figure--line-height: 2.25rem;
+  --text-hero: 3.5rem; /* 56: the North Star number */
+  --text-hero--line-height: 1;
+
+  --radius-card: var(--app-radius-card);
+  --radius-control: var(--app-radius-control);
+  --shadow-card: var(--app-shadow-card);
+  --shadow-pop: var(--app-shadow-pop);
+}
+
+/* The app shell: page background, tabular figures everywhere, native
+   controls and scrollbars in the right scheme. */
+.app-shell {
+  background: var(--app-page);
+  color: var(--app-fg);
+  font-variant-numeric: tabular-nums;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .app-shell { color-scheme: dark; }
+}
+:root[data-theme="dark"] .app-shell { color-scheme: dark; }
+/* In the base layer so a component can opt out (e.g. the palette's search box,
+   whose focus is the open dialog itself). */
+@layer base {
+  .app-shell :focus-visible {
+    outline: 2px solid var(--app-fg);
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+}
+
+/* Skeletons: same shape as the content they stand in for. */
+.app-skeleton {
+  background: var(--app-sunken);
+  border-radius: 8px;
+  animation: app-skeleton 1.4s ease-in-out infinite;
+}
+@keyframes app-skeleton {
+  50% { opacity: 0.55; }
+}
+
+/* "Live" pulse in the top bar. */
+.app-live-dot { position: relative; }
+.app-live-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: var(--app-success);
+  animation: app-live 2s var(--app-ease-out) infinite;
+}
+@keyframes app-live {
+  from { transform: scale(1); opacity: 0.6; }
+  to { transform: scale(2.6); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-skeleton, .app-live-dot::after { animation: none; }
+}
+
+/* ⌘K palette group headings (cmdk renders these). */
+.app-shell [cmdk-group-heading] {
+  padding: 0.75rem 0.75rem 0.25rem;
+  font-size: var(--text-cap);
+  line-height: var(--text-cap--line-height);
+  font-weight: 600;
+  color: var(--app-muted);
+}
+
+/* ---------------------------------------------------------------------------
+   First-load motion. Each runs once, when the element mounts (a range change
+   keeps elements mounted, so it never replays). Transform/opacity only: no
+   layout shift. All of it is removed for prefers-reduced-motion.
+   ------------------------------------------------------------------------- */
+@keyframes app-reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+/* Staggered: set --i on each card (40ms per card). */
+.app-reveal {
+  animation: app-reveal 420ms var(--app-ease-out) both;
+  animation-delay: calc(var(--i, 0) * var(--app-stagger));
+}
+@keyframes app-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+/* Lines draw in: use with pathLength="1". */
+.app-draw {
+  stroke-dasharray: 1;
+  animation: app-draw 900ms var(--app-ease-out) both;
+}
+@keyframes app-fade { from { opacity: 0; } to { opacity: 1; } }
+.app-fade-in { animation: app-fade 700ms ease-out 150ms both; }
+@keyframes app-grow { from { transform: scaleX(0); } to { transform: none; } }
+/* Bars grow from their baseline. */
+.app-grow {
+  transform-origin: left center;
+  animation: app-grow 700ms var(--app-ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-reveal, .app-draw, .app-fade-in, .app-grow { animation: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   Older pages (Payments, Insights, Research, Experiments, Checkout Studio)
+   were built on the original brand tokens and plain white/ink utilities.
+   In dark mode, inside the app shell, those map onto the app theme, so
+   every screen follows the same light/dark hierarchy.
+   ------------------------------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .app-shell {
+    --lumen-ink: var(--app-fg);
+    --lumen-surface: var(--app-sunken);
+    --lumen-muted: var(--app-muted);
+    --lumen-muted-strong: var(--app-muted);
+    --lumen-orange-deep: var(--app-accent-text);
+    --color-white: var(--app-card);
+    --color-black: #ffffff;
+  }
+}
+:root[data-theme="dark"] .app-shell {
+  --lumen-ink: var(--app-fg);
+  --lumen-surface: var(--app-sunken);
+  --lumen-muted: var(--app-muted);
+  --lumen-muted-strong: var(--app-muted);
+  --lumen-orange-deep: var(--app-accent-text);
+  --color-white: var(--app-card);
+  --color-black: #ffffff;
+}
+/* A deliberately dark element (e.g. Research's "lumen noticed" card) opts
+   out of the remap so it stays dark, with a hairline to sit off a dark page. */
+.app-shell .keep-dark {
+  --lumen-ink: #0e0e10;
+  --lumen-muted-strong: #5c5c64;
+  --lumen-orange-deep: #b83a12;
+  --color-white: #ffffff;
+  --color-black: #000000;
+  box-shadow: 0 0 0 1px var(--app-hairline);
+}

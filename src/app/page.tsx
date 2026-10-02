@@ -1,13 +1,13 @@
 import { ClosingCta, Footer } from "@/components/landing/footer";
 import { Hero } from "@/components/landing/hero";
 import { LearnsSection } from "@/components/landing/learns-section";
-import { LiveEditor } from "@/components/landing/live-editor";
+import { LazyLiveEditor } from "@/components/landing/lazy-live-editor";
 
 export default function Home() {
   return (
     <>
-      <Hero />
       <main id="main">
+        <Hero />
         <section id="try" aria-labelledby="try-title" className="scroll-mt-4 bg-surface py-20 sm:py-28">
           <div className="mx-auto max-w-7xl px-4 sm:px-8">
             <div className="mb-10 max-w-2xl sm:mb-14">
@@ -23,7 +23,7 @@ export default function Home() {
                 Pay for the mugs. It all updates as you go.
               </p>
             </div>
-            <LiveEditor />
+            <LazyLiveEditor />
           </div>
         </section>
         <LearnsSection />

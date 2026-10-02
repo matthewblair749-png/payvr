@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../styles/theme.css";
 
 /* =========================================================================
    lumen design tokens
@@ -61,14 +62,17 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Visible, on-brand focus ring for keyboard users everywhere. */
-:focus-visible {
-  outline: 3px solid var(--lumen-ink);
-  outline-offset: 3px;
-  border-radius: 6px;
-}
-.on-orange :focus-visible {
-  outline-color: var(--lumen-white);
+/* Visible, on-brand focus ring for keyboard users everywhere. In the base
+   layer so utilities (and the app shell's themed ring) can refine it. */
+@layer base {
+  :focus-visible {
+    outline: 3px solid var(--lumen-ink);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+  .on-orange :focus-visible {
+    outline-color: var(--lumen-white);
+  }
 }
 
 ::selection {

@@ -13,6 +13,7 @@ import { z } from "zod";
 // forbids. Jitless mode avoids the probe with negligible cost for our sizes.
 z.config({ jitless: true });
 
+import { SURVEY_QUESTION_KEYS } from "@/lib/survey/questions";
 import { BLOCK_META, BLOCK_TYPES, FONT_KEYS, FONTS, type BlockType, type FontKey } from "./meta";
 export { BLOCK_META, BLOCK_TYPES, FONT_KEYS, FONTS, type BlockType, type FontKey };
 
@@ -60,13 +61,39 @@ export const blockSchema = z.discriminatedUnion("type", [
     props: z.object({ label: shortText(60), maxPercent: z.number().int().min(5).max(50) }),
   }),
   z.object({ ...base, type: z.literal("payIn4"), props: z.object({ label: shortText(60) }) }),
-  z.object({ ...base, type: z.literal("coupon"), props: z.object({ placeholder: shortText(40) }) }),
+  z.object({
+    ...base,
+    type: z.literal("coupon"),
+    props: z.object({
+      placeholder: shortText(40),
+      /** Codes this checkout accepts. Validated server-side at payment time. */
+      codes: z
+        .array(
+          z.object({
+            code: z.string().trim().toUpperCase().regex(/^[A-Z0-9_-]{2,24}$/, "Codes use letters, numbers, - and _"),
+            percentOff: z.number().int().min(1).max(100),
+          }),
+        )
+        .max(20)
+        .default([]),
+    }),
+  }),
   z.object({
     ...base,
     type: z.literal("trustBadges"),
     props: z.object({ items: z.array(z.enum(["secure", "refund", "support", "shipping"])).max(4) }),
   }),
-  z.object({ ...base, type: z.literal("payment"), props: z.object({ buttonLabel: shortText(30) }) }),
+  z.object({
+    ...base,
+    type: z.literal("payment"),
+    props: z.object({
+      buttonLabel: shortText(30),
+      /** Success celebration: a short vibration on supporting phones. */
+      haptics: z.boolean().default(true),
+      /** Success celebration: a soft two-note chime (off by default; sound should be opt-in). */
+      sound: z.boolean().default(false),
+    }),
+  }),
 ]);
 
 export type Block = z.infer<typeof blockSchema>;
@@ -92,10 +119,24 @@ export const checkoutConfigSchema = z.object({
   schemaVersion: z.literal(1),
   brand: z.object({
     name: shortText(48).min(1),
-    /** Optional https logo URL (set by brand import or upload). */
-    logoUrl: z.string().url().startsWith("https://").max(500).optional(),
+    /**
+     * Optional logo: an https URL (brand import or pasted), which publishing
+     * copies into lumen as a same-origin `/assets/<id>` path.
+     */
+    logoUrl: z
+      .string()
+      .max(500)
+      .refine((v) => /^\/assets\/[a-z0-9]{20,32}$/.test(v) || (v.startsWith("https://") && URL.canParse(v)), "Use an https link")
+      .optional(),
   }),
   theme: themeSchema,
+  /** One-tap question shown on the success screen after payment. */
+  survey: z
+    .object({
+      enabled: z.boolean(),
+      question: z.enum(SURVEY_QUESTION_KEYS),
+    })
+    .default({ enabled: true, question: "nearly_stopped" }),
   blocks: z
     .array(blockSchema)
     .max(20)
@@ -115,4 +156,6 @@ export type CheckoutProduct = {
   currency: string;
   /** Optional https image; the demo uses a built-in illustration instead. */
   imageUrl?: string;
+  /** Physical goods: collect a shipping address. */
+  requiresShipping?: boolean;
 };

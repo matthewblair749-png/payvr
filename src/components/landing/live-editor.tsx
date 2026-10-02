@@ -11,30 +11,12 @@ import { ArrowRight, Monitor, RotateCcw, Smartphone } from "lucide-react";
 import { CheckoutView } from "@/components/checkout/checkout-view";
 import { ScaledFrame } from "@/components/checkout/scaled-frame";
 import { BlockList } from "@/components/editor/block-list";
-import { ControlGroup, RangeControl, Segmented, SwatchPicker } from "@/components/editor/controls";
+import { Segmented } from "@/components/editor/controls";
+import { ThemeControls } from "@/components/editor/theme-controls";
 import { DEMO_CONFIG, DEMO_PRODUCT } from "@/lib/checkout/defaults";
 import { saveDraft } from "@/lib/checkout/draft";
 import { editorReducer } from "@/lib/checkout/reducer";
-import { FONT_KEYS, FONTS, type FontKey } from "@/lib/checkout/meta";
 import { slugify } from "@/lib/utils";
-
-const ACCENTS = [
-  { value: "#F04A1A", name: "Lumen orange" },
-  { value: "#0E0E10", name: "Ink" },
-  { value: "#1F7A4D", name: "Fern" },
-  { value: "#3355E0", name: "Cobalt" },
-  { value: "#8A3FFC", name: "Violet" },
-  { value: "#E0457B", name: "Rose" },
-];
-
-const BACKGROUNDS = [
-  { value: "#EDEDF0", name: "Mist" },
-  { value: "#F6EEE3", name: "Oat" },
-  { value: "#FFF3C4", name: "Butter" },
-  { value: "#E3EFE6", name: "Sage" },
-  { value: "#FFFFFF", name: "White" },
-  { value: "#0E0E10", name: "Ink" },
-];
 
 export function LiveEditor() {
   const [config, dispatch] = useReducer(editorReducer, DEMO_CONFIG);
@@ -43,77 +25,14 @@ export function LiveEditor() {
 
   function makeItMine() {
     saveDraft({ ...config, brand: { ...config.brand, name: config.brand.name.trim() || "Your brand" } });
-    router.push("/studio?from=landing");
+    router.push("/studio/checkouts?from=landing");
   }
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(320px,380px)_1fr] lg:gap-10">
       {/* ---------------- Controls ---------------- */}
       <div className="order-2 space-y-6 rounded-[28px] bg-white p-5 shadow-soft ring-1 ring-black/5 sm:p-6 lg:order-1">
-        <ControlGroup label="Brand name" htmlFor="brand-name">
-          <input
-            id="brand-name"
-            value={config.brand.name}
-            maxLength={48}
-            onChange={(e) => dispatch({ type: "brand", patch: { name: e.target.value } })}
-            className="w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 font-medium focus:border-ink focus:outline-none"
-          />
-        </ControlGroup>
-
-        <SwatchPicker
-          label="Accent"
-          value={config.theme.accent}
-          options={ACCENTS}
-          onChange={(accent) => dispatch({ type: "theme", patch: { accent } })}
-        />
-        <SwatchPicker
-          label="Background"
-          value={config.theme.background}
-          options={BACKGROUNDS}
-          onChange={(background) => dispatch({ type: "theme", patch: { background } })}
-        />
-
-        <Segmented<FontKey>
-          label="Font"
-          value={config.theme.font}
-          onChange={(font) => dispatch({ type: "theme", patch: { font } })}
-          options={FONT_KEYS.map((k) => ({
-            value: k,
-            label: "Aa",
-            srLabel: FONTS[k].label,
-            style: { fontFamily: FONTS[k].stack, fontSize: "1rem" },
-          }))}
-        />
-
-        <RangeControl
-          label="Corner radius"
-          value={config.theme.radius}
-          min={0}
-          max={28}
-          unit="px"
-          onChange={(radius) => dispatch({ type: "theme", patch: { radius } })}
-        />
-
-        <div className="grid grid-cols-2 gap-3">
-          <Segmented
-            label="Mode"
-            value={config.theme.mode}
-            onChange={(mode) => dispatch({ type: "theme", patch: { mode } })}
-            options={[
-              { value: "light", label: "Light" },
-              { value: "dark", label: "Dark" },
-            ]}
-          />
-          <Segmented
-            label="Layout"
-            value={config.theme.layout}
-            onChange={(layout) => dispatch({ type: "theme", patch: { layout } })}
-            options={[
-              { value: "page", label: "Page" },
-              { value: "modal", label: "Modal" },
-            ]}
-          />
-        </div>
+        <ThemeControls config={config} dispatch={dispatch} />
 
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">

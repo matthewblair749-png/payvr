@@ -31,11 +31,22 @@ export function defaultBlock(type: BlockType, id: string = `${type}-${Math.rando
     case "payIn4":
       return { id, type, hidden: false, props: { label: "Pay in 4 interest-free payments" } };
     case "coupon":
-      return { id, type, hidden: false, props: { placeholder: "Discount code" } };
+      return {
+        id,
+        type,
+        hidden: false,
+        props: {
+          placeholder: "Discount code",
+          codes: [
+            { code: "LUMEN10", percentOff: 10 },
+            { code: "HELLO", percentOff: 15 },
+          ],
+        },
+      };
     case "trustBadges":
       return { id, type, hidden: false, props: { items: ["secure", "refund", "support"] } };
     case "payment":
-      return { id, type, hidden: false, props: { buttonLabel: "Pay" } };
+      return { id, type, hidden: false, props: { buttonLabel: "Pay", haptics: true, sound: false } };
   }
 }
 
@@ -51,6 +62,7 @@ export const DEMO_CONFIG: CheckoutConfig = {
     radius: 16,
     layout: "page",
   },
+  survey: { enabled: true, question: "nearly_stopped" },
   blocks: [
     defaultBlock("orderSummary", "summary"),
     defaultBlock("countdown", "countdown"),
@@ -69,4 +81,5 @@ export const DEMO_PRODUCT: CheckoutProduct = {
   description: "Two wheel-thrown stoneware mugs, 12oz, oatmeal glaze.",
   priceCents: 4800,
   currency: "USD",
+  requiresShipping: true,
 };

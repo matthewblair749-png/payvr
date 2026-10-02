@@ -24,6 +24,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useId } from "react";
 import { Eye, EyeOff, GripVertical, Lock, Trash2 } from "lucide-react";
 import { restrictToParentElement, restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { BLOCK_META } from "@/lib/checkout/meta";
@@ -47,6 +48,8 @@ export function BlockList({
   onSelect?: (id: string) => void;
   selectedId?: string | null;
 }) {
+  // Stable id keeps dnd-kit's generated aria ids identical on server and client.
+  const dndId = useId();
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -74,6 +77,7 @@ export function BlockList({
 
   return (
     <DndContext
+      id={dndId}
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}

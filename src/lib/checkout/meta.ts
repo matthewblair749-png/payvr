@@ -7,12 +7,12 @@ export const FONT_KEYS = ["dmSans", "sora", "spaceGrotesk", "fraunces", "plexMon
 export type FontKey = (typeof FONT_KEYS)[number];
 
 /** Human labels + CSS stacks for each selectable checkout font. */
-export const FONTS: Record<FontKey, { label: string; stack: string }> = {
-  dmSans: { label: "DM Sans", stack: "var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif" },
-  sora: { label: "Sora", stack: "var(--font-sora), ui-sans-serif, system-ui, sans-serif" },
-  spaceGrotesk: { label: "Grotesk", stack: "var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif" },
-  fraunces: { label: "Fraunces", stack: "var(--font-fraunces), ui-serif, Georgia, serif" },
-  plexMono: { label: "Mono", stack: "var(--font-plex-mono), ui-monospace, monospace" },
+export const FONTS: Record<FontKey, { label: string; stack: string; family: string }> = {
+  dmSans: { label: "DM Sans", stack: "var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif", family: "DM Sans" },
+  sora: { label: "Sora", stack: "var(--font-sora), ui-sans-serif, system-ui, sans-serif", family: "Sora" },
+  spaceGrotesk: { label: "Grotesk", stack: "var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif", family: "Space Grotesk" },
+  fraunces: { label: "Fraunces", stack: "var(--font-fraunces), ui-serif, Georgia, serif", family: "Fraunces" },
+  plexMono: { label: "Mono", stack: "var(--font-plex-mono), ui-monospace, monospace", family: "IBM Plex Mono" },
 };
 
 export const BLOCK_TYPES = [
