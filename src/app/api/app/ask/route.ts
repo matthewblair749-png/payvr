@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { homeMode, canWrite } from "@/server/dal/home-source";
 import { z } from "zod";
 import { parseRange, rangeDays } from "@/lib/date-range";
 import { merchantForAction } from "@/server/dal/session";
@@ -29,7 +30,16 @@ export async function POST(req: Request) {
       try {
         // Shares the Research Assistant's hourly budget: both run the same tools.
         rateLimit(`research:${merchant.id}`, 40, 60 * 60_000);
-        await ask({ merchantId: merchant.id, question: parsed.data.question, days, emit, signal: req.signal });
+        const mode = await homeMode(merchant);
+        await ask({
+          merchantId: merchant.id,
+          dataMerchantId: mode.dataMerchantId ?? merchant.id,
+          allowProposals: canWrite(mode),
+          question: parsed.data.question,
+          days,
+          emit,
+          signal: req.signal,
+        });
       } catch (e) {
         if (e instanceof RateLimitError) emit({ type: "error", message: e.message });
         else if (e instanceof Error && e.message === "busy") emit({ type: "error", message: "Still working on your last question. One moment." });

@@ -66,7 +66,7 @@ export default async function StudioHome() {
                 </div>
                 <div className="p-5">
                   <div className="flex items-center gap-2">
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${live ? "bg-spark text-ink" : "bg-surface text-muted-strong"}`}>
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${live ? "bg-spark text-[#0e0e10]" : "bg-surface text-muted-strong"}`}>
                       {live ? "Live" : "Draft"}
                     </span>
                     {p.experiments.length > 0 && (

@@ -85,6 +85,14 @@ model Merchant {
   /// Set once, when the first successful payment lands (drives the celebration).
   firstSaleAt          DateTime?
   firstSaleCelebratedAt DateTime?
+  /// lumen's demo shop: its data is sample data, shown to new merchants until they turn it off.
+  isSample             Boolean  @default(false)
+  /// Show the demo shop's sample data on Home until the first real sale (merchant can turn it off).
+  showSample           Boolean  @default(true)
+  /// Home layout: { order: SectionKey[], hidden: SectionKey[] } (validated on read and write).
+  homeLayout           Json?
+  /// Saved Home views: [{ id, name, range, order, hidden }].
+  homeViews            Json?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 

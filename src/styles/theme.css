@@ -248,3 +248,76 @@
   font-weight: 600;
   color: var(--app-muted);
 }
+
+/* ---------------------------------------------------------------------------
+   First-load motion. Each runs once, when the element mounts (a range change
+   keeps elements mounted, so it never replays). Transform/opacity only: no
+   layout shift. All of it is removed for prefers-reduced-motion.
+   ------------------------------------------------------------------------- */
+@keyframes app-reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+/* Staggered: set --i on each card (40ms per card). */
+.app-reveal {
+  animation: app-reveal 420ms var(--app-ease-out) both;
+  animation-delay: calc(var(--i, 0) * var(--app-stagger));
+}
+@keyframes app-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+/* Lines draw in: use with pathLength="1". */
+.app-draw {
+  stroke-dasharray: 1;
+  animation: app-draw 900ms var(--app-ease-out) both;
+}
+@keyframes app-fade { from { opacity: 0; } to { opacity: 1; } }
+.app-fade-in { animation: app-fade 700ms ease-out 150ms both; }
+@keyframes app-grow { from { transform: scaleX(0); } to { transform: none; } }
+/* Bars grow from their baseline. */
+.app-grow {
+  transform-origin: left center;
+  animation: app-grow 700ms var(--app-ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-reveal, .app-draw, .app-fade-in, .app-grow { animation: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   Older pages (Payments, Insights, Research, Experiments, Checkout Studio)
+   were built on the original brand tokens and plain white/ink utilities.
+   In dark mode, inside the app shell, those map onto the app theme, so
+   every screen follows the same light/dark hierarchy.
+   ------------------------------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .app-shell {
+    --lumen-ink: var(--app-fg);
+    --lumen-surface: var(--app-sunken);
+    --lumen-muted: var(--app-muted);
+    --lumen-muted-strong: var(--app-muted);
+    --lumen-orange-deep: var(--app-accent-text);
+    --color-white: var(--app-card);
+    --color-black: #ffffff;
+  }
+}
+:root[data-theme="dark"] .app-shell {
+  --lumen-ink: var(--app-fg);
+  --lumen-surface: var(--app-sunken);
+  --lumen-muted: var(--app-muted);
+  --lumen-muted-strong: var(--app-muted);
+  --lumen-orange-deep: var(--app-accent-text);
+  --color-white: var(--app-card);
+  --color-black: #ffffff;
+}
+/* A deliberately dark element (e.g. Research's "lumen noticed" card) opts
+   out of the remap so it stays dark, with a hairline to sit off a dark page. */
+.app-shell .keep-dark {
+  --lumen-ink: #0e0e10;
+  --lumen-muted-strong: #5c5c64;
+  --lumen-orange-deep: #b83a12;
+  --color-white: #ffffff;
+  --color-black: #000000;
+  box-shadow: 0 0 0 1px var(--app-hairline);
+}

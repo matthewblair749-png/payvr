@@ -7,6 +7,7 @@ import { useId, useMemo, useState } from "react";
 import { Card } from "@/components/app-shell/page-header";
 import { niceTicks, useWidth } from "@/components/dashboard/charts";
 import type { HomeDay, HomeOverview } from "@/server/dal/home";
+import { CountUp } from "./count-up";
 import { DeltaBadge } from "./delta-badge";
 import { delta, longDay, money, moneyCompact, shortDay } from "./format";
 import { NORTH_STAR_HEIGHT } from "./skeletons";
@@ -67,7 +68,9 @@ export function NorthStar({ data, periodLabel }: { data: HomeOverview; periodLab
           <h2 id="north-star-title" className="text-ui font-semibold text-app-muted">
             Revenue · {periodLabel}
           </h2>
-          <p className="mt-2 font-display text-hero font-bold tracking-[-0.04em]">{money(current.revenueCents, currency)}</p>
+          <p className="mt-2 font-display text-hero font-bold tracking-[-0.04em]">
+            <CountUp value={current.revenueCents} format={(v) => money(Math.round(v), currency)} />
+          </p>
           <DeltaBadge className="mt-3" delta={d} against={`vs ${money(previous.revenueCents, currency)} in the ${prevLabel}`} />
         </div>
         {/* Two series, so a legend (the end-label and best-day label supplement it). */}
@@ -212,6 +215,7 @@ function RevenueChart({
 
           {/* Previous period: quiet context */}
           <LinePath
+            className="app-fade-in"
             data={series}
             x={(_, i) => x(i)}
             y={(p) => y(p.prev)}
@@ -223,6 +227,7 @@ function RevenueChart({
           />
           {/* This period: the one orange series */}
           <AreaClosed
+            className="app-fade-in"
             data={series}
             x={(_, i) => x(i)}
             y={(p) => y(p.cur)}
@@ -230,7 +235,10 @@ function RevenueChart({
             curve={curveMonotoneX}
             fill="var(--app-chart-main-fill)"
           />
+          {/* Draws in on first load (pathLength=1 drives the dash animation). */}
           <LinePath
+            className="app-draw"
+            pathLength={1}
             data={series}
             x={(_, i) => x(i)}
             y={(p) => y(p.cur)}

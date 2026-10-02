@@ -89,7 +89,7 @@ export function ExperimentView({ data }: { data: ExperimentDetail }) {
       </div>
 
       {data.splitBroken && (
-        <div role="alert" className="mt-6 flex gap-3 rounded-2xl bg-[#FFF3C4] p-4 text-sm">
+        <div role="alert" className="mt-6 flex gap-3 rounded-2xl bg-[#FFF3C4] p-4 text-sm text-[#0e0e10]">
           <AlertTriangle size={18} aria-hidden="true" className="mt-0.5 shrink-0" />
           <p>
             <span className="font-semibold">Traffic isn&apos;t splitting the way it should</span> ({v.A.visits.toLocaleString()} vs {v.B.visits.toLocaleString()} visits for a{" "}
@@ -170,7 +170,7 @@ export function ExperimentView({ data }: { data: ExperimentDetail }) {
               <h3 className="font-display text-xl font-bold tracking-[-0.03em]">
                 {k} · {v[k].name}
               </h3>
-              {data.winnerKey === k && <span className="rounded-full bg-spark px-2 py-0.5 text-xs font-bold">Winner</span>}
+              {data.winnerKey === k && <span className="rounded-full bg-spark px-2 py-0.5 text-xs font-bold text-[#0e0e10]">Winner</span>}
             </div>
             <dl className="mt-4 grid grid-cols-3 gap-3">
               <div>

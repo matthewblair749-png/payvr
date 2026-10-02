@@ -7,6 +7,7 @@ import { useMemo } from "react";
 import { Card } from "@/components/app-shell/page-header";
 import { useWidth } from "@/components/dashboard/charts";
 import type { HomeDay, HomeOverview, PeriodTotals } from "@/server/dal/home";
+import { CountUp } from "./count-up";
 import { DeltaBadge } from "./delta-badge";
 import { delta, formatMetric, rollingMean, type MetricKind } from "./format";
 import { KPI_HEIGHT } from "./skeletons";
@@ -60,8 +61,8 @@ export function KpiTiles({ data }: { data: HomeOverview }) {
         Key numbers
       </h2>
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {TILES.map((t) => (
-          <li key={t.key}>
+        {TILES.map((t, i) => (
+          <li key={t.key} className="app-reveal" style={{ "--i": 2 + i } as React.CSSProperties}>
             <KpiTile tile={t} data={data} />
           </li>
         ))}
@@ -88,7 +89,9 @@ function KpiTile({ tile, data }: { tile: Tile; data: HomeOverview }) {
       <h3 id={titleId} className="text-ui font-medium text-app-muted">
         {tile.label}
       </h3>
-      <p className="mt-1 font-display text-figure font-bold tracking-[-0.03em]">{fmt(cur)}</p>
+      <p className="mt-1 font-display text-figure font-bold tracking-[-0.03em]">
+        <CountUp value={cur} format={fmt} />
+      </p>
       <DeltaBadge className="mt-1" delta={d} against={`vs ${fmt(prev)}`} />
       <Sparkline
         points={points}
@@ -123,6 +126,8 @@ function Sparkline({ points, label }: { points: (number | null)[]; label: string
       {width > 0 && lastIndex >= 0 && (
         <svg width={width} height={h} aria-hidden="true" className="block overflow-visible">
           <LinePath
+            className="app-draw"
+            pathLength={1}
             data={points.map((v, i) => [i, v] as const)}
             defined={([, v]) => v != null}
             x={([i]) => x(i)}

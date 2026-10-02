@@ -19,7 +19,7 @@ type Thread = { id: string; title: string; updatedAt: string };
 
 const SUGGESTIONS = [
   "Why did conversions drop on Tuesday?",
-  "Should I price the mug set at $48 or $58?",
+  "Should I price the mug set at $52 or $58?",
   "What's stopping people from buying?",
   "Which payment methods should I offer in Germany?",
   "Is variant B actually winning?",
@@ -260,7 +260,7 @@ export function ResearchView({
               type="submit"
               disabled={!enabled || busy || input.trim().length < 2}
               aria-label="Send"
-              className="grid h-10 w-10 place-items-center rounded-xl bg-orange text-ink disabled:opacity-40"
+              className="grid h-10 w-10 place-items-center rounded-xl bg-orange text-[#0e0e10] disabled:opacity-40"
             >
               {busy ? <Loader2 size={18} className="animate-spin" aria-hidden="true" /> : <ArrowUp size={18} aria-hidden="true" />}
             </button>
@@ -270,7 +270,7 @@ export function ResearchView({
 
       {/* ------------------------------------------------ Side column */}
       <aside className="space-y-6" aria-label="Insights and conversations">
-        <section aria-labelledby="noticed" className="rounded-[28px] bg-ink p-5 text-white">
+        <section aria-labelledby="noticed" className="keep-dark rounded-[28px] bg-ink p-5 text-white">
           <div className="flex items-center justify-between">
             <h2 id="noticed" className="flex items-center gap-2 font-display text-lg font-bold tracking-[-0.03em]">
               <Sparkles size={18} className="text-spark" aria-hidden="true" /> lumen noticed

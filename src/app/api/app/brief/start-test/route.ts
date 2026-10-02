@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { homeMode, canWrite } from "@/server/dal/home-source";
 import { TZ_COOKIE } from "@/components/app-shell/greeting";
 import { merchantForAction } from "@/server/dal/session";
 import { UserError } from "@/server/errors";
@@ -22,6 +23,7 @@ export async function POST() {
   }
   try {
     const tz = decodeURIComponent((await cookies()).get(TZ_COOKIE)?.value ?? "UTC");
+    if (!canWrite(await homeMode(merchant))) throw new UserError("Tests can't be started on sample data.");
     const brief = await getBrief(merchant.id, merchant.defaultCurrency, tz);
     const s = brief?.facts.suggestion;
     if (!s || brief.actions[0].kind !== "start_test") throw new UserError("There's no test to start from today's brief.");

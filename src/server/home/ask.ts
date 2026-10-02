@@ -161,10 +161,19 @@ The answer (the merchant is busy, not an analyst):
 - No jargon, no statistics terms, don't mention tools or queries.
 - Add a chart only when it helps: copy values exactly from tool results (cents for money, 0-1 fractions for percent), at most 12 points, highlight the one the answer is about.`;
 
-async function askWithClaude(ctx: ToolContext, merchantName: string, question: string, days: number, threadId: string, emit: (e: AskEvent) => void, signal?: AbortSignal) {
+async function askWithClaude(
+  ctx: ToolContext,
+  merchantName: string,
+  question: string,
+  days: number,
+  threadId: string,
+  emit: (e: AskEvent) => void,
+  signal?: AbortSignal,
+  allowProposals = true,
+) {
   const steps: AskStep[] = [];
   let proposal: ProposalView | null = null;
-  const tools = [...toolDefinitions(), ANSWER_TOOL];
+  const tools = [...toolDefinitions().filter((t) => allowProposals || t.name !== "propose_experiment"), ANSWER_TOOL];
   const messages: BetaMessageParam[] = [
     {
       role: "user",
@@ -240,7 +249,10 @@ async function askWithClaude(ctx: ToolContext, merchantName: string, question: s
     const results: BetaToolResultBlockParam[] = [];
     for (const use of uses) {
       emit({ type: "step", label: RESEARCH_TOOLS.find((t) => t.name === use.name)?.label ?? "Looking into it" });
-      const r = await runTool(ctx, use.name, use.input);
+      const r =
+        use.name === "propose_experiment" && !allowProposals
+          ? { ok: false, content: JSON.stringify({ error: "Proposals are off for sample data." }) }
+          : await runTool(ctx, use.name, use.input);
       results.push({ type: "tool_result", tool_use_id: use.id, content: r.content, ...(r.ok ? {} : { is_error: true }) });
       if (!r.ok) continue;
       const data = JSON.parse(r.content) as unknown;
@@ -409,20 +421,32 @@ export async function quickAnswer(ctx: ToolContext, question: string, fallbackDa
 
 const locks = new Set<string>();
 
-export async function ask(opts: { merchantId: string; question: string; days: number; emit: (e: AskEvent) => void; signal?: AbortSignal }): Promise<AskAnswer> {
+export async function ask(opts: {
+  merchantId: string;
+  /** Whose numbers to read (the demo shop's in sample mode). Defaults to merchantId. */
+  dataMerchantId?: string;
+  /** False on sample data: no drafting tests against someone else's shop. */
+  allowProposals?: boolean;
+  question: string;
+  days: number;
+  emit: (e: AskEvent) => void;
+  signal?: AbortSignal;
+}): Promise<AskAnswer> {
   const { merchantId, question, days, emit, signal } = opts;
+  const dataMerchantId = opts.dataMerchantId ?? merchantId;
+  const allowProposals = opts.allowProposals ?? true;
   if (locks.has(merchantId)) throw new Error("busy");
   locks.add(merchantId);
   try {
-    const merchant = await db.merchant.findUniqueOrThrow({ where: { id: merchantId } });
-    const ctx: ToolContext = { merchantId, currency: merchant.defaultCurrency };
+    const merchant = await db.merchant.findUniqueOrThrow({ where: { id: dataMerchantId } });
+    const ctx: ToolContext = { merchantId: dataMerchantId, currency: merchant.defaultCurrency };
     // Saved like a research conversation, so ⌘K finds it and Research can open it.
     const thread = await db.researchThread.create({ data: { merchantId, title: question.slice(0, 80) } });
 
     let result: Omit<AskAnswer, "question" | "source" | "threadId">;
     let source: AskAnswer["source"];
     if (assistantEnabled()) {
-      result = await askWithClaude(ctx, merchant.name, question, days, thread.id, emit, signal);
+      result = await askWithClaude(ctx, merchant.name, question, days, thread.id, emit, signal, allowProposals);
       source = "ai";
     } else {
       const quick = await quickAnswer(ctx, question, days, emit);

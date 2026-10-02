@@ -201,7 +201,7 @@ function SegmentCard({ title, rows, worst }: { title: string; rows: SegmentRow[]
                         {/* Shared 0–100% scale, so bars compare across cards. */}
                         <div aria-hidden="true" className="h-2.5 flex-1 rounded-r-[4px] bg-app-sunken">
                           <div
-                            className={cn("h-2.5 rounded-r-[4px]", isWorst ? "bg-app-accent" : "bg-(--app-chart-gray)")}
+                            className={cn("app-grow h-2.5 rounded-r-[4px]", isWorst ? "bg-app-accent" : "bg-(--app-chart-gray)")}
                             style={{ width: `${Math.max(1, r.dropRate * 100)}%` }}
                           />
                         </div>

@@ -185,7 +185,7 @@ export function WhyTheyBuyCard({ range, periodLabel }: { range: RangeValue; peri
                   <span className={cn("truncate", i === 0 && "font-semibold")}>{a.label}</span>
                   <span aria-hidden="true" className="h-2.5 rounded-r-[4px] bg-app-sunken">
                     <span
-                      className={cn("block h-2.5 rounded-r-[4px]", i === 0 ? "bg-(--app-chart-ink)" : "bg-(--app-chart-gray)")}
+                      className={cn("app-grow block h-2.5 rounded-r-[4px]", i === 0 ? "bg-(--app-chart-ink)" : "bg-(--app-chart-gray)")}
                       style={{ width: `${Math.max(1, (a.share / max) * 100)}%` }}
                     />
                   </span>
@@ -273,7 +273,7 @@ export function ExperimentCardView() {
               </dt>
               <dd aria-hidden="true" className="h-2.5 rounded-r-[4px] bg-app-sunken">
                 <span
-                  className={cn("block h-2.5 rounded-r-[4px]", k === "B" ? "bg-(--app-chart-ink)" : "bg-(--app-chart-gray)")}
+                  className={cn("app-grow block h-2.5 rounded-r-[4px]", k === "B" ? "bg-(--app-chart-ink)" : "bg-(--app-chart-gray)")}
                   style={{ width: `${Math.max(1, (value(k) / max) * 100)}%` }}
                 />
               </dd>
@@ -301,7 +301,7 @@ export function ExperimentCardView() {
             aria-valuetext={`${chance} percent; 95 percent is the line for shipping B`}
             className="relative mt-1 h-2 rounded-full bg-app-sunken"
           >
-            <div className="h-2 rounded-full bg-(--app-chart-ink)" style={{ width: `${Math.max(1, chance)}%` }} />
+            <div className="app-grow h-2 rounded-full bg-(--app-chart-ink)" style={{ width: `${Math.max(1, chance)}%` }} />
             <span aria-hidden="true" className="absolute -top-1 h-4 w-0.5 rounded-full bg-app-muted" style={{ left: "95%" }} />
           </div>
           <p className="mt-1 text-right text-cap text-app-muted" aria-hidden="true">

@@ -48,18 +48,28 @@ export function HomeDashboard() {
       aria-busy={isPlaceholderData || undefined}
       className={cn("mt-8 space-y-4 transition-opacity duration-200 sm:space-y-6", isPlaceholderData && "opacity-60")}
     >
-      <MorningBrief />
-      <NorthStar data={data} periodLabel={periodLabel} />
+      {/* First load: each card rises in 40ms after the one before (--i). */}
+      <Reveal i={0}>
+        <MorningBrief />
+      </Reveal>
+      <Reveal i={1}>
+        <NorthStar data={data} periodLabel={periodLabel} />
+      </Reveal>
+      {/* KPI tiles stagger individually (--i 2–5). */}
       <KpiTiles data={data} />
-      <FunnelSection range={range} periodLabel={periodLabel} />
+      <Reveal i={6}>
+        <FunnelSection range={range} periodLabel={periodLabel} />
+      </Reveal>
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
-        <LiveFeed className="lg:row-span-2" />
-        <div className="lg:col-span-2">
+        <Reveal i={7} className="lg:row-span-2">
+          <LiveFeed className="h-full" />
+        </Reveal>
+        <Reveal i={8} className="lg:col-span-2">
           <WhyTheyBuyCard range={range} periodLabel={periodLabel} />
-        </div>
-        <div className="lg:col-span-2">
+        </Reveal>
+        <Reveal i={9} className="lg:col-span-2">
           <ExperimentCardView />
-        </div>
+        </Reveal>
       </div>
     </div>
   );
@@ -85,6 +95,14 @@ function FunnelSection({ range, periodLabel }: { range: RangeValue; periodLabel:
   return (
     <div className={cn("transition-opacity duration-200", isPlaceholderData && "opacity-60")} aria-busy={isPlaceholderData || undefined}>
       <FunnelCard data={data} range={range} periodLabel={periodLabel} />
+    </div>
+  );
+}
+
+function Reveal({ i, className, children }: { i: number; className?: string; children: React.ReactNode }) {
+  return (
+    <div className={cn("app-reveal", className)} style={{ "--i": i } as React.CSSProperties}>
+      {children}
     </div>
   );
 }

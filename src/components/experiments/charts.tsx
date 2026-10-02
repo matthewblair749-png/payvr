@@ -10,7 +10,8 @@ import { fmtDay, niceTicks, TipRow, useWidth, VIZ } from "@/components/dashboard
 import { cn } from "@/lib/utils";
 
 export const SERIES = { A: "#2A78D6", B: "#F04A1A" } as const;
-const STATUS = { good: "#0CA30C", goodText: "#006300", bad: "#D03B3B", badText: "#B42318" };
+// Status colors from the theme, so they pass in light and dark.
+const STATUS = { good: "var(--app-success)", goodText: "var(--app-success-text)", bad: "var(--app-failure)", badText: "var(--app-failure-text)" };
 
 export function Legend({ names }: { names: { A: string; B: string } }) {
   return (

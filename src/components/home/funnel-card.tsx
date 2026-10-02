@@ -87,7 +87,7 @@ export function FunnelCard({ data, range, periodLabel }: { data: FunnelOverview;
                   </div>
                 </div>
                 <div aria-hidden="true" className="mt-2 h-2 rounded-full bg-app-sunken">
-                  <div className="h-2 rounded-full bg-(--app-chart-ink) opacity-80" style={{ width: `${Math.max(2, (s.sessions / visits) * 100)}%` }} />
+                  <div className="app-grow h-2 rounded-full bg-(--app-chart-ink) opacity-80" style={{ width: `${Math.max(2, (s.sessions / visits) * 100)}%` }} />
                 </div>
               </li>
             </Fragment>

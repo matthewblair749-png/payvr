@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight, CircleCheck, Clock, Palette } from "lucide-react";
 import { Card, PageHeader } from "@/components/app-shell/page-header";
+import { SampleToggle } from "@/components/home/sample-banner";
 import { auth } from "@/server/auth";
+import { db } from "@/server/db";
 import { requireMerchant } from "@/server/dal/session";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -11,6 +13,9 @@ export default async function SettingsPage() {
   const merchant = await requireMerchant("/studio/settings");
   const session = await auth();
   const ready = merchant.stripeChargesEnabled;
+  const hasSales = Boolean(
+    await db.order.findFirst({ where: { merchantId: merchant.id, status: { in: ["SUCCEEDED", "PARTIALLY_REFUNDED", "REFUNDED", "DISPUTED"] } }, select: { id: true } }),
+  );
 
   return (
     <>
@@ -49,6 +54,17 @@ export default async function SettingsPage() {
             <ChevronRight size={18} aria-hidden="true" className="text-app-muted" />
           </Link>
         </Card>
+
+        {!merchant.isSample && (
+          <Card aria-labelledby="sample-h" className="p-6">
+            <h2 id="sample-h" className="font-display text-title font-bold">
+              Sample data
+            </h2>
+            <div className="mt-3">
+              <SampleToggle show={merchant.showSample} hasSales={hasSales} />
+            </div>
+          </Card>
+        )}
 
         <Card aria-labelledby="look-h" className="flex items-start gap-4 p-6">
           <Palette size={20} aria-hidden="true" className="mt-1 shrink-0 text-app-muted" />

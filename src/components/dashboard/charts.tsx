@@ -13,16 +13,22 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNod
 import { bestText } from "@/lib/color";
 import { cn } from "@/lib/utils";
 
+/**
+ * Chart colors as theme variables, so every chart follows light/dark mode.
+ * (The series orange is the brand accent in both modes.)
+ */
 export const VIZ = {
-  series: "#F04A1A",
-  wash: "rgba(240, 74, 26, 0.10)",
-  ink: "#0E0E10",
-  ink2: "#5C5C64",
-  axis: "#6B6B73",
-  grid: "#ECECEF",
-  baseline: "#D4D4D8",
-  surface: "#FFFFFF",
+  series: "var(--app-chart-main)",
+  wash: "var(--app-chart-main-fill)",
+  ink: "var(--app-chart-ink)",
+  ink2: "var(--app-muted)",
+  axis: "var(--app-chart-axis)",
+  grid: "var(--app-chart-grid)",
+  baseline: "var(--app-chart-gray-soft)",
+  surface: "var(--app-card)",
 };
+/** Literal ink for contrast math on light heat cells (cells keep their own colors in dark mode). */
+const INK_HEX = "#0E0E10";
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -66,7 +72,7 @@ export function heatColor(t: number): string {
 }
 /** Ink or white for text inside a heat cell: whichever has more contrast with that exact fill. */
 export function heatText(t: number) {
-  return bestText(heatColor(t), ["#FFFFFF", VIZ.ink]);
+  return bestText(heatColor(t), ["#FFFFFF", INK_HEX]);
 }
 
 const shortDate = new Intl.DateTimeFormat("en", { month: "short", day: "numeric", timeZone: "UTC" });
@@ -517,7 +523,7 @@ export function StatTile({
       <p className="text-sm font-medium text-muted-strong">{label}</p>
       <p className={cn("mt-1 font-semibold tracking-[-0.03em]", hero ? "text-5xl" : "text-3xl")}>{value}</p>
       {delta != null && (
-        <p className={cn("mt-1 text-sm font-semibold", good === null ? "text-muted-strong" : good ? "text-[#006300]" : "text-[#B42318]")}>
+        <p className={cn("mt-1 text-sm font-semibold", good === null ? "text-muted-strong" : good ? "text-app-success-text" : "text-app-failure-text")}>
           <span aria-hidden="true">{Math.abs(delta) < 0.005 ? "→" : delta > 0 ? "↑" : "↓"}</span>{" "}
           {Math.abs(delta) < 0.005 ? "No change" : `${delta > 0 ? "+" : "−"}${Math.abs(delta * 100).toFixed(1)}%`}
           <span className="font-normal text-muted-strong"> vs previous period</span>

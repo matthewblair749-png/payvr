@@ -67,7 +67,7 @@ async function main() {
   await db.user.deleteMany({ where: { email: DEMO_EMAIL } }); // cascades to merchant + everything
 
   const user = await db.user.create({ data: { email: DEMO_EMAIL, name: "Kiln & Co.", emailVerified: new Date() } });
-  const merchant = await db.merchant.create({ data: { userId: user.id, name: "Kiln & Co.", country: "US" } });
+  const merchant = await db.merchant.create({ data: { userId: user.id, name: "Kiln & Co.", country: "US", isSample: true } });
 
   const daysAgo = (d: number) => new Date(Date.now() - d * 86_400_000);
 
