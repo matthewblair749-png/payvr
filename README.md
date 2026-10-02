@@ -16,8 +16,9 @@ npm run db:seed                 # demo merchant + checkouts
 npm run dev                     # http://localhost:3000
 ```
 
-The seed also generates about 90 days of realistic checkout history for the demo merchant: roughly 43k events,
-3.5k orders and 1.4k survey answers. It is deterministic, so every run produces the same data.
+The seed also generates about 180 days of realistic checkout history for the demo shop (Kiln & Co.),
+roughly 6.4k orders with matching checkout events and survey answers, ending today. It is deterministic, so
+every run tells the same story: a launch spike, mobile drop-off at shipping, and a winning price test.
 
 **Sign in:** go to `/studio` and enter `demo@lumen.test` (the seeded merchant), or any email address.
 Without `EMAIL_SERVER` set, the magic link appears on the "Check your inbox" screen and in the
