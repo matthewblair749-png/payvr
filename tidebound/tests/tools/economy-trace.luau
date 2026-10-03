@@ -1,0 +1,16 @@
+local Loader = require("../harness/Loader")
+Loader.alias("src/Shared/Config", "shared/config")
+local Shared = Loader.root("src/Shared")
+local cfg = Loader.require(Shared.ConfigLoader).defaults()
+local PlayerSim = Loader.require(Shared.Sim.PlayerSim)
+local Time = Loader.require(Shared.Util.Time)
+local START = Time.parseUtc("2026-10-05T12:00:00Z")
+local p = PlayerSim.new(cfg, 1, START, 1)
+PlayerSim.tutorial(p)
+local after = p.earned
+PlayerSim.playDay(p, START + 480)
+local s = p.save.stats
+print("earned", p.earned, "tutorial", after, "fish", s.fishCaught, "crops", s.cropHarvested, "forage", s.forage, "silverFromSales", s.silverFromSales)
+print("silver", p.save.currencies.silver, "materials", p.save.materials.driftwood, p.save.materials.shells, p.save.materials.ironScrap, "level", p.save.progress.level)
+local W = Loader.require(Shared.Rules.Drifters)
+print("worker/min", W.workerIncomePerMinute(cfg, p.save))

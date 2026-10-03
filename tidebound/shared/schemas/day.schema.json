@@ -1,0 +1,382 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tidebound.game/schemas/day.schema.json",
+  "title": "Tidebound day config",
+  "type": "object",
+  "properties": {
+    "fishing": {
+      "type": "object",
+      "properties": {
+        "minigameSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "perfectHalfWidthSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "perfectXpMultiplier": {
+          "type": "number",
+          "minimum": 1
+        },
+        "latencyToleranceSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "abandonAfterSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "rarityWeights": {
+          "type": "object",
+          "properties": {
+            "common": {
+              "type": "number",
+              "minimum": 0
+            },
+            "uncommon": {
+              "type": "number",
+              "minimum": 0
+            },
+            "rare": {
+              "type": "number",
+              "minimum": 0
+            },
+            "epic": {
+              "type": "number",
+              "minimum": 0
+            },
+            "legendary": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "common",
+            "uncommon",
+            "rare",
+            "epic",
+            "legendary"
+          ],
+          "additionalProperties": false
+        },
+        "rods": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "tier": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 4
+              },
+              "minWaitSeconds": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "maxWaitSeconds": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "zoneHalfWidthSeconds": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "priceSilver": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "levelRequired": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "id",
+              "tier",
+              "minWaitSeconds",
+              "maxWaitSeconds",
+              "zoneHalfWidthSeconds",
+              "priceSilver",
+              "levelRequired"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "fish": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "tier": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "rarity": {
+                "enum": [
+                  "common",
+                  "uncommon",
+                  "rare",
+                  "epic",
+                  "legendary"
+                ]
+              },
+              "value": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "id",
+              "tier",
+              "rarity",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 20,
+          "maxItems": 20
+        },
+        "onboardingFish": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "tier": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "rarity": {
+              "enum": [
+                "common",
+                "uncommon",
+                "rare",
+                "epic",
+                "legendary"
+              ]
+            },
+            "value": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "id",
+            "tier",
+            "rarity",
+            "value"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "minigameSeconds",
+        "perfectHalfWidthSeconds",
+        "perfectXpMultiplier",
+        "latencyToleranceSeconds",
+        "abandonAfterSeconds",
+        "rarityWeights",
+        "rods",
+        "fish",
+        "onboardingFish"
+      ],
+      "additionalProperties": false
+    },
+    "farming": {
+      "type": "object",
+      "properties": {
+        "startPlots": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxPlots": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "extraPlotPrices": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "minItems": 0
+        },
+        "extraPlotLevels": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "minItems": 0
+        },
+        "crops": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "growSeconds": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "seedCost": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "sellValue": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "levelRequired": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "id",
+              "growSeconds",
+              "seedCost",
+              "sellValue",
+              "levelRequired"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "startPlots",
+        "maxPlots",
+        "extraPlotPrices",
+        "extraPlotLevels",
+        "crops"
+      ],
+      "additionalProperties": false
+    },
+    "foraging": {
+      "type": "object",
+      "properties": {
+        "respawnSeconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "material": {
+                "enum": [
+                  "driftwood",
+                  "shells",
+                  "ironScrap"
+                ]
+              },
+              "yieldMin": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "yieldMax": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "id",
+              "material",
+              "yieldMin",
+              "yieldMax"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "materialSellValues": {
+          "type": "object",
+          "properties": {
+            "driftwood": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "shells": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "ironScrap": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "driftwood",
+            "shells",
+            "ironScrap"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "respawnSeconds",
+        "nodes",
+        "materialSellValues"
+      ],
+      "additionalProperties": false
+    },
+    "market": {
+      "type": "object",
+      "properties": {
+        "demandSwing": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.5
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "fish",
+              "crops",
+              "materials"
+            ]
+          },
+          "minItems": 1
+        },
+        "sellMaterialsInSellAll": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "demandSwing",
+        "categories",
+        "sellMaterialsInSellAll"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "fishing",
+    "farming",
+    "foraging",
+    "market"
+  ],
+  "additionalProperties": false
+}

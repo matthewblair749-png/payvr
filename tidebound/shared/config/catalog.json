@@ -1,0 +1,670 @@
+{
+  "catalogVersion": 1,
+  "priceTiers": {
+    "tier_0_99": {
+      "usd": 0.99
+    },
+    "tier_1_99": {
+      "usd": 1.99
+    },
+    "tier_2_99": {
+      "usd": 2.99
+    },
+    "tier_3_99": {
+      "usd": 3.99
+    },
+    "tier_4_99": {
+      "usd": 4.99
+    },
+    "tier_7_99": {
+      "usd": 7.99
+    },
+    "tier_9_99": {
+      "usd": 9.99
+    },
+    "tier_19_99": {
+      "usd": 19.99
+    },
+    "tier_49_99": {
+      "usd": 49.99
+    }
+  },
+  "products": [
+    {
+      "id": "gems_handful",
+      "kind": "gems",
+      "type": "consumable",
+      "priceTier": "tier_0_99",
+      "gems": 80,
+      "robloxType": "developerProduct",
+      "robloxId": 0
+    },
+    {
+      "id": "gems_pouch",
+      "kind": "gems",
+      "type": "consumable",
+      "priceTier": "tier_4_99",
+      "gems": 450,
+      "robloxType": "developerProduct",
+      "robloxId": 0
+    },
+    {
+      "id": "gems_chest",
+      "kind": "gems",
+      "type": "consumable",
+      "priceTier": "tier_9_99",
+      "gems": 950,
+      "robloxType": "developerProduct",
+      "robloxId": 0
+    },
+    {
+      "id": "gems_hoard",
+      "kind": "gems",
+      "type": "consumable",
+      "priceTier": "tier_19_99",
+      "gems": 2000,
+      "robloxType": "developerProduct",
+      "robloxId": 0
+    },
+    {
+      "id": "gems_vault",
+      "kind": "gems",
+      "type": "consumable",
+      "priceTier": "tier_49_99",
+      "gems": 5250,
+      "robloxType": "developerProduct",
+      "robloxId": 0
+    },
+    {
+      "id": "starter_pack",
+      "kind": "starterPack",
+      "type": "nonConsumable",
+      "priceTier": "tier_2_99",
+      "grants": {
+        "eggs": 1,
+        "cosmetics": [
+          "skin_starter_sailor",
+          "rodskin_starter_lantern"
+        ]
+      },
+      "robloxType": "gamePass",
+      "robloxId": 0
+    },
+    {
+      "id": "cosmetic_crate",
+      "kind": "crate",
+      "type": "consumable",
+      "priceTier": "tier_1_99",
+      "crateId": "crate_tidecomb",
+      "robloxType": "developerProduct",
+      "robloxId": 0
+    },
+    {
+      "id": "harbor_pass",
+      "kind": "pass",
+      "type": "consumable",
+      "priceTier": "tier_4_99",
+      "robloxType": "developerProduct",
+      "robloxId": 0
+    },
+    {
+      "id": "harbor_club",
+      "kind": "subscription",
+      "type": "subscription",
+      "priceTier": "tier_4_99",
+      "periodDays": 30,
+      "robloxType": "subscription",
+      "robloxId": 0
+    },
+    {
+      "id": "storage_pass",
+      "kind": "storagePass",
+      "type": "nonConsumable",
+      "priceTier": "tier_7_99",
+      "grants": {
+        "storageBonus": 50,
+        "autoCollect": true
+      },
+      "robloxType": "gamePass",
+      "robloxId": 0
+    }
+  ],
+  "gemItems": [
+    {
+      "id": "gem_crate",
+      "gems": 160,
+      "kind": "crate",
+      "crateId": "crate_tidecomb"
+    },
+    {
+      "id": "deco_lantern_string",
+      "gems": 120,
+      "kind": "cosmetic",
+      "cosmeticClass": "decoration"
+    },
+    {
+      "id": "deco_kelp_arch",
+      "gems": 180,
+      "kind": "cosmetic",
+      "cosmeticClass": "decoration"
+    },
+    {
+      "id": "deco_shell_fountain",
+      "gems": 250,
+      "kind": "cosmetic",
+      "cosmeticClass": "decoration"
+    },
+    {
+      "id": "deco_coral_gazebo",
+      "gems": 320,
+      "kind": "cosmetic",
+      "cosmeticClass": "decoration"
+    },
+    {
+      "id": "deco_lighthouse_mural",
+      "gems": 400,
+      "kind": "cosmetic",
+      "cosmeticClass": "decoration"
+    },
+    {
+      "id": "skin_pirate_hat",
+      "gems": 250,
+      "kind": "cosmetic",
+      "cosmeticClass": "drifterSkin"
+    },
+    {
+      "id": "skin_raincoat",
+      "gems": 300,
+      "kind": "cosmetic",
+      "cosmeticClass": "drifterSkin"
+    },
+    {
+      "id": "skin_crown_of_shells",
+      "gems": 450,
+      "kind": "cosmetic",
+      "cosmeticClass": "drifterSkin"
+    },
+    {
+      "id": "skin_aurora_cloak",
+      "gems": 600,
+      "kind": "cosmetic",
+      "cosmeticClass": "drifterSkin"
+    },
+    {
+      "id": "rodskin_bamboo",
+      "gems": 200,
+      "kind": "cosmetic",
+      "cosmeticClass": "rodSkin"
+    },
+    {
+      "id": "rodskin_starlight",
+      "gems": 200,
+      "kind": "cosmetic",
+      "cosmeticClass": "rodSkin"
+    },
+    {
+      "id": "storage_pack_20",
+      "gems": 300,
+      "kind": "storage",
+      "storageBonus": 20
+    }
+  ],
+  "crates": [
+    {
+      "id": "crate_tidecomb",
+      "rarityWeights": {
+        "common": 60,
+        "uncommon": 25,
+        "rare": 10.5,
+        "epic": 3.5,
+        "legendary": 1
+      },
+      "pityEpicOrBetterEvery": 30,
+      "duplicateGems": {
+        "common": 10,
+        "uncommon": 20,
+        "rare": 40,
+        "epic": 80,
+        "legendary": 160
+      },
+      "items": [
+        {
+          "id": "emote_wave",
+          "rarity": "common",
+          "cosmeticClass": "emote"
+        },
+        {
+          "id": "emote_splash",
+          "rarity": "common",
+          "cosmeticClass": "emote"
+        },
+        {
+          "id": "deco_buoy",
+          "rarity": "common",
+          "cosmeticClass": "decoration"
+        },
+        {
+          "id": "deco_net_pile",
+          "rarity": "common",
+          "cosmeticClass": "decoration"
+        },
+        {
+          "id": "skin_bandana",
+          "rarity": "common",
+          "cosmeticClass": "drifterSkin"
+        },
+        {
+          "id": "rodskin_painted",
+          "rarity": "common",
+          "cosmeticClass": "rodSkin"
+        },
+        {
+          "id": "emote_dance",
+          "rarity": "uncommon",
+          "cosmeticClass": "emote"
+        },
+        {
+          "id": "deco_lantern_post",
+          "rarity": "uncommon",
+          "cosmeticClass": "decoration"
+        },
+        {
+          "id": "skin_sailor_cap",
+          "rarity": "uncommon",
+          "cosmeticClass": "drifterSkin"
+        },
+        {
+          "id": "rodskin_coral",
+          "rarity": "uncommon",
+          "cosmeticClass": "rodSkin"
+        },
+        {
+          "id": "deco_anchor_statue",
+          "rarity": "rare",
+          "cosmeticClass": "decoration"
+        },
+        {
+          "id": "skin_bubble_helm",
+          "rarity": "rare",
+          "cosmeticClass": "drifterSkin"
+        },
+        {
+          "id": "rodskin_glow",
+          "rarity": "rare",
+          "cosmeticClass": "rodSkin"
+        },
+        {
+          "id": "skin_tidecaller_robe",
+          "rarity": "epic",
+          "cosmeticClass": "drifterSkin"
+        },
+        {
+          "id": "deco_pearl_arch",
+          "rarity": "epic",
+          "cosmeticClass": "decoration"
+        },
+        {
+          "id": "skin_leviathan_costume",
+          "rarity": "legendary",
+          "cosmeticClass": "drifterSkin"
+        },
+        {
+          "id": "deco_golden_topper",
+          "rarity": "legendary",
+          "cosmeticClass": "decoration"
+        }
+      ]
+    }
+  ],
+  "harborPass": {
+    "blockDays": 28,
+    "anchorUtcDate": "2026-01-05",
+    "tiers": 30,
+    "xpPerTier": 100,
+    "freeTrack": [
+      {
+        "tier": 1,
+        "silver": 50
+      },
+      {
+        "tier": 2,
+        "materials": {
+          "driftwood": 20,
+          "shells": 20
+        }
+      },
+      {
+        "tier": 3,
+        "silver": 60
+      },
+      {
+        "tier": 4,
+        "materials": {
+          "ironScrap": 15
+        }
+      },
+      {
+        "tier": 5,
+        "silver": 80
+      },
+      {
+        "tier": 6,
+        "materials": {
+          "driftwood": 30
+        }
+      },
+      {
+        "tier": 7,
+        "silver": 90
+      },
+      {
+        "tier": 8,
+        "materials": {
+          "shells": 30
+        }
+      },
+      {
+        "tier": 9,
+        "silver": 100
+      },
+      {
+        "tier": 10,
+        "cosmetics": [
+          "emote_cheer"
+        ]
+      },
+      {
+        "tier": 11,
+        "silver": 110
+      },
+      {
+        "tier": 12,
+        "materials": {
+          "ironScrap": 20
+        }
+      },
+      {
+        "tier": 13,
+        "silver": 120
+      },
+      {
+        "tier": 14,
+        "materials": {
+          "driftwood": 40
+        }
+      },
+      {
+        "tier": 15,
+        "pearls": 2
+      },
+      {
+        "tier": 16,
+        "silver": 130
+      },
+      {
+        "tier": 17,
+        "materials": {
+          "shells": 40
+        }
+      },
+      {
+        "tier": 18,
+        "silver": 140
+      },
+      {
+        "tier": 19,
+        "materials": {
+          "ironScrap": 25
+        }
+      },
+      {
+        "tier": 20,
+        "cosmetics": [
+          "deco_pass_flagpole"
+        ]
+      },
+      {
+        "tier": 21,
+        "silver": 150
+      },
+      {
+        "tier": 22,
+        "materials": {
+          "driftwood": 50
+        }
+      },
+      {
+        "tier": 23,
+        "silver": 160
+      },
+      {
+        "tier": 24,
+        "materials": {
+          "shells": 50
+        }
+      },
+      {
+        "tier": 25,
+        "pearls": 3
+      },
+      {
+        "tier": 26,
+        "silver": 170
+      },
+      {
+        "tier": 27,
+        "materials": {
+          "ironScrap": 30
+        }
+      },
+      {
+        "tier": 28,
+        "silver": 180
+      },
+      {
+        "tier": 29,
+        "eggs": 1
+      },
+      {
+        "tier": 30,
+        "cosmetics": [
+          "skin_pass_explorer"
+        ]
+      }
+    ],
+    "paidTrack": [
+      {
+        "tier": 1,
+        "cosmetics": [
+          "emote_salute"
+        ]
+      },
+      {
+        "tier": 3,
+        "gems": 30
+      },
+      {
+        "tier": 5,
+        "cosmetics": [
+          "skin_pass_lifejacket"
+        ]
+      },
+      {
+        "tier": 8,
+        "gems": 30
+      },
+      {
+        "tier": 10,
+        "cosmetics": [
+          "deco_pass_bell"
+        ]
+      },
+      {
+        "tier": 13,
+        "gems": 30
+      },
+      {
+        "tier": 15,
+        "cosmetics": [
+          "rodskin_pass_brass"
+        ]
+      },
+      {
+        "tier": 18,
+        "gems": 30
+      },
+      {
+        "tier": 20,
+        "cosmetics": [
+          "skin_pass_captain"
+        ]
+      },
+      {
+        "tier": 23,
+        "gems": 30
+      },
+      {
+        "tier": 25,
+        "cosmetics": [
+          "deco_pass_ship_in_bottle"
+        ]
+      },
+      {
+        "tier": 28,
+        "gems": 30
+      },
+      {
+        "tier": 30,
+        "gems": 120,
+        "cosmetics": [
+          "skin_pass_admiral"
+        ]
+      }
+    ]
+  },
+  "harborClub": {
+    "dailyGems": 30,
+    "storageBonus": 100,
+    "autoCollect": true,
+    "monthlyCosmetics": [
+      "skin_club_scarf",
+      "deco_club_bench",
+      "rodskin_club_silver",
+      "skin_club_beret",
+      "deco_club_banner",
+      "emote_club_bow"
+    ]
+  },
+  "experiments": [
+    {
+      "id": "exp_starter_price",
+      "enabled": false,
+      "productId": "starter_pack",
+      "variants": [
+        {
+          "id": "control",
+          "weight": 50
+        },
+        {
+          "id": "price_3_99",
+          "weight": 50,
+          "priceTier": "tier_3_99",
+          "robloxId": 0
+        }
+      ]
+    },
+    {
+      "id": "exp_pouch_size",
+      "enabled": false,
+      "productId": "gems_pouch",
+      "variants": [
+        {
+          "id": "control",
+          "weight": 50
+        },
+        {
+          "id": "gems_500",
+          "weight": 50,
+          "gems": 500,
+          "robloxId": 0
+        }
+      ]
+    },
+    {
+      "id": "exp_gem_crate_price",
+      "enabled": false,
+      "gemItemId": "gem_crate",
+      "variants": [
+        {
+          "id": "control",
+          "weight": 50
+        },
+        {
+          "id": "gems_150",
+          "weight": 50,
+          "gems": 150
+        }
+      ]
+    }
+  ],
+  "spendControls": {
+    "limitOptionsRobux": [
+      0,
+      500,
+      1000,
+      2000,
+      5000,
+      10000
+    ],
+    "defaultLimitRobux": null
+  },
+  "rewardedAds": {
+    "enabled": false,
+    "placement": "double_market_sale",
+    "perDay": 1
+  },
+  "platformFees": {
+    "ios": {
+      "commissionRate": 0.15,
+      "smallBusinessProgram": true
+    },
+    "googlePlay": {
+      "rateUnderThreshold": 0.15,
+      "thresholdUsdPerYear": 1000000,
+      "rateOverThreshold": 0.3,
+      "subscriptionRate": 0.15
+    },
+    "platformMix": {
+      "ios": 0.5,
+      "googlePlay": 0.5
+    }
+  },
+  "roblox": {
+    "usdPerRobux": 0.01,
+    "platformFee": 0.3,
+    "devExUsdPerRobux": 0.0038,
+    "subscriptionKeepRate": 0.266,
+    "companionBackendMonthlyUsd": 0,
+    "marketingMonthlyUsd": 0
+  },
+  "planning": {
+    "dailyPlayers": 10000,
+    "marketingMonthlyUsd": 1000,
+    "premiumPayoutsPerDailyPlayerMonthlyUsd": 0,
+    "buyRates": {
+      "starter_pack": 0.01,
+      "cosmetic_crate": 0.012,
+      "harbor_pass": 0.008,
+      "harbor_club": 0.005,
+      "storage_pass": 0.004,
+      "gems_handful": 0,
+      "gems_pouch": 0,
+      "gems_chest": 0,
+      "gems_hoard": 0,
+      "gems_vault": 0
+    }
+  },
+  "standalone": {
+    "backendCostMonthlyUsd": 400
+  }
+}

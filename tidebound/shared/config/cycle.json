@@ -1,0 +1,14 @@
+{
+  "daySeconds": 360,
+  "duskSeconds": 15,
+  "nightSeconds": 300,
+  "dawnSeconds": 15,
+  "cycleEpochUtc": "2026-01-05T00:00:00Z",
+  "firstDaySeconds": 360,
+  "nightJoinLateSeconds": 60,
+  "offlineCapHours": 8,
+  "failedNightRewardMultiplier": 0.25,
+  "streakBonusPerNight": 0.05,
+  "streakBonusCap": 0.30,
+  "roleSwitchesPerCycle": 1
+}

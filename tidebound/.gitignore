@@ -1,0 +1,8 @@
+node_modules/
+*.rbxl
+*.rbxlx
+*.rbxl.lock
+sourcemap.json
+/build/
+backend/dist/
+model/~$*

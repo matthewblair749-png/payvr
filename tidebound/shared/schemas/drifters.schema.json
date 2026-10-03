@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tidebound.game/schemas/drifters.schema.json",
+  "title": "Tidebound drifters config",
+  "type": "object",
+  "properties": {
+    "elements": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "tide",
+          "ember",
+          "moss",
+          "frost"
+        ]
+      },
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "elementBeats": {
+      "type": "object",
+      "properties": {
+        "tide": {
+          "enum": [
+            "tide",
+            "ember",
+            "moss",
+            "frost"
+          ]
+        },
+        "ember": {
+          "enum": [
+            "tide",
+            "ember",
+            "moss",
+            "frost"
+          ]
+        },
+        "moss": {
+          "enum": [
+            "tide",
+            "ember",
+            "moss",
+            "frost"
+          ]
+        },
+        "frost": {
+          "enum": [
+            "tide",
+            "ember",
+            "moss",
+            "frost"
+          ]
+        }
+      },
+      "required": [
+        "tide",
+        "ember",
+        "moss",
+        "frost"
+      ],
+      "additionalProperties": false
+    },
+    "advantageMultiplier": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "disadvantageMultiplier": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "rarities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "enum": [
+              "common",
+              "uncommon",
+              "rare",
+              "epic",
+              "legendary"
+            ]
+          },
+          "hatchWeight": {
+            "type": "number",
+            "minimum": 0
+          },
+          "statMultiplier": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "shape": {
+            "type": "string",
+            "minLength": 1
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          }
+        },
+        "required": [
+          "id",
+          "hatchWeight",
+          "statMultiplier",
+          "shape",
+          "color"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 5,
+      "maxItems": 5
+    },
+    "pity": {
+      "type": "object",
+      "properties": {
+        "epicOrBetterEvery": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "legendaryEvery": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "epicOrBetterEvery",
+        "legendaryEvery"
+      ],
+      "additionalProperties": false
+    },
+    "maxActiveSlots": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "storageMax": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "species": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "element": {
+            "enum": [
+              "tide",
+              "ember",
+              "moss",
+              "frost"
+            ]
+          },
+          "rarity": {
+            "enum": [
+              "common",
+              "uncommon",
+              "rare",
+              "epic",
+              "legendary"
+            ]
+          },
+          "power": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "speed": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "income": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        },
+        "required": [
+          "id",
+          "element",
+          "rarity",
+          "power",
+          "speed",
+          "income"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 20
+    },
+    "onboardingSpeciesId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "traits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "incomePct": {
+            "type": "number"
+          },
+          "powerPct": {
+            "type": "number"
+          },
+          "speedPct": {
+            "type": "number"
+          },
+          "happinessDecayPct": {
+            "type": "number"
+          },
+          "repairPct": {
+            "type": "number"
+          },
+          "xpPct": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 12
+    }
+  },
+  "required": [
+    "elements",
+    "elementBeats",
+    "advantageMultiplier",
+    "disadvantageMultiplier",
+    "rarities",
+    "pity",
+    "maxActiveSlots",
+    "storageMax",
+    "species",
+    "onboardingSpeciesId",
+    "traits"
+  ],
+  "additionalProperties": false
+}

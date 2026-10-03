@@ -1,0 +1,5 @@
+std = "roblox"
+exclude = ["tests/harness/*"]
+
+[lints]
+shadowing = "allow"

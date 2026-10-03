@@ -1,0 +1,12 @@
+{
+  "quickPhrases": [
+    "qp_hello", "qp_thanks", "qp_good_job", "qp_help_lighthouse", "qp_help_seawall", "qp_help_dock",
+    "qp_repairing", "qp_on_my_way", "qp_boss_weak_point", "qp_ready", "qp_wait", "qp_nice_catch",
+    "qp_lets_go", "qp_well_played", "qp_goodnight", "qp_follow_me"
+  ],
+  "emotes": ["emote_hi", "emote_heart", "emote_thumbs_up", "emote_sleepy", "emote_laugh", "emote_clap"],
+  "reportReasons": ["report_unkind_name", "report_cheating", "report_griefing", "report_other"],
+  "disableFreeTextChat": true,
+  "respectPaidRandomItemsPolicy": true,
+  "rateLimits": { "intentsPerSecond": 8, "intentBurst": 16, "purchasePromptsPerMinute": 6, "violationsBeforeKick": 50 }
+}

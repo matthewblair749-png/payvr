@@ -1,0 +1,301 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tidebound.game/schemas/harbor.schema.json",
+  "title": "Tidebound harbor config",
+  "type": "object",
+  "properties": {
+    "buildings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "enum": [
+              "lighthouse",
+              "market",
+              "docks",
+              "seawall",
+              "workshop"
+            ]
+          },
+          "perk": {
+            "type": "string",
+            "minLength": 1
+          },
+          "perPerTier": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "perk",
+          "perPerTier"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 5,
+      "maxItems": 5
+    },
+    "maxTier": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "tierCosts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "toTier": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "driftwood": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "shells": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "ironScrap": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "toTier",
+          "driftwood",
+          "shells",
+          "ironScrap"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0
+    },
+    "maxContributionPerRequest": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "seasons": {
+      "type": "object",
+      "properties": {
+        "anchorUtcDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "lengthDays": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "list": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "modifiers": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "number"
+                }
+              }
+            },
+            "required": [
+              "id",
+              "modifiers"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "anchorUtcDate",
+        "lengthDays",
+        "list"
+      ],
+      "additionalProperties": false
+    },
+    "quests": {
+      "type": "object",
+      "properties": {
+        "dailyCount": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "pool": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "type": {
+                "type": "string",
+                "minLength": 1
+              },
+              "target": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "silver": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "passXp": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "pearls": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "id",
+              "type",
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "weekly": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "type": {
+              "type": "string",
+              "minLength": 1
+            },
+            "target": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "silver": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "passXp": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "pearls": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "id",
+            "type",
+            "target"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "dailyCount",
+        "pool",
+        "weekly"
+      ],
+      "additionalProperties": false
+    },
+    "loginStreak": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "silver": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "pearls": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "day"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "notifications": {
+      "type": "object",
+      "properties": {
+        "maxPerDay": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "quietStartHour": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 23
+        },
+        "quietEndHour": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 23
+        },
+        "types": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "enum": [
+                  "crops_ready",
+                  "worker_income_full",
+                  "night_starting",
+                  "season_changed"
+                ]
+              },
+              "priority": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": [
+              "id",
+              "priority"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 4,
+          "maxItems": 4
+        }
+      },
+      "required": [
+        "maxPerDay",
+        "quietStartHour",
+        "quietEndHour",
+        "types"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "buildings",
+    "maxTier",
+    "tierCosts",
+    "maxContributionPerRequest",
+    "seasons",
+    "quests",
+    "loginStreak",
+    "notifications"
+  ],
+  "additionalProperties": false
+}

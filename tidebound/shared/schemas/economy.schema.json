@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tidebound.game/schemas/economy.schema.json",
+  "title": "Tidebound economy config",
+  "type": "object",
+  "properties": {
+    "startingSilver": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "eggPriceSilver": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "playerLevel": {
+      "type": "object",
+      "properties": {
+        "maxLevel": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "xpBase": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "xpLinear": {
+          "type": "number",
+          "minimum": 0
+        },
+        "xpExponent": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "maxLevel",
+        "xpBase",
+        "xpLinear",
+        "xpExponent"
+      ],
+      "additionalProperties": false
+    },
+    "xpRewards": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "activeSlotUnlocks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "level": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "slots": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "level",
+          "slots"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "storage": {
+      "type": "object",
+      "properties": {
+        "base": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cap": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "upgradeAmount": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "upgradePricesSilver": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "minItems": 0
+        }
+      },
+      "required": [
+        "base",
+        "cap",
+        "upgradeAmount",
+        "upgradePricesSilver"
+      ],
+      "additionalProperties": false
+    },
+    "happiness": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "decayPerHour": {
+          "type": "number",
+          "minimum": 0
+        },
+        "feedGain": {
+          "type": "number",
+          "minimum": 0
+        },
+        "outputMinMultiplier": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "outputMaxMultiplier": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "start",
+        "decayPerHour",
+        "feedGain",
+        "outputMinMultiplier",
+        "outputMaxMultiplier"
+      ],
+      "additionalProperties": false
+    },
+    "drifterLevel": {
+      "type": "object",
+      "properties": {
+        "maxLevel": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "xpBase": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "xpExponent": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "statGrowthPerLevel": {
+          "type": "number",
+          "minimum": 0
+        },
+        "feedXpPerSilverValue": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "maxLevel",
+        "xpBase",
+        "xpExponent",
+        "statGrowthPerLevel",
+        "feedXpPerSilverValue"
+      ],
+      "additionalProperties": false
+    },
+    "worker": {
+      "type": "object",
+      "properties": {
+        "silverPerIncomePointPerMinute": {
+          "type": "number",
+          "minimum": 0
+        },
+        "pendingCapHours": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "silverPerIncomePointPerMinute",
+        "pendingCapHours"
+      ],
+      "additionalProperties": false
+    },
+    "catchUp": {
+      "type": "object",
+      "properties": {
+        "underTotalHours": {
+          "type": "number",
+          "minimum": 0
+        },
+        "nightPowerBonus": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "underTotalHours",
+        "nightPowerBonus"
+      ],
+      "additionalProperties": false
+    },
+    "milestonePearls": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "level": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "pearls": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "level",
+          "pearls"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0
+    }
+  },
+  "required": [
+    "startingSilver",
+    "eggPriceSilver",
+    "playerLevel",
+    "xpRewards",
+    "activeSlotUnlocks",
+    "storage",
+    "happiness",
+    "drifterLevel",
+    "worker",
+    "catchUp",
+    "milestonePearls"
+  ],
+  "additionalProperties": false
+}

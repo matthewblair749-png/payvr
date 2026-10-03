@@ -1,0 +1,299 @@
+{
+  "fishing": {
+    "minigameSeconds": 1.2,
+    "perfectHalfWidthSeconds": 0.08,
+    "perfectXpMultiplier": 2,
+    "latencyToleranceSeconds": 1.5,
+    "abandonAfterSeconds": 30,
+    "rarityWeights": {
+      "common": 55,
+      "uncommon": 27,
+      "rare": 12,
+      "epic": 5,
+      "legendary": 1
+    },
+    "rods": [
+      {
+        "id": "rod_driftwood",
+        "tier": 1,
+        "minWaitSeconds": 6,
+        "maxWaitSeconds": 8,
+        "zoneHalfWidthSeconds": 0.25,
+        "priceSilver": 0,
+        "levelRequired": 1
+      },
+      {
+        "id": "rod_reed",
+        "tier": 2,
+        "minWaitSeconds": 5,
+        "maxWaitSeconds": 7,
+        "zoneHalfWidthSeconds": 0.28,
+        "priceSilver": 600,
+        "levelRequired": 3
+      },
+      {
+        "id": "rod_bronze",
+        "tier": 3,
+        "minWaitSeconds": 4,
+        "maxWaitSeconds": 6,
+        "zoneHalfWidthSeconds": 0.31,
+        "priceSilver": 2400,
+        "levelRequired": 10
+      },
+      {
+        "id": "rod_tidesteel",
+        "tier": 4,
+        "minWaitSeconds": 3,
+        "maxWaitSeconds": 5,
+        "zoneHalfWidthSeconds": 0.34,
+        "priceSilver": 7000,
+        "levelRequired": 20
+      }
+    ],
+    "fish": [
+      {
+        "id": "fish_minnowkin",
+        "tier": 1,
+        "rarity": "common",
+        "value": 2
+      },
+      {
+        "id": "fish_sand_dab",
+        "tier": 1,
+        "rarity": "uncommon",
+        "value": 3
+      },
+      {
+        "id": "fish_speckled_perch",
+        "tier": 1,
+        "rarity": "rare",
+        "value": 6
+      },
+      {
+        "id": "fish_moon_guppy",
+        "tier": 1,
+        "rarity": "epic",
+        "value": 14
+      },
+      {
+        "id": "fish_starlight_koi",
+        "tier": 1,
+        "rarity": "legendary",
+        "value": 40
+      },
+      {
+        "id": "fish_reef_darter",
+        "tier": 2,
+        "rarity": "common",
+        "value": 3
+      },
+      {
+        "id": "fish_coral_wrasse",
+        "tier": 2,
+        "rarity": "uncommon",
+        "value": 6
+      },
+      {
+        "id": "fish_blue_tang",
+        "tier": 2,
+        "rarity": "rare",
+        "value": 13
+      },
+      {
+        "id": "fish_lantern_angler",
+        "tier": 2,
+        "rarity": "epic",
+        "value": 29
+      },
+      {
+        "id": "fish_sunscale_marlin",
+        "tier": 2,
+        "rarity": "legendary",
+        "value": 80
+      },
+      {
+        "id": "fish_kelp_puffer",
+        "tier": 3,
+        "rarity": "common",
+        "value": 5
+      },
+      {
+        "id": "fish_mossy_eel",
+        "tier": 3,
+        "rarity": "uncommon",
+        "value": 10
+      },
+      {
+        "id": "fish_striped_bass",
+        "tier": 3,
+        "rarity": "rare",
+        "value": 20
+      },
+      {
+        "id": "fish_ghost_pike",
+        "tier": 3,
+        "rarity": "epic",
+        "value": 45
+      },
+      {
+        "id": "fish_kelp_king",
+        "tier": 3,
+        "rarity": "legendary",
+        "value": 125
+      },
+      {
+        "id": "fish_trench_smelt",
+        "tier": 4,
+        "rarity": "common",
+        "value": 8
+      },
+      {
+        "id": "fish_iron_grouper",
+        "tier": 4,
+        "rarity": "uncommon",
+        "value": 15
+      },
+      {
+        "id": "fish_abyss_snapper",
+        "tier": 4,
+        "rarity": "rare",
+        "value": 30
+      },
+      {
+        "id": "fish_gloom_ray",
+        "tier": 4,
+        "rarity": "epic",
+        "value": 68
+      },
+      {
+        "id": "fish_leviathan_fry",
+        "tier": 4,
+        "rarity": "legendary",
+        "value": 190
+      }
+    ],
+    "onboardingFish": {
+      "id": "fish_golden_snapper",
+      "tier": 1,
+      "rarity": "rare",
+      "value": 100
+    }
+  },
+  "farming": {
+    "startPlots": 6,
+    "maxPlots": 18,
+    "extraPlotPrices": [
+      150,
+      220,
+      300,
+      400,
+      520,
+      650,
+      800,
+      1000,
+      1250,
+      1500,
+      1800,
+      2200
+    ],
+    "extraPlotLevels": [
+      2,
+      3,
+      4,
+      5,
+      7,
+      9,
+      11,
+      14,
+      17,
+      20,
+      24,
+      28
+    ],
+    "crops": [
+      {
+        "id": "crop_sea_lettuce",
+        "growSeconds": 60,
+        "seedCost": 2,
+        "sellValue": 5,
+        "levelRequired": 1
+      },
+      {
+        "id": "crop_kelp_bean",
+        "growSeconds": 120,
+        "seedCost": 4,
+        "sellValue": 13,
+        "levelRequired": 2
+      },
+      {
+        "id": "crop_glow_berry",
+        "growSeconds": 180,
+        "seedCost": 6,
+        "sellValue": 21,
+        "levelRequired": 5
+      },
+      {
+        "id": "crop_tide_pumpkin",
+        "growSeconds": 240,
+        "seedCost": 9,
+        "sellValue": 30,
+        "levelRequired": 8
+      }
+    ]
+  },
+  "foraging": {
+    "respawnSeconds": 90,
+    "nodes": [
+      {
+        "id": "node_driftwood_a",
+        "material": "driftwood",
+        "yieldMin": 2,
+        "yieldMax": 4
+      },
+      {
+        "id": "node_driftwood_b",
+        "material": "driftwood",
+        "yieldMin": 2,
+        "yieldMax": 4
+      },
+      {
+        "id": "node_shells_a",
+        "material": "shells",
+        "yieldMin": 2,
+        "yieldMax": 4
+      },
+      {
+        "id": "node_shells_b",
+        "material": "shells",
+        "yieldMin": 2,
+        "yieldMax": 4
+      },
+      {
+        "id": "node_iron_a",
+        "material": "ironScrap",
+        "yieldMin": 1,
+        "yieldMax": 3
+      },
+      {
+        "id": "node_iron_b",
+        "material": "ironScrap",
+        "yieldMin": 1,
+        "yieldMax": 3
+      }
+    ],
+    "materialSellValues": {
+      "driftwood": 2,
+      "shells": 2,
+      "ironScrap": 3
+    }
+  },
+  "market": {
+    "demandSwing": 0.1,
+    "categories": [
+      "fish",
+      "crops",
+      "materials"
+    ],
+    "sellMaterialsInSellAll": false
+  }
+}

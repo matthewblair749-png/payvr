@@ -1,0 +1,815 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tidebound.game/schemas/night.schema.json",
+  "title": "Tidebound night config",
+  "type": "object",
+  "properties": {
+    "tickRate": {
+      "type": "integer",
+      "minimum": 5,
+      "maximum": 60
+    },
+    "introSeconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "waveCount": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 12
+    },
+    "waveSeconds": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "breakSeconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "maxSquadSize": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "maxSquadsPerRoom": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4
+    },
+    "enemyCountBase": {
+      "type": "number",
+      "minimum": 0
+    },
+    "enemyCountGrowth": {
+      "type": "number",
+      "minimum": 0
+    },
+    "enemyCountPerSquadMember": {
+      "type": "number",
+      "minimum": 0
+    },
+    "enemyHealthGrowthPerWave": {
+      "type": "number",
+      "minimum": 0
+    },
+    "spawnSpreadSeconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "sector": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "spawnY": {
+          "type": "number"
+        },
+        "seawallY": {
+          "type": "number"
+        },
+        "playerMaxY": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "width",
+        "height",
+        "spawnY",
+        "seawallY",
+        "playerMaxY"
+      ],
+      "additionalProperties": false
+    },
+    "structures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "enum": [
+              "lighthouse",
+              "seawall",
+              "dock"
+            ]
+          },
+          "maxHp": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          },
+          "radius": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "losesNight": {
+            "type": "boolean"
+          },
+          "repairable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "maxHp",
+          "x",
+          "y",
+          "radius",
+          "losesNight",
+          "repairable"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "damageStageThresholds": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "repair": {
+      "type": "object",
+      "properties": {
+        "range": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "intervalSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "hpPerInterval": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "ironScrapPerInterval": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "range",
+        "intervalSeconds",
+        "hpPerInterval",
+        "ironScrapPerInterval"
+      ],
+      "additionalProperties": false
+    },
+    "enemies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "enum": [
+              "crawler",
+              "brute",
+              "spitter"
+            ]
+          },
+          "hp": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "speed": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "damage": {
+            "type": "number",
+            "minimum": 0
+          },
+          "attackInterval": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "range": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "radius": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "firstWave": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "spawnShare": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "targets": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "lighthouse",
+                "seawall",
+                "dock"
+              ]
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "id",
+          "hp",
+          "speed",
+          "damage",
+          "attackInterval",
+          "range",
+          "radius",
+          "firstWave",
+          "spawnShare",
+          "targets"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "player": {
+      "type": "object",
+      "properties": {
+        "moveSpeed": {
+          "type": "number",
+          "minimum": 0
+        },
+        "speedPerSpeedPoint": {
+          "type": "number",
+          "minimum": 0
+        },
+        "basePower": {
+          "type": "number",
+          "minimum": 0
+        },
+        "supportGuardianShare": {
+          "type": "number",
+          "minimum": 0
+        },
+        "attackRange": {
+          "type": "number",
+          "minimum": 0
+        },
+        "attackArcDegrees": {
+          "type": "number",
+          "minimum": 0
+        },
+        "attackCooldown": {
+          "type": "number",
+          "minimum": 0
+        },
+        "chargeSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "chargedRadius": {
+          "type": "number",
+          "minimum": 0
+        },
+        "chargedMultiplier": {
+          "type": "number",
+          "minimum": 0
+        },
+        "abilityCooldown": {
+          "type": "number",
+          "minimum": 0
+        },
+        "stunSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "knockback": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "moveSpeed",
+        "speedPerSpeedPoint",
+        "basePower",
+        "supportGuardianShare",
+        "attackRange",
+        "attackArcDegrees",
+        "attackCooldown",
+        "chargeSeconds",
+        "chargedRadius",
+        "chargedMultiplier",
+        "abilityCooldown",
+        "stunSeconds",
+        "knockback"
+      ],
+      "additionalProperties": false
+    },
+    "abilities": {
+      "type": "object",
+      "properties": {
+        "tide": {
+          "type": "object",
+          "properties": {
+            "radius": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "damageMultiplier": {
+              "type": "number",
+              "minimum": 0
+            },
+            "knockback": {
+              "type": "number",
+              "minimum": 0
+            },
+            "slowPct": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 90
+            },
+            "slowSeconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "healStructure": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "radius",
+            "damageMultiplier",
+            "knockback",
+            "slowPct",
+            "slowSeconds",
+            "healStructure"
+          ],
+          "additionalProperties": false
+        },
+        "ember": {
+          "type": "object",
+          "properties": {
+            "radius": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "damageMultiplier": {
+              "type": "number",
+              "minimum": 0
+            },
+            "knockback": {
+              "type": "number",
+              "minimum": 0
+            },
+            "slowPct": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 90
+            },
+            "slowSeconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "healStructure": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "radius",
+            "damageMultiplier",
+            "knockback",
+            "slowPct",
+            "slowSeconds",
+            "healStructure"
+          ],
+          "additionalProperties": false
+        },
+        "moss": {
+          "type": "object",
+          "properties": {
+            "radius": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "damageMultiplier": {
+              "type": "number",
+              "minimum": 0
+            },
+            "knockback": {
+              "type": "number",
+              "minimum": 0
+            },
+            "slowPct": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 90
+            },
+            "slowSeconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "healStructure": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "radius",
+            "damageMultiplier",
+            "knockback",
+            "slowPct",
+            "slowSeconds",
+            "healStructure"
+          ],
+          "additionalProperties": false
+        },
+        "frost": {
+          "type": "object",
+          "properties": {
+            "radius": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "damageMultiplier": {
+              "type": "number",
+              "minimum": 0
+            },
+            "knockback": {
+              "type": "number",
+              "minimum": 0
+            },
+            "slowPct": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 90
+            },
+            "slowSeconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "healStructure": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "radius",
+            "damageMultiplier",
+            "knockback",
+            "slowPct",
+            "slowSeconds",
+            "healStructure"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "tide",
+        "ember",
+        "moss",
+        "frost"
+      ],
+      "additionalProperties": false
+    },
+    "boss": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "wave": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "baseHp": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "hpPerSquadMember": {
+          "type": "number",
+          "minimum": 0
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "radius": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "phaseThresholds": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "telegraphRadius": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "telegraphWarningSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "telegraphIntervalSeconds": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "telegraphCount": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "telegraphStructureDamage": {
+          "type": "number",
+          "minimum": 0
+        },
+        "shieldDamageTaken": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "weakPointWindowSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "weakPointRetrySeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "weakPointHitRange": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "stunSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "stunnedDamageTaken": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "id",
+        "enabled",
+        "wave",
+        "baseHp",
+        "hpPerSquadMember",
+        "x",
+        "y",
+        "radius",
+        "phaseThresholds",
+        "telegraphRadius",
+        "telegraphWarningSeconds",
+        "telegraphIntervalSeconds",
+        "telegraphCount",
+        "telegraphStructureDamage",
+        "shieldDamageTaken",
+        "weakPointWindowSeconds",
+        "weakPointRetrySeconds",
+        "weakPointHitRange",
+        "stunSeconds",
+        "stunnedDamageTaken"
+      ],
+      "additionalProperties": false
+    },
+    "rewards": {
+      "type": "object",
+      "properties": {
+        "silverPerWave": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "materialsPerWave": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "driftwood",
+              "shells",
+              "ironScrap"
+            ]
+          },
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "passXpPerWave": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bossSilver": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bossPearls": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "contribution": {
+          "type": "object",
+          "properties": {
+            "damagePoint": {
+              "type": "number",
+              "minimum": 0
+            },
+            "repairHpPoint": {
+              "type": "number",
+              "minimum": 0
+            },
+            "weakPointHit": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "damagePoint",
+            "repairHpPoint",
+            "weakPointHit"
+          ],
+          "additionalProperties": false
+        },
+        "contributionWeight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "minShare": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maxShare": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "silverPerWave",
+        "materialsPerWave",
+        "passXpPerWave",
+        "bossSilver",
+        "bossPearls",
+        "contribution",
+        "contributionWeight",
+        "minShare",
+        "maxShare"
+      ],
+      "additionalProperties": false
+    },
+    "onboardingNight": {
+      "type": "object",
+      "properties": {
+        "waveCount": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "boss": {
+          "type": "boolean"
+        },
+        "enemyHealthMultiplier": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "enemyCountMultiplier": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "waveCount",
+        "boss",
+        "enemyHealthMultiplier",
+        "enemyCountMultiplier"
+      ],
+      "additionalProperties": false
+    },
+    "smuggler": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "minOptIns": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "crates": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "timeLimitSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "pickupRange": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "deliverRange": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "inspectChannelSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "inspectRange": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "inspectBreakRange": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "smugglerSuccessSilver": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "catchSilver": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "enabled",
+        "minOptIns",
+        "crates",
+        "timeLimitSeconds",
+        "pickupRange",
+        "deliverRange",
+        "inspectChannelSeconds",
+        "inspectRange",
+        "inspectBreakRange",
+        "smugglerSuccessSilver",
+        "catchSilver"
+      ],
+      "additionalProperties": false
+    },
+    "quickChatPerSecond": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    }
+  },
+  "required": [
+    "tickRate",
+    "introSeconds",
+    "waveCount",
+    "waveSeconds",
+    "breakSeconds",
+    "maxSquadSize",
+    "maxSquadsPerRoom",
+    "enemyCountBase",
+    "enemyCountGrowth",
+    "enemyCountPerSquadMember",
+    "enemyHealthGrowthPerWave",
+    "spawnSpreadSeconds",
+    "sector",
+    "structures",
+    "damageStageThresholds",
+    "repair",
+    "enemies",
+    "player",
+    "abilities",
+    "boss",
+    "rewards",
+    "onboardingNight",
+    "smuggler",
+    "quickChatPerSecond"
+  ],
+  "additionalProperties": false
+}

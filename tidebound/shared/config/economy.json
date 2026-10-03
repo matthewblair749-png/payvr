@@ -1,0 +1,27 @@
+{
+  "startingSilver": 0,
+  "eggPriceSilver": 100,
+  "playerLevel": { "maxLevel": 50, "xpBase": 40, "xpLinear": 30, "xpExponent": 1.35 },
+  "xpRewards": { "fishCaught": 2, "cropHarvested": 2, "forage": 1, "hatch": 10, "waveSurvived": 8, "bossDefeated": 30, "questCompleted": 25 },
+  "activeSlotUnlocks": [
+    { "level": 1, "slots": 3 },
+    { "level": 4, "slots": 4 },
+    { "level": 8, "slots": 5 },
+    { "level": 14, "slots": 6 },
+    { "level": 22, "slots": 7 },
+    { "level": 32, "slots": 8 }
+  ],
+  "storage": { "base": 100, "cap": 200, "upgradeAmount": 20, "upgradePricesSilver": [300, 600, 1000, 1500, 2200] },
+  "happiness": { "start": 70, "decayPerHour": 6, "feedGain": 8, "outputMinMultiplier": 0.8, "outputMaxMultiplier": 1.2 },
+  "drifterLevel": { "maxLevel": 30, "xpBase": 20, "xpExponent": 1.5, "statGrowthPerLevel": 0.06, "feedXpPerSilverValue": 2 },
+  "worker": { "silverPerIncomePointPerMinute": 0.3, "pendingCapHours": 8 },
+  "catchUp": { "underTotalHours": 10, "nightPowerBonus": 0.10 },
+  "milestonePearls": [
+    { "level": 5, "pearls": 5 },
+    { "level": 10, "pearls": 10 },
+    { "level": 20, "pearls": 15 },
+    { "level": 30, "pearls": 20 },
+    { "level": 40, "pearls": 25 },
+    { "level": 50, "pearls": 40 }
+  ]
+}

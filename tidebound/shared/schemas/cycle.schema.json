@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tidebound.game/schemas/cycle.schema.json",
+  "title": "Tidebound cycle config",
+  "type": "object",
+  "properties": {
+    "daySeconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "duskSeconds": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "nightSeconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "dawnSeconds": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "cycleEpochUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "firstDaySeconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "nightJoinLateSeconds": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "offlineCapHours": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 72
+    },
+    "failedNightRewardMultiplier": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "streakBonusPerNight": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "streakBonusCap": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "roleSwitchesPerCycle": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "daySeconds",
+    "duskSeconds",
+    "nightSeconds",
+    "dawnSeconds",
+    "cycleEpochUtc",
+    "firstDaySeconds",
+    "nightJoinLateSeconds",
+    "offlineCapHours",
+    "failedNightRewardMultiplier",
+    "streakBonusPerNight",
+    "streakBonusCap",
+    "roleSwitchesPerCycle"
+  ],
+  "additionalProperties": false
+}

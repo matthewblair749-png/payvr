@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tidebound.game/schemas/compliance.schema.json",
+  "title": "Tidebound compliance config",
+  "type": "object",
+  "properties": {
+    "quickPhrases": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "emotes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "reportReasons": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "disableFreeTextChat": {
+      "const": true
+    },
+    "respectPaidRandomItemsPolicy": {
+      "const": true
+    },
+    "rateLimits": {
+      "type": "object",
+      "properties": {
+        "intentsPerSecond": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "intentBurst": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "purchasePromptsPerMinute": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "violationsBeforeKick": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "intentsPerSecond",
+        "intentBurst",
+        "purchasePromptsPerMinute",
+        "violationsBeforeKick"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "quickPhrases",
+    "emotes",
+    "reportReasons",
+    "disableFreeTextChat",
+    "respectPaidRandomItemsPolicy",
+    "rateLimits"
+  ],
+  "additionalProperties": false
+}

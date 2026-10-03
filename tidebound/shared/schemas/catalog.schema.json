@@ -1,0 +1,757 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tidebound.game/schemas/catalog.schema.json",
+  "title": "Tidebound catalog config",
+  "type": "object",
+  "properties": {
+    "catalogVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "priceTiers": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "usd": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        },
+        "required": [
+          "usd"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "products": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "enum": [
+              "gems",
+              "starterPack",
+              "crate",
+              "pass",
+              "subscription",
+              "storagePass"
+            ]
+          },
+          "type": {
+            "enum": [
+              "consumable",
+              "nonConsumable",
+              "subscription"
+            ]
+          },
+          "robloxType": {
+            "enum": [
+              "developerProduct",
+              "gamePass",
+              "subscription"
+            ]
+          },
+          "robloxId": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "priceTier": {
+            "type": "string",
+            "minLength": 1
+          },
+          "gems": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "crateId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "periodDays": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "grants": {
+            "type": "object",
+            "properties": {
+              "eggs": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "cosmetics": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "minItems": 0
+              },
+              "storageBonus": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "autoCollect": {
+                "type": "boolean"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "type",
+          "robloxType",
+          "robloxId",
+          "priceTier"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "gemItems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "gems": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "kind": {
+            "enum": [
+              "crate",
+              "cosmetic",
+              "storage"
+            ]
+          },
+          "crateId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "cosmeticClass": {
+            "type": "string",
+            "minLength": 1
+          },
+          "storageBonus": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "id",
+          "gems",
+          "kind"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "crates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "rarityWeights": {
+            "type": "object",
+            "properties": {
+              "common": {
+                "type": "number",
+                "minimum": 0
+              },
+              "uncommon": {
+                "type": "number",
+                "minimum": 0
+              },
+              "rare": {
+                "type": "number",
+                "minimum": 0
+              },
+              "epic": {
+                "type": "number",
+                "minimum": 0
+              },
+              "legendary": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "common",
+              "uncommon",
+              "rare",
+              "epic",
+              "legendary"
+            ],
+            "additionalProperties": false
+          },
+          "pityEpicOrBetterEvery": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "duplicateGems": {
+            "type": "object",
+            "properties": {
+              "common": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "uncommon": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "rare": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "epic": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "legendary": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "common",
+              "uncommon",
+              "rare",
+              "epic",
+              "legendary"
+            ],
+            "additionalProperties": false
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "rarity": {
+                  "enum": [
+                    "common",
+                    "uncommon",
+                    "rare",
+                    "epic",
+                    "legendary"
+                  ]
+                },
+                "cosmeticClass": {
+                  "enum": [
+                    "drifterSkin",
+                    "decoration",
+                    "rodSkin",
+                    "emote"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "rarity",
+                "cosmeticClass"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "id",
+          "rarityWeights",
+          "pityEpicOrBetterEvery",
+          "duplicateGems",
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "harborPass": {
+      "type": "object",
+      "properties": {
+        "blockDays": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "anchorUtcDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "tiers": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "xpPerTier": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "freeTrack": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tier": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "silver": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "pearls": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "gems": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "eggs": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "materials": {
+                "type": "object",
+                "propertyNames": {
+                  "enum": [
+                    "driftwood",
+                    "shells",
+                    "ironScrap"
+                  ]
+                },
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "cosmetics": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "minItems": 0
+              }
+            },
+            "required": [
+              "tier"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0
+        },
+        "paidTrack": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tier": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "silver": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "pearls": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "gems": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "eggs": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "materials": {
+                "type": "object",
+                "propertyNames": {
+                  "enum": [
+                    "driftwood",
+                    "shells",
+                    "ironScrap"
+                  ]
+                },
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "cosmetics": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "minItems": 0
+              }
+            },
+            "required": [
+              "tier"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0
+        }
+      },
+      "required": [
+        "blockDays",
+        "anchorUtcDate",
+        "tiers",
+        "xpPerTier",
+        "freeTrack",
+        "paidTrack"
+      ],
+      "additionalProperties": false
+    },
+    "harborClub": {
+      "type": "object",
+      "properties": {
+        "dailyGems": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "storageBonus": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "autoCollect": {
+          "type": "boolean"
+        },
+        "monthlyCosmetics": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "dailyGems",
+        "storageBonus",
+        "autoCollect",
+        "monthlyCosmetics"
+      ],
+      "additionalProperties": false
+    },
+    "experiments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "productId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "gemItemId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "weight": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "robloxId": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "priceTier": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "gems": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "id",
+                "weight"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 2
+          }
+        },
+        "required": [
+          "id",
+          "enabled",
+          "variants"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0
+    },
+    "spendControls": {
+      "type": "object",
+      "properties": {
+        "limitOptionsRobux": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "minItems": 1
+        },
+        "defaultLimitRobux": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "limitOptionsRobux",
+        "defaultLimitRobux"
+      ],
+      "additionalProperties": false
+    },
+    "rewardedAds": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "placement": {
+          "const": "double_market_sale"
+        },
+        "perDay": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "enabled",
+        "placement",
+        "perDay"
+      ],
+      "additionalProperties": false
+    },
+    "platformFees": {
+      "type": "object",
+      "properties": {
+        "ios": {
+          "type": "object",
+          "properties": {
+            "commissionRate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "smallBusinessProgram": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "commissionRate",
+            "smallBusinessProgram"
+          ],
+          "additionalProperties": false
+        },
+        "googlePlay": {
+          "type": "object",
+          "properties": {
+            "rateUnderThreshold": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "thresholdUsdPerYear": {
+              "type": "number",
+              "minimum": 0
+            },
+            "rateOverThreshold": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "subscriptionRate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "rateUnderThreshold",
+            "thresholdUsdPerYear",
+            "rateOverThreshold",
+            "subscriptionRate"
+          ],
+          "additionalProperties": false
+        },
+        "platformMix": {
+          "type": "object",
+          "properties": {
+            "ios": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "googlePlay": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "ios",
+            "googlePlay"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "ios",
+        "googlePlay",
+        "platformMix"
+      ],
+      "additionalProperties": false
+    },
+    "roblox": {
+      "type": "object",
+      "properties": {
+        "usdPerRobux": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "platformFee": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "devExUsdPerRobux": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "subscriptionKeepRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "companionBackendMonthlyUsd": {
+          "type": "number",
+          "minimum": 0
+        },
+        "marketingMonthlyUsd": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "usdPerRobux",
+        "platformFee",
+        "devExUsdPerRobux",
+        "subscriptionKeepRate",
+        "companionBackendMonthlyUsd",
+        "marketingMonthlyUsd"
+      ],
+      "additionalProperties": false
+    },
+    "standalone": {
+      "type": "object",
+      "properties": {
+        "backendCostMonthlyUsd": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "backendCostMonthlyUsd"
+      ],
+      "additionalProperties": false
+    },
+    "planning": {
+      "type": "object",
+      "properties": {
+        "dailyPlayers": {
+          "type": "number",
+          "minimum": 0
+        },
+        "marketingMonthlyUsd": {
+          "type": "number",
+          "minimum": 0
+        },
+        "premiumPayoutsPerDailyPlayerMonthlyUsd": {
+          "type": "number",
+          "minimum": 0
+        },
+        "buyRates": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      },
+      "required": [
+        "dailyPlayers",
+        "marketingMonthlyUsd",
+        "premiumPayoutsPerDailyPlayerMonthlyUsd",
+        "buyRates"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "catalogVersion",
+    "priceTiers",
+    "products",
+    "gemItems",
+    "crates",
+    "harborPass",
+    "harborClub",
+    "experiments",
+    "spendControls",
+    "rewardedAds",
+    "platformFees",
+    "roblox",
+    "standalone",
+    "planning"
+  ],
+  "additionalProperties": false
+}

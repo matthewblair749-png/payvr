@@ -1,0 +1,53 @@
+{
+  "elements": ["tide", "ember", "moss", "frost"],
+  "elementBeats": { "tide": "ember", "ember": "moss", "moss": "frost", "frost": "tide" },
+  "advantageMultiplier": 1.25,
+  "disadvantageMultiplier": 0.8,
+  "rarities": [
+    { "id": "common", "hatchWeight": 60, "statMultiplier": 1.0, "shape": "circle", "color": "#9AA5B1" },
+    { "id": "uncommon", "hatchWeight": 25, "statMultiplier": 1.15, "shape": "square", "color": "#3FA34D" },
+    { "id": "rare", "hatchWeight": 10, "statMultiplier": 1.35, "shape": "triangle", "color": "#2F80ED" },
+    { "id": "epic", "hatchWeight": 4, "statMultiplier": 1.6, "shape": "diamond", "color": "#9B51E0" },
+    { "id": "legendary", "hatchWeight": 1, "statMultiplier": 1.9, "shape": "star", "color": "#F2A900" }
+  ],
+  "pity": { "epicOrBetterEvery": 25, "legendaryEvery": 100 },
+  "maxActiveSlots": 8,
+  "storageMax": 200,
+  "species": [
+    { "id": "drf_puddlefin", "element": "tide", "rarity": "common", "power": 10, "speed": 10, "income": 10 },
+    { "id": "drf_ripplet", "element": "tide", "rarity": "uncommon", "power": 9, "speed": 12, "income": 11 },
+    { "id": "drf_brinehop", "element": "tide", "rarity": "rare", "power": 11, "speed": 11, "income": 9 },
+    { "id": "drf_surgeling", "element": "tide", "rarity": "epic", "power": 12, "speed": 10, "income": 9 },
+    { "id": "drf_maelstrom_koi", "element": "tide", "rarity": "legendary", "power": 11, "speed": 11, "income": 11 },
+    { "id": "drf_cindermite", "element": "ember", "rarity": "common", "power": 12, "speed": 9, "income": 9 },
+    { "id": "drf_ashpaw", "element": "ember", "rarity": "uncommon", "power": 11, "speed": 11, "income": 9 },
+    { "id": "drf_flickerfin", "element": "ember", "rarity": "rare", "power": 10, "speed": 12, "income": 10 },
+    { "id": "drf_magmaw", "element": "ember", "rarity": "epic", "power": 13, "speed": 9, "income": 9 },
+    { "id": "drf_phoenix_eel", "element": "ember", "rarity": "legendary", "power": 12, "speed": 11, "income": 10 },
+    { "id": "drf_sprouty", "element": "moss", "rarity": "common", "power": 8, "speed": 9, "income": 13 },
+    { "id": "drf_lichenpup", "element": "moss", "rarity": "uncommon", "power": 9, "speed": 10, "income": 12 },
+    { "id": "drf_bramblesnail", "element": "moss", "rarity": "rare", "power": 10, "speed": 8, "income": 13 },
+    { "id": "drf_mossback", "element": "moss", "rarity": "epic", "power": 11, "speed": 8, "income": 12 },
+    { "id": "drf_elder_kelpwyrm", "element": "moss", "rarity": "legendary", "power": 10, "speed": 10, "income": 12 },
+    { "id": "drf_chillbub", "element": "frost", "rarity": "common", "power": 10, "speed": 11, "income": 9 },
+    { "id": "drf_rimecrab", "element": "frost", "rarity": "uncommon", "power": 12, "speed": 8, "income": 10 },
+    { "id": "drf_glacipede", "element": "frost", "rarity": "rare", "power": 11, "speed": 12, "income": 8 },
+    { "id": "drf_frostfang", "element": "frost", "rarity": "epic", "power": 13, "speed": 11, "income": 8 },
+    { "id": "drf_aurora_ray", "element": "frost", "rarity": "legendary", "power": 11, "speed": 12, "income": 11 }
+  ],
+  "onboardingSpeciesId": "drf_puddlefin",
+  "traits": [
+    { "id": "trait_diligent", "incomePct": 10 },
+    { "id": "trait_brave", "powerPct": 8 },
+    { "id": "trait_swift", "speedPct": 10 },
+    { "id": "trait_cheerful", "happinessDecayPct": -25 },
+    { "id": "trait_handy", "repairPct": 15 },
+    { "id": "trait_studious", "xpPct": 15 },
+    { "id": "trait_steady", "powerPct": 4, "incomePct": 4 },
+    { "id": "trait_gentle", "happinessDecayPct": -15, "incomePct": 5 },
+    { "id": "trait_bold", "powerPct": 12, "happinessDecayPct": 15 },
+    { "id": "trait_breezy", "speedPct": 6, "incomePct": 4 },
+    { "id": "trait_tidy", "repairPct": 8, "xpPct": 8 },
+    { "id": "trait_dreamy", "xpPct": 10, "happinessDecayPct": -10 }
+  ]
+}
