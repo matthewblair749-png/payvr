@@ -10,6 +10,14 @@ local Test = require("./harness/Test")
 
 Loader.alias("src/Shared/Config", "shared/config")
 
+-- Server integration specs run the real server scripts from a place built by Rojo.
+fs.writeDir("tests/.build")
+local build = process.exec("rojo", { "build", "default.project.json", "-o", "tests/.build/tidebound-dev.rbxl" })
+if not build.ok then
+	print("rojo build failed (is rojo on PATH?):\n" .. build.stderr)
+	process.exit(1)
+end
+
 local filter = process.args[1]
 local specs = fs.readDir("tests/specs")
 table.sort(specs)
@@ -31,3 +39,6 @@ if r.failed > 0 then
 	end
 	process.exit(1)
 end
+
+-- Server scripts leave background loops scheduled; exit explicitly.
+process.exit(0)

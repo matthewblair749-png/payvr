@@ -6,3 +6,4 @@ sourcemap.json
 /build/
 backend/dist/
 model/~$*
+tests/.build/
