@@ -621,7 +621,8 @@
   "rewardedAds": {
     "enabled": false,
     "placement": "double_market_sale",
-    "perDay": 1
+    "perDay": 1,
+    "robloxRewardProductId": 0
   },
   "platformFees": {
     "ios": {

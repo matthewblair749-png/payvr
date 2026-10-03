@@ -65,7 +65,10 @@ function Session.settleNight(cfg: any, save: any, nightId: string, reward: any, 
 	n.played += 1
 	n.streak = reward.streakAfter
 	local events = {}
-	if reward.survived then
+	if reward.partial then
+		-- Left mid-night: keep earned rewards, no streak change, no outcome events.
+		n.played -= 1
+	elseif reward.survived then
 		n.survived += 1
 		Progression.record(cfg, save, "nightSurvived", 1, now)
 		table.insert(events, { name = "night_survived", props = { waves = reward.wavesSurvived, streak = reward.streakAfter, share = reward.share } })
@@ -94,7 +97,7 @@ function Session.settleNight(cfg: any, save: any, nightId: string, reward: any, 
 		table.insert(events, e)
 	end
 	Pass.addXp(cfg, save, reward.passXp, now)
-	if not n.firstCompleted then
+	if not n.firstCompleted and not reward.partial then
 		n.firstCompleted = true
 		local e = Onboarding.complete(save, "first_night", now)
 		if e then

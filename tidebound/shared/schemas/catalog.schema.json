@@ -58,8 +58,16 @@
             ]
           },
           "robloxId": {
-            "type": "integer",
-            "minimum": 0
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "string",
+                "pattern": "^EXP-[0-9]+$"
+              }
+            ]
           },
           "priceTier": {
             "type": "string",
@@ -490,8 +498,16 @@
                   "minimum": 0
                 },
                 "robloxId": {
-                  "type": "integer",
-                  "minimum": 0
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^EXP-[0-9]+$"
+                    }
+                  ]
                 },
                 "priceTier": {
                   "type": "string",
@@ -562,12 +578,17 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 1
+        },
+        "robloxRewardProductId": {
+          "type": "integer",
+          "minimum": 0
         }
       },
       "required": [
         "enabled",
         "placement",
-        "perDay"
+        "perDay",
+        "robloxRewardProductId"
       ],
       "additionalProperties": false
     },

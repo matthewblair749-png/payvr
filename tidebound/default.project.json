@@ -1,0 +1,53 @@
+{
+  "name": "Tidebound-dev",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/Shared",
+        "Config": {
+          "$path": "shared/config"
+        }
+      }
+    },
+    "ServerScriptService": {
+      "Server": {
+        "$path": "src/Server"
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "Client": {
+          "$path": "src/Client"
+        }
+      }
+    },
+    "LocalizationService": {
+      "TideboundStrings": {
+        "$path": "src/Localization/strings.csv"
+      }
+    },
+    "TextChatService": {
+      "$properties": {
+        "CreateDefaultTextChannels": false,
+        "CreateDefaultCommands": false
+      }
+    },
+    "Players": {
+      "$properties": {
+        "CharacterAutoLoads": true
+      }
+    },
+    "Workspace": {
+      "$properties": {
+        "StreamingEnabled": true
+      }
+    },
+    "Lighting": {
+      "$properties": {
+        "Technology": "Voxel",
+        "GlobalShadows": true
+      }
+    }
+  }
+}

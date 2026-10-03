@@ -96,11 +96,11 @@ schemas["harbor"] = obj({
         "types": arr(obj({"id": {"enum": ["crops_ready", "worker_income_full", "night_starting", "season_changed"]}, "priority": int1}), 4, 4)})})
 product = obj({"id": s, "kind": {"enum": ["gems", "starterPack", "crate", "pass", "subscription", "storagePass"]},
     "type": {"enum": ["consumable", "nonConsumable", "subscription"]},
-    "robloxType": {"enum": ["developerProduct", "gamePass", "subscription"]}, "robloxId": int0,
+    "robloxType": {"enum": ["developerProduct", "gamePass", "subscription"]}, "robloxId": {"anyOf": [int0, {"type": "string", "pattern": "^EXP-[0-9]+$"}]},
     "priceTier": s, "gems": int1, "crateId": s, "periodDays": int1,
     "grants": obj({"eggs": int0, "cosmetics": arr(s), "storageBonus": int0, "autoCollect": boolean}, [])},
     ["id", "kind", "type", "robloxType", "robloxId", "priceTier"])
-variant = obj({"id": s, "weight": nn, "robloxId": int0, "priceTier": s, "gems": int1}, ["id", "weight"])
+variant = obj({"id": s, "weight": nn, "robloxId": {"anyOf": [int0, {"type": "string", "pattern": "^EXP-[0-9]+$"}]}, "priceTier": s, "gems": int1}, ["id", "weight"])
 schemas["catalog"] = obj({"catalogVersion": int1,
     "priceTiers": {"type": "object", "additionalProperties": obj({"usd": pos})},
     "products": arr(product, 1),
@@ -113,7 +113,7 @@ schemas["catalog"] = obj({"catalogVersion": int1,
     "harborClub": obj({"dailyGems": int0, "storageBonus": int0, "autoCollect": boolean, "monthlyCosmetics": arr(s, 1)}),
     "experiments": arr(obj({"id": s, "enabled": boolean, "productId": s, "gemItemId": s, "variants": arr(variant, 2)}, ["id", "enabled", "variants"])),
     "spendControls": obj({"limitOptionsRobux": arr(int0, 1), "defaultLimitRobux": {"anyOf": [int0, {"type": "null"}]}}),
-    "rewardedAds": obj({"enabled": boolean, "placement": {"const": "double_market_sale"}, "perDay": {"type": "integer", "minimum": 0, "maximum": 1}}),
+    "rewardedAds": obj({"enabled": boolean, "placement": {"const": "double_market_sale"}, "perDay": {"type": "integer", "minimum": 0, "maximum": 1}, "robloxRewardProductId": int0}),
     "platformFees": obj({"ios": obj({"commissionRate": frac, "smallBusinessProgram": boolean}),
         "googlePlay": obj({"rateUnderThreshold": frac, "thresholdUsdPerYear": nn, "rateOverThreshold": frac, "subscriptionRate": frac}),
         "platformMix": obj({"ios": frac, "googlePlay": frac})}),

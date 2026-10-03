@@ -1,0 +1,520 @@
+Key,Source,Context,Example,en
+block,Block,,,Block
+boss_phase,Phase {phase},,,Phase {phase}
+boss_shielded,Shielded - everyone hit a weak point!,,,Shielded - everyone hit a weak point!
+boss_stunned,Stunned - attack now!,,,Stunned - attack now!
+boss_window,{time}s,,,{time}s
+building_docks,Docks,,,Docks
+building_lighthouse,Lighthouse,,,Lighthouse
+building_market,Market,,,Market
+building_seawall,Seawall,,,Seawall
+building_workshop,Workshop,,,Workshop
+buy_silver,{price} Silver (lvl {level}),,,{price} Silver (lvl {level})
+cancel,Cancel,,,Cancel
+category_crops,Crops,,,Crops
+category_fish,Fish,,,Fish
+category_materials,Materials,,,Materials
+class_decoration,Decorations,,,Decorations
+class_drifterSkin,Drifter skins,,,Drifter skins
+class_emote,Emotes,,,Emotes
+class_rodSkin,Rod skins,,,Rod skins
+club_claim_daily,Claim today's {gems} Gems,,,Claim today's {gems} Gems
+club_claim_monthly,Claim this month's cosmetic,,,Claim this month's cosmetic
+collection_progress,{found} of {total} Drifters found,,,{found} of {total} Drifters found
+collection_unknown,???,,,???
+continue,Continue,,,Continue
+cosmetic_crate,Tidecomb Crate,,,Tidecomb Crate
+cosmetic_crate_body,One random cosmetic. Epic or better guaranteed within {n} crates. No gameplay items.,,,One random cosmetic. Epic or better guaranteed within {n} crates. No gameplay items.
+crate_result,You got {item} ({rarity})!,,,You got {item} ({rarity})!
+crop_glow_berry,Glow Berry,,,Glow Berry
+crop_kelp_bean,Kelp Bean,,,Kelp Bean
+crop_sea_lettuce,Sea Lettuce,,,Sea Lettuce
+crop_tide_pumpkin,Tide Pumpkin,,,Tide Pumpkin
+currency_silver_short,Silver,,,Silver
+deco_anchor_statue,Anchor Statue,,,Anchor Statue
+deco_buoy,Buoy,,,Buoy
+deco_club_banner,Club Banner,,,Club Banner
+deco_club_bench,Club Bench,,,Club Bench
+deco_coral_gazebo,Coral Gazebo,,,Coral Gazebo
+deco_golden_topper,Golden Topper,,,Golden Topper
+deco_kelp_arch,Kelp Arch,,,Kelp Arch
+deco_lantern_post,Lantern Post,,,Lantern Post
+deco_lantern_string,Lantern String,,,Lantern String
+deco_lighthouse_mural,Lighthouse Mural,,,Lighthouse Mural
+deco_net_pile,Net Pile,,,Net Pile
+deco_pass_bell,Pass Bell,,,Pass Bell
+deco_pass_flagpole,Pass Flagpole,,,Pass Flagpole
+deco_pass_ship_in_bottle,Pass Ship In Bottle,,,Pass Ship In Bottle
+deco_pearl_arch,Pearl Arch,,,Pearl Arch
+deco_shell_fountain,Shell Fountain,,,Shell Fountain
+drf_ashpaw,Ashpaw,,,Ashpaw
+drf_aurora_ray,Aurora Ray,,,Aurora Ray
+drf_bramblesnail,Bramblesnail,,,Bramblesnail
+drf_brinehop,Brinehop,,,Brinehop
+drf_chillbub,Chillbub,,,Chillbub
+drf_cindermite,Cindermite,,,Cindermite
+drf_elder_kelpwyrm,Elder Kelpwyrm,,,Elder Kelpwyrm
+drf_flickerfin,Flickerfin,,,Flickerfin
+drf_frostfang,Frostfang,,,Frostfang
+drf_glacipede,Glacipede,,,Glacipede
+drf_lichenpup,Lichenpup,,,Lichenpup
+drf_maelstrom_koi,Maelstrom Koi,,,Maelstrom Koi
+drf_magmaw,Magmaw,,,Magmaw
+drf_mossback,Mossback,,,Mossback
+drf_phoenix_eel,Phoenix Eel,,,Phoenix Eel
+drf_puddlefin,Puddlefin,,,Puddlefin
+drf_rimecrab,Rimecrab,,,Rimecrab
+drf_ripplet,Ripplet,,,Ripplet
+drf_sprouty,Sprouty,,,Sprouty
+drf_surgeling,Surgeling,,,Surgeling
+drifter_active,Active,,,Active
+drifter_feed,Feed,,,Feed
+drifter_level,Lv {level},,,Lv {level}
+drifter_stats,Power {power} - Speed {speed} - Income {income} - Happy {happiness} - {trait},,,Power {power} - Speed {speed} - Income {income} - Happy {happiness} - {trait}
+drifter_stored,Stored,,,Stored
+drifters_book,Book,,,Book
+drifters_buy_egg,Buy and hatch an egg - {price} Silver,,,Buy and hatch an egg - {price} Silver
+drifters_hatch_egg,Hatch an egg ({eggs}),,,Hatch an egg ({eggs})
+drifters_odds,Odds,,,Odds
+drifters_slots,Active {active}/{slots} - Stored {stored}/{capacity},,,Active {active}/{slots} - Stored {stored}/{capacity}
+drifters_storage_upgrade,+{amount} storage for {price} Silver,,,+{amount} storage for {price} Silver
+element_ember,Ember,,,Ember
+element_frost,Frost,,,Frost
+element_moss,Moss,,,Moss
+element_nil,,,,
+element_tide,Tide,,,Tide
+emote_cheer,Cheer,,,Cheer
+emote_clap,Clap,,,Clap
+emote_club_bow,Club Bow,,,Club Bow
+emote_dance,Dance,,,Dance
+emote_heart,Heart,,,Heart
+emote_hi,Hi,,,Hi
+emote_laugh,Laugh,,,Laugh
+emote_salute,Salute,,,Salute
+emote_sleepy,Sleepy,,,Sleepy
+emote_splash,Splash,,,Splash
+emote_thumbs_up,Thumbs Up,,,Thumbs Up
+emote_wave,Wave,,,Wave
+equip,Equip,,,Equip
+equip_toggle,Use / remove,,,Use / remove
+equipped,Equipped,,,Equipped
+err_ads_disabled,That isn't available.,,,That isn't available.
+err_ads_not_allowed,That isn't available.,,,That isn't available.
+err_already_casting,Your line is already out.,,,Your line is already out.
+err_already_claimed,Already claimed.,,,Already claimed.
+err_already_owned,You already own this.,,,You already own this.
+err_already_reversed,Already refunded.,,,Already refunded.
+err_already_used_today,Already used today.,,,Already used today.
+err_bad_args,Something went wrong.,,,Something went wrong.
+err_bad_intent,Something went wrong.,,,Something went wrong.
+err_bad_limit,Pick one of the limits.,,,Pick one of the limits.
+err_bad_materials,Something went wrong.,,,Something went wrong.
+err_bad_plot,Something went wrong.,,,Something went wrong.
+err_bad_role,Something went wrong.,,,Something went wrong.
+err_bad_seq,Something went wrong.,,,Something went wrong.
+err_bad_tap,Something went wrong.,,,Something went wrong.
+err_bad_tier,Something went wrong.,,,Something went wrong.
+err_bad_track,Something went wrong.,,,Something went wrong.
+err_confirmation_failed,The code didn't match.,,,The code didn't match.
+err_gem_debt,Gems from a refunded purchase must be repaid first.,,,Gems from a refunded purchase must be repaid first.
+err_harbor_busy,The harbor is busy. Try again.,,,The harbor is busy. Try again.
+err_level_too_low,Reach a higher level first.,,,Reach a higher level first.
+err_max_plots,All plots unlocked.,,,All plots unlocked.
+err_network,Connection problem. Try again.,,,Connection problem. Try again.
+err_no_cast,Cast first.,,,Cast first.
+err_no_food,Catch a fish or harvest a crop to feed your Drifters.,,,Catch a fish or harvest a crop to feed your Drifters.
+err_no_free_slot,No free active slot.,,,No free active slot.
+err_no_recent_sale,Sell something first.,,,Sell something first.
+err_no_reward,Nothing here.,,,Nothing here.
+err_not_allowed,Not allowed.,,,Not allowed.
+err_not_complete,Not finished yet.,,,Not finished yet.
+err_not_configured,This item isn't on sale yet.,,,This item isn't on sale yet.
+err_not_enough_gems,Not enough Gems.,,,Not enough Gems.
+err_not_enough_materials,Not enough materials.,,,Not enough materials.
+err_not_enough_silver,Not enough Silver.,,,Not enough Silver.
+err_not_loaded,Still loading...,,,Still loading...
+err_not_owned,You don't have that.,,,You don't have that.
+err_not_ready,Not ready yet.,,,Not ready yet.
+err_not_subscribed,For Harbor Club members.,,,For Harbor Club members.
+err_nothing_ready,Nothing is ready.,,,Nothing is ready.
+err_nothing_to_collect,Nothing to collect yet.,,,Nothing to collect yet.
+err_nothing_to_contribute,Choose some materials.,,,Choose some materials.
+err_nothing_to_sell,Nothing to sell.,,,Nothing to sell.
+err_pass_not_owned,Unlock the paid track first.,,,Unlock the paid track first.
+err_plot_busy,Something is growing there.,,,Something is growing there.
+err_plot_empty,Plant something first.,,,Plant something first.
+err_random_items_restricted,Not available in your region.,,,Not available in your region.
+err_record_expired,Purchase record is too old.,,,Purchase record is too old.
+err_role_locked,Roles are locked.,,,Roles are locked.
+err_role_switch_cooldown,You can switch this Drifter's role again next cycle.,,,You can switch this Drifter's role again next cycle.
+err_server_only,Something went wrong.,,,Something went wrong.
+err_silver_debt,Repay refunded Silver first.,,,Repay refunded Silver first.
+err_slow_down,Slow down a little.,,,Slow down a little.
+err_spend_limit,That would go over your monthly limit.,,,That would go over your monthly limit.
+err_storage_full,Drifter storage is full.,,,Drifter storage is full.
+err_storage_maxed,Storage is at the maximum.,,,Storage is at the maximum.
+err_store_locked,The shop opens after your first night.,,,The shop opens after your first night.
+err_tier_locked,Reach that tier first.,,,Reach that tier first.
+err_too_early,Too early.,,,Too early.
+err_too_many_decorations,Too many decorations placed.,,,Too many decorations placed.
+err_too_much_at_once,That's a lot! Give a bit less at once.,,,That's a lot! Give a bit less at once.
+err_unknown_action,Something went wrong.,,,Something went wrong.
+err_unknown_building,Something went wrong.,,,Something went wrong.
+err_unknown_command,Unknown command.,,,Unknown command.
+err_unknown_crop,Something went wrong.,,,Something went wrong.
+err_unknown_intent,Something went wrong.,,,Something went wrong.
+err_unknown_item,Something went wrong.,,,Something went wrong.
+err_unknown_node,Something went wrong.,,,Something went wrong.
+err_unknown_product,Something went wrong.,,,Something went wrong.
+err_unknown_purchase,Purchase not found.,,,Purchase not found.
+err_unknown_quest,Something went wrong.,,,Something went wrong.
+err_unknown_rod,Something went wrong.,,,Something went wrong.
+farm_buy_plot,New plot: {price} Silver (lvl {level}),,,New plot: {price} Silver (lvl {level})
+farm_empty,"Empty
+Tap to plant",,,"Empty
+Tap to plant"
+farm_growing,"{crop}
+{time}",,,"{crop}
+{time}"
+farm_harvest_all,Harvest everything ready,,,Harvest everything ready
+farm_pick_seed,"Pick a seed, then tap an empty plot.",,,"Pick a seed, then tap an empty plot."
+farm_ready,"{crop}
+Ready!",,,"{crop}
+Ready!"
+farm_seed_cost,"{cost} Silver, {time}s",,,"{cost} Silver, {time}s"
+fish_abyss_snapper,Abyss Snapper,,,Abyss Snapper
+fish_blue_tang,Blue Tang,,,Blue Tang
+fish_coral_wrasse,Coral Wrasse,,,Coral Wrasse
+fish_ghost_pike,Ghost Pike,,,Ghost Pike
+fish_gloom_ray,Gloom Ray,,,Gloom Ray
+fish_golden_snapper,Golden Harbor Snapper,,,Golden Harbor Snapper
+fish_iron_grouper,Iron Grouper,,,Iron Grouper
+fish_kelp_king,Kelp King,,,Kelp King
+fish_kelp_puffer,Kelp Puffer,,,Kelp Puffer
+fish_lantern_angler,Lantern Angler,,,Lantern Angler
+fish_leviathan_fry,Leviathan Fry,,,Leviathan Fry
+fish_minnowkin,Minnowkin,,,Minnowkin
+fish_moon_guppy,Moon Guppy,,,Moon Guppy
+fish_mossy_eel,Mossy Eel,,,Mossy Eel
+fish_reef_darter,Reef Darter,,,Reef Darter
+fish_sand_dab,Sand Dab,,,Sand Dab
+fish_speckled_perch,Speckled Perch,,,Speckled Perch
+fish_starlight_koi,Starlight Koi,,,Starlight Koi
+fish_striped_bass,Striped Bass,,,Striped Bass
+fish_sunscale_marlin,Sunscale Marlin,,,Sunscale Marlin
+fish_trench_smelt,Trench Smelt,,,Trench Smelt
+fishing_bite,Bite! Tap in the green zone.,,,Bite! Tap in the green zone.
+fishing_cast,Cast,,,Cast
+fishing_caught,Caught a {fish} ({rarity})!,,,Caught a {fish} ({rarity})!
+fishing_caught_perfect,Perfect! Caught a {fish} ({rarity}) - double XP.,,,Perfect! Caught a {fish} ({rarity}) - double XP.
+fishing_escaped,It got away. Cast again!,,,It got away. Cast again!
+fishing_missed,Missed the zone. Try again!,,,Missed the zone. Try again!
+fishing_ready,Cast when you're ready.,,,Cast when you're ready.
+fishing_reel,Reel!,,,Reel!
+fishing_rod,Rod: {rod} (tier {tier}),,,Rod: {rod} (tier {tier})
+fishing_rods,Rods,,,Rods
+fishing_too_soon,Too soon - the fish swam off.,,,Too soon - the fish swam off.
+fishing_wait,{min}-{max}s bite,,,{min}-{max}s bite
+fishing_waiting,Waiting for a bite...,,,Waiting for a bite...
+forage_gather,Gather,,,Gather
+forage_got,+{amount} {material},,,+{amount} {material}
+gem_crate,Tidecomb Crate,,,Tidecomb Crate
+gems_chest,Chest of Gems ({gems}),,,Chest of Gems ({gems})
+gems_handful,Handful of Gems ({gems}),,,Handful of Gems ({gems})
+gems_hoard,Hoard of Gems ({gems}),,,Hoard of Gems ({gems})
+gems_pouch,Pouch of Gems ({gems}),,,Pouch of Gems ({gems})
+gems_vault,Vault of Gems ({gems}),,,Vault of Gems ({gems})
+guide_cast,"Open Fish, cast, and tap when the marker is in the green zone.",,,"Open Fish, cast, and tap when the marker is in the green zone."
+guide_countdown,"The tide rises in {time}. Explore, farm and fish until then!",,,"The tide rises in {time}. Explore, farm and fish until then!"
+guide_hatch,You have 100 Silver. Hatch your first Drifter egg!,,,You have 100 Silver. Hatch your first Drifter egg!
+guide_role,Pick a job: Workers earn Silver by day; Guardians defend at night. You can switch later.,,,Pick a job: Workers earn Silver by day; Guardians defend at night. You can switch later.
+guide_sell,Nice catch! Sell it at the Market.,,,Nice catch! Sell it at the Market.
+guide_skip,Skip,,,Skip
+guide_start,Let's go,,,Let's go
+guide_welcome,Welcome to Tidebound! Let's catch your first fish.,,,Welcome to Tidebound! Let's catch your first fish.
+harbor_club,Harbor Club,,,Harbor Club
+harbor_club_body,"Monthly: {gems} Gems a day, +{storage} Drifter storage (same cap free players reach), auto-collect, one cosmetic each month. Cancel anytime in Roblox settings.",,,"Monthly: {gems} Gems a day, +{storage} Drifter storage (same cap free players reach), auto-collect, one cosmetic each month. Cancel anytime in Roblox settings."
+harbor_club_member,You're a Harbor Club member,,,You're a Harbor Club member
+harbor_give,Give {amount} {material},,,Give {amount} {material}
+harbor_intro,Everyone in Tidebound builds the harbor together. Every tier helps all players.,,,Everyone in Tidebound builds the harbor together. Every tier helps all players.
+harbor_next,"Next tier needs {driftwood} driftwood, {shells} shells, {iron} iron scrap (shared).",,,"Next tier needs {driftwood} driftwood, {shells} shells, {iron} iron scrap (shared)."
+harbor_pass,Harbor Pass,,,Harbor Pass
+harbor_pass_body,Unlocks the paid track for this 4-week block: cosmetics and Gems. Pass XP is the same for everyone.,,,Unlocks the paid track for this 4-week block: cosmetics and Gems. Pass XP is the same for everyone.
+harbor_thanks,Thanks! The harbor grows.,,,Thanks! The harbor grows.
+harbor_tier,Tier {tier}/{max},,,Tier {tier}/{max}
+hatch_assign,Choose its job,,,Choose its job
+hatch_new_species,New in your Collection Book!,,,New in your Collection Book!
+hatch_pity,Your lucky egg arrived (pity).,,,Your lucky egg arrived (pity).
+hud_drifters,Drifters,,,Drifters
+hud_farm,Farm,,,Farm
+hud_fish,Fish,,,Fish
+hud_harbor,Harbor,,,Harbor
+hud_inventory,Bag,,,Bag
+hud_market,Market,,,Market
+hud_pass,Pass,,,Pass
+hud_quests,Quests,,,Quests
+hud_settings,Settings,,,Settings
+hud_shop,Shop,,,Shop
+inv_cosmetics,Cosmetics,,,Cosmetics
+inv_crops,Crops,,,Crops
+inv_eggs,Eggs: {count},,,Eggs: {count}
+inv_fish,Fish,,,Fish
+inv_materials,Materials,,,Materials
+loading,Loading...,,,Loading...
+market_ad_double,Watch an ad to double that sale (once a day),,,Watch an ad to double that sale (once a day)
+market_collect,Collect Worker Silver,,,Collect Worker Silver
+market_demand_down,{category}: -{pct}% today,,,{category}: -{pct}% today
+market_demand_flat,{category}: normal price,,,{category}: normal price
+market_demand_title,Today's demand,,,Today's demand
+market_demand_up,{category}: +{pct}% today,,,{category}: +{pct}% today
+market_items,{count} items to sell,,,{count} items to sell
+market_sell_all,Sell all,,,Sell all
+market_sold,Sold for {silver} Silver,,,Sold for {silver} Silver
+market_workers,Workers: {rate} Silver/min - {pending} waiting (max {cap}),,,Workers: {rate} Silver/min - {pending} waiting (max {cap})
+material_driftwood,Driftwood,,,Driftwood
+material_ironScrap,Iron scrap,,,Iron scrap
+material_shells,Shells,,,Shells
+night_ability,Ability,,,Ability
+night_attack,Hit,,,Hit
+night_break,Calm water - wave {wave}/{waves} done. {time},,,Calm water - wave {wave}/{waves} done. {time}
+night_charge,Charge,,,Charge
+night_info,Iron scrap: {iron} - Ability: {ability},,,Iron scrap: {iron} - Ability: {ability}
+night_inspect,Inspect,,,Inspect
+night_intro,The tide rises... {time},,,The tide rises... {time}
+night_repair,Repair,,,Repair
+night_squad,Squad,,,Squad
+night_squad_formed,Your squad of {count} is ready. Night falls soon.,,,Your squad of {count} is ready. Night falls soon.
+night_stunned,Washed back!,,,Washed back!
+night_wave,Wave {wave}/{waves} ({element}) - {time},,,Wave {wave}/{waves} ({element}) - {time}
+no_thanks,No thanks,,,No thanks
+notif_crops_ready,Crops ready,,,Crops ready
+notif_night_starting,Night starting,,,Night starting
+notif_season_changed,New season,,,New season
+notif_worker_income_full,Worker income full,,,Worker income full
+odds_base,Each roll,,,Each roll
+odds_by_class,Chance by item type,,,Chance by item type
+odds_by_item,Chance for each item,,,Chance for each item
+odds_crate_pity,Guaranteed Epic or better cosmetic within {n} crates.,,,Guaranteed Epic or better cosmetic within {n} crates.
+odds_crate_title,Crate odds,,,Crate odds
+odds_duplicates,Duplicates turn into Gems.,,,Duplicates turn into Gems.
+odds_explainer,Odds come from the server and match every roll. Overall rates include the pity guarantee.,,,Odds come from the server and match every roll. Overall rates include the pity guarantee.
+odds_hatch_pity,"Guaranteed Epic or better within {epic} hatches, and Legendary within {legendary}.",,,"Guaranteed Epic or better within {epic} hatches, and Legendary within {legendary}."
+odds_hatch_title,Egg odds,,,Egg odds
+odds_overall,Overall (with pity),,,Overall (with pity)
+odds_rarity,Rarity,,,Rarity
+off,Off,,,Off
+on,On,,,On
+owned,Owned,,,Owned
+panel_collection,Collection Book,,,Collection Book
+panel_drifters,Drifters,,,Drifters
+panel_farm,Farm,,,Farm
+panel_fishing,Fishing,,,Fishing
+panel_harbor,Harbor,,,Harbor
+panel_hatch,Hatching,,,Hatching
+panel_inventory,Bag,,,Bag
+panel_market,Market,,,Market
+panel_night_result,Dawn,,,Dawn
+panel_odds,Odds,,,Odds
+panel_pass,Harbor Pass,,,Harbor Pass
+panel_people,Players,,,Players
+panel_privacy,Your data,,,Your data
+panel_quests,Quests,,,Quests
+panel_settings,Settings,,,Settings
+panel_shop,Shop,,,Shop
+panel_spending,Spending,,,Spending
+panel_squad,Your squad,,,Your squad
+panel_welcome,Welcome back,,,Welcome back
+pass_status,Tier {tier}/{tiers} - {xp}/{per} XP - ends in {time},,,Tier {tier}/{tiers} - {xp}/{per} XP - ends in {time}
+pass_tier,Tier {tier},,,Tier {tier}
+pass_unlock_paid,See the paid track in the shop,,,See the paid track in the shop
+people_alone,Nobody else is here right now.,,,Nobody else is here right now.
+perk_fishWaitPct,Bites come {value}% faster,,,Bites come {value}% faster
+perk_lighthouseHpPct,Lighthouse +{value}% health at night,,,Lighthouse +{value}% health at night
+perk_repairPct,Repairs +{value}%,,,Repairs +{value}%
+perk_seawallHpPct,Seawall +{value}% health at night,,,Seawall +{value}% health at night
+perk_sellPricePct,+{value}% market prices,,,+{value}% market prices
+phase_dawn,Dawn - {time},,,Dawn - {time}
+phase_day,Day - {time} left,,,Day - {time} left
+phase_dusk,Dusk - night in {time},,,Dusk - night in {time}
+phase_first_night,First night in {time},,,First night in {time}
+phase_night,Night - {time} left,,,Night - {time} left
+privacy_delete_code,Type {code} to confirm,,,Type {code} to confirm
+privacy_delete_confirm,Delete forever,,,Delete forever
+privacy_delete_placeholder,Code,,,Code
+privacy_delete_warning,This deletes all your Tidebound progress. It cannot be undone.,,,This deletes all your Tidebound progress. It cannot be undone.
+privacy_export_note,Everything Tidebound stores about you:,,,Everything Tidebound stores about you:
+purchase_thanks,Thank you! Your items are ready.,,,Thank you! Your items are ready.
+q_catch_fish,Catch {target} fish,,,Catch {target} fish
+q_contribute,Give {target} materials to the harbor,,,Give {target} materials to the harbor
+q_feed,Feed your Drifters {target} times,,,Feed your Drifters {target} times
+q_forage,Gather {target} times on the shore,,,Gather {target} times on the shore
+q_harvest,Harvest {target} crops,,,Harvest {target} crops
+q_hatch,Hatch an egg,,,Hatch an egg
+q_repair,Repair {target} health at night,,,Repair {target} health at night
+q_sell,Earn {target} Silver at the market,,,Earn {target} Silver at the market
+q_survive_night,Survive a night,,,Survive a night
+qp_boss_weak_point,Hit a weak point!,,,Hit a weak point!
+qp_follow_me,Follow me!,,,Follow me!
+qp_good_job,Good job!,,,Good job!
+qp_goodnight,Good night!,,,Good night!
+qp_hello,Hello!,,,Hello!
+qp_help_dock,Help at the dock!,,,Help at the dock!
+qp_help_lighthouse,Help at the lighthouse!,,,Help at the lighthouse!
+qp_help_seawall,Help at the seawall!,,,Help at the seawall!
+qp_lets_go,Let's go!,,,Let's go!
+qp_nice_catch,Nice catch!,,,Nice catch!
+qp_on_my_way,On my way!,,,On my way!
+qp_ready,Ready!,,,Ready!
+qp_repairing,I'm repairing.,,,I'm repairing.
+qp_thanks,Thanks!,,,Thanks!
+qp_wait,Wait!,,,Wait!
+qp_well_played,Well played!,,,Well played!
+quest_claim,Claim,,,Claim
+quest_claimed,Claimed,,,Claimed
+quest_progress,{progress}/{target} - {silver} Silver,,,{progress}/{target} - {silver} Silver
+quests_daily,Today,,,Today
+quests_level,Level {level} - {xp}/{next} XP,,,Level {level} - {xp}/{next} XP
+quests_streak,Login streak: {days} days - Night streak: {nights},,,Login streak: {days} days - Night streak: {nights}
+quests_weekly,This week,,,This week
+rarity_common,Common,,,Common
+rarity_epic,Epic,,,Epic
+rarity_legendary,Legendary,,,Legendary
+rarity_rare,Rare,,,Rare
+rarity_uncommon,Uncommon,,,Uncommon
+ready,ready,,,ready
+reconnecting,Reconnecting... your actions are saved and will go through.,,,Reconnecting... your actions are saved and will go through.
+report_cheating,Cheating,,,Cheating
+report_griefing,Spoiling the game,,,Spoiling the game
+report_other,Something else,,,Something else
+report_sent,Thanks. Our team will review it.,,,Thanks. Our team will review it.
+report_unkind_name,Unkind name,,,Unkind name
+result_boss,You defeated The Undertow!,,,You defeated The Undertow!
+result_failed,The tide won this time ({waves} waves).,,,The tide won this time ({waves} waves).
+result_failed_note,You keep 25% of the rewards and everything you own. Try again tomorrow night!,,,You keep 25% of the rewards and everything you own. Try again tomorrow night!
+result_left,You left after {waves} waves - your rewards are saved.,,,You left after {waves} waves - your rewards are saved.
+result_materials,"+{driftwood} driftwood, +{shells} shells, +{iron} iron scrap",,,"+{driftwood} driftwood, +{shells} shells, +{iron} iron scrap"
+result_pearls,+{pearls} Pearls,,,+{pearls} Pearls
+result_share,Your share {pct}% - repaired {repair},,,Your share {pct}% - repaired {repair}
+result_silver,+{silver} Silver,,,+{silver} Silver
+result_streak,Night streak {streak}: +{bonus}% rewards,,,Night streak {streak}: +{bonus}% rewards
+result_survived,The harbor held! {waves} waves survived.,,,The harbor held! {waves} waves survived.
+reward_eggs,{n} egg,,,{n} egg
+reward_gems,{n} Gems,,,{n} Gems
+reward_pearls,{n} Pearls,,,{n} Pearls
+reward_silver,{n} Silver,,,{n} Silver
+robux_amount,R$ {robux},,,R$ {robux}
+rod_bronze,Bronze Rod,,,Bronze Rod
+rod_driftwood,Driftwood Rod,,,Driftwood Rod
+rod_reed,Reed Rod,,,Reed Rod
+rod_tidesteel,Tidesteel Rod,,,Tidesteel Rod
+rodskin_bamboo,Bamboo,,,Bamboo
+rodskin_club_silver,Club Silver,,,Club Silver
+rodskin_coral,Coral,,,Coral
+rodskin_glow,Glow,,,Glow
+rodskin_painted,Painted,,,Painted
+rodskin_pass_brass,Pass Brass,,,Pass Brass
+rodskin_starlight,Starlight,,,Starlight
+rodskin_starter_lantern,Starter Lantern,,,Starter Lantern
+role_guardian,Guardian,,,Guardian
+role_worker,Worker,,,Worker
+season_banner,{season} - {time} left,,,{season} - {time} left
+season_ember_tide,Ember Tide,,,Ember Tide
+season_frostmoon,Frostmoon,,,Frostmoon
+season_kelp_bloom,Kelp Bloom,,,Kelp Bloom
+season_lantern_festival,Lantern Festival,,,Lantern Festival
+season_pearl_drift,Pearl Drift,,,Pearl Drift
+season_stormwatch,Stormwatch,,,Stormwatch
+settings_accessibility,Accessibility,,,Accessibility
+settings_allow_notifications,Allow Tidebound notifications,,,Allow Tidebound notifications
+settings_blocked,Blocked players,,,Blocked players
+settings_blocked_none,Nobody blocked.,,,Nobody blocked.
+settings_delete,Delete my Tidebound data,,,Delete my Tidebound data
+settings_export,See my data,,,See my data
+settings_haptics,Vibration,,,Vibration
+settings_music,Music {pct}%,,,Music {pct}%
+settings_night,Night,,,Night
+settings_notifications,Notifications,,,Notifications
+settings_notifications_note,"At most 2 a day, never at night. Turn each kind on or off.",,,"At most 2 a day, never at night. Turn each kind on or off."
+settings_notifications_unavailable,Notifications aren't available on this account.,,,Notifications aren't available on this account.
+settings_privacy,Your data,,,Your data
+settings_privacy_note,"Tidebound stores only game progress. See exactly what we keep, or delete it.",,,"Tidebound stores only game progress. See exactly what we keep, or delete it."
+settings_reduced_motion,Reduce motion,,,Reduce motion
+settings_smuggler,Volunteer to be the Smuggler,,,Volunteer to be the Smuggler
+settings_text_size,Text size {pct}%,,,Text size {pct}%
+shop_gem_items,Spend Gems,,,Spend Gems
+shop_gems,Gems (for cosmetics and convenience),,,Gems (for cosmetics and convenience)
+shop_gems_base,Base value,,,Base value
+shop_gems_bonus,+{pct}% bonus Gems,,,+{pct}% bonus Gems
+shop_locked,The shop opens after your first night.,,,The shop opens after your first night.
+shop_price_gems,{gems} Gems,,,{gems} Gems
+shop_price_robux,R$ {robux},,,R$ {robux}
+shop_price_subscription,US${usd}/month (shown in your currency next),,,US${usd}/month (shown in your currency next)
+shop_prompt_opened,Confirm on the Roblox screen.,,,Confirm on the Roblox screen.
+shop_random_restricted,Crates are not available in your region.,,,Crates are not available in your region.
+shop_spending,Spending summary and limit,,,Spending summary and limit
+shop_view_odds,See all odds,,,See all odds
+skin_aurora_cloak,Aurora Cloak,,,Aurora Cloak
+skin_bandana,Bandana,,,Bandana
+skin_bubble_helm,Bubble Helm,,,Bubble Helm
+skin_club_beret,Club Beret,,,Club Beret
+skin_club_scarf,Club Scarf,,,Club Scarf
+skin_crown_of_shells,Crown Of Shells,,,Crown Of Shells
+skin_leviathan_costume,Leviathan Costume,,,Leviathan Costume
+skin_pass_admiral,Pass Admiral,,,Pass Admiral
+skin_pass_captain,Pass Captain,,,Pass Captain
+skin_pass_explorer,Pass Explorer,,,Pass Explorer
+skin_pass_lifejacket,Pass Lifejacket,,,Pass Lifejacket
+skin_pirate_hat,Pirate Hat,,,Pirate Hat
+skin_raincoat,Raincoat,,,Raincoat
+skin_sailor_cap,Sailor Cap,,,Sailor Cap
+skin_starter_sailor,Starter Sailor,,,Starter Sailor
+skin_tidecaller_robe,Tidecaller Robe,,,Tidecaller Robe
+smuggler_among_us,A Smuggler is among you. Inspect once per wave.,,,A Smuggler is among you. Inspect once per wave.
+smuggler_carrying,(carrying),,,(carrying)
+smuggler_chosen,You're the Smuggler! Carry 5 crates to your hidden boat.,,,You're the Smuggler! Carry 5 crates to your hidden boat.
+smuggler_result_caught,The Smuggler was caught!,,,The Smuggler was caught!
+smuggler_result_success,The Smuggler got away!,,,The Smuggler got away!
+smuggler_result_timeout,The Smuggler ran out of time.,,,The Smuggler ran out of time.
+smuggler_you,Crates {delivered}/{total} - {time},,,Crates {delivered}/{total} - {time}
+spending_gems_spent,Gems spent in total: {gems},,,Gems spent in total: {gems}
+spending_history,By month,,,By month
+spending_limit,Your monthly limit: R$ {robux},,,Your monthly limit: R$ {robux}
+spending_no_limit,No monthly limit set,,,No monthly limit set
+spending_no_limit_button,No limit,,,No limit
+spending_pending,Changing to {target} in {time},,,Changing to {target} in {time}
+spending_recent,Recent purchases,,,Recent purchases
+spending_reversed,refunded,,,refunded
+spending_roblox_controls,Raising a limit takes 24 hours. Parents can also set spending limits in Roblox Parental Controls.,,,Raising a limit takes 24 hours. Parents can also set spending limits in Roblox Parental Controls.
+spending_set_limit,Set a monthly limit,,,Set a monthly limit
+spending_this_month,This month: R$ {robux},,,This month: R$ {robux}
+stage_0,Intact,,,Intact
+stage_1,Cracked,,,Cracked
+stage_2,Crumbling,,,Crumbling
+stage_3,Destroyed,,,Destroyed
+starter_offer_intro,"You made it through your first night! A one-time welcome pack is in the shop, if you'd like it.",,,"You made it through your first night! A one-time welcome pack is in the shop, if you'd like it."
+starter_pack,Starter Pack,,,Starter Pack
+starter_pack_body,"One egg, the Sailor skin and the Lantern rod skin. Once per account. Cosmetic items plus one ordinary egg (same odds as any egg).",,,"One egg, the Sailor skin and the Lantern rod skin. Once per account. Cosmetic items plus one ordinary egg (same odds as any egg)."
+storage_pack_20,+20 Drifter storage,,,+20 Drifter storage
+storage_pass,Storage and Auto-collect Pass,,,Storage and Auto-collect Pass
+storage_pass_body,"Auto-collects Worker Silver and ripe crops, and adds Drifter storage up to the same cap free players reach.",,,"Auto-collects Worker Silver and ripe crops, and adds Drifter storage up to the same cap free players reach."
+structure_dock,Dock,,,Dock
+structure_lighthouse,Lighthouse,,,Lighthouse
+structure_seawall,Seawall,,,Seawall
+the_undertow,The Undertow,,,The Undertow
+trait_bold,Bold,,,Bold
+trait_brave,Brave,,,Brave
+trait_breezy,Breezy,,,Breezy
+trait_cheerful,Cheerful,,,Cheerful
+trait_diligent,Diligent,,,Diligent
+trait_dreamy,Dreamy,,,Dreamy
+trait_gentle,Gentle,,,Gentle
+trait_handy,Handy,,,Handy
+trait_steady,Steady,,,Steady
+trait_studious,Studious,,,Studious
+trait_swift,Swift,,,Swift
+trait_tidy,Tidy,,,Tidy
+unblock,Unblock,,,Unblock
+w_survive_nights,Survive {target} nights this week,,,Survive {target} nights this week
+welcome_autocollect,Auto-collected {silver} Silver.,,,Auto-collected {silver} Silver.
+welcome_away,You were away {time}. Your Workers earned {silver} Silver.,,,You were away {time}. Your Workers earned {silver} Silver.
+welcome_streak,Login day {day} - streak {streak}!,,,Login day {day} - streak {streak}!

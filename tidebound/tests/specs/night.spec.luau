@@ -97,6 +97,17 @@ return function(T, Loader)
 		end)
 	end)
 
+	T.describe("Leaving mid-night", function()
+		T.it("keeps rewards for finished waves and leaves the streak alone", function()
+			local sim = NightSim.new(cfg, { seed = 1, members = { member(1, 10, "tide") } })
+			sim.wavesCompleted = 2
+			local r = Rewards.partial(cfg, sim, 1, 4, {})
+			T.expect(r.streakAfter).toBe(4)
+			T.expect(r.silver).toBeNear(cfg.night.rewards.silverPerWave * 2, 1)
+			T.expect(r.partial).toBeTruthy()
+		end)
+	end)
+
 	T.describe("Contribution", function()
 		T.it("splits silver by contribution within the share bounds", function()
 			local sim = NightSim.new(cfg, { seed = 1, members = { member(1, 10, "tide"), member(2, 10, "tide") } })

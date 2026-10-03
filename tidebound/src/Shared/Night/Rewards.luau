@@ -92,4 +92,27 @@ function Rewards.compute(cfg: any, sim: any, streaks: { [any]: number }, mods: a
 	return out
 end
 
+--[[
+	A player who leaves mid-night keeps per-wave rewards for the waves already finished, at full rate,
+	with their streak unchanged (a dropped connection is never punished). No boss reward.
+]]
+function Rewards.partial(cfg: any, sim: any, userId: any, streakBefore: number, mods: any): any
+	local saved = sim.result
+	sim.result = { survived = true, wavesSurvived = sim.wavesCompleted, bossDefeated = false }
+	local all = Rewards.compute(cfg, sim, { [userId] = 0 }, mods)
+	sim.result = saved
+	local r = all[userId]
+	local base = 1 + Rewards.streakBonus(cfg, 1)
+	r.silver = math.floor(r.silver / base)
+	for m, n in r.materials do
+		r.materials[m] = math.floor(n / base)
+	end
+	r.streakBefore = streakBefore
+	r.streakAfter = streakBefore
+	r.streakBonus = 0
+	r.survived = false
+	r.partial = true
+	return r
+end
+
 return Rewards

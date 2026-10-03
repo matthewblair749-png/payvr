@@ -125,6 +125,28 @@ function Purchases.grantGamePass(cfg: any, save: any, product: any, now: number)
 	return Purchases.grant(cfg, save, product, purchaseId, product.robux, now, nil)
 end
 
+--[[
+	Undoes a grant that could not be saved, as if it never happened, so Roblox's retry of
+	ProcessReceipt grants it cleanly later. Only for the in-memory save, before it was persisted.
+]]
+function Purchases.rollback(cfg: any, save: any, purchaseId: string)
+	local p = save.purchases
+	local record = p.ledger[purchaseId]
+	if not record then
+		return
+	end
+	Ledger.reverseEntries(cfg, save, record.entries)
+	p.ledger[purchaseId] = nil
+	p.processed[purchaseId] = nil
+	local i = table.find(p.order, purchaseId)
+	if i then
+		table.remove(p.order, i)
+	end
+	local Time = require(script.Parent.Parent.Util.Time)
+	local month = Time.monthKey(record.at)
+	save.spend.byMonth[month] = math.max(0, (save.spend.byMonth[month] or 0) - record.robux)
+end
+
 function Purchases.reverse(cfg: any, save: any, purchaseId: string, reason: string): any
 	local record, err = Ledger.reverse(cfg, save, purchaseId)
 	if not record then
