@@ -348,7 +348,12 @@ function StoreService.init()
 	end)
 	task.spawn(function()
 		pcall(MessagingService.SubscribeAsync, MessagingService, REVERSE_TOPIC, function(message)
+			-- Open Cloud publishes strings; decode JSON payloads from the companion backend.
 			local data = message.Data
+			if type(data) == "string" then
+				local ok, decoded = pcall(game:GetService("HttpService").JSONDecode, game:GetService("HttpService"), data)
+				data = if ok then decoded else nil
+			end
 			if type(data) ~= "table" then
 				return
 			end
