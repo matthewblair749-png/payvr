@@ -1,6 +1,6 @@
 # Assets
 
-The game is playable with placeholder parts. Each visual looks for a model with the exact name below in `ReplicatedStorage.Assets` and falls back to a placeholder when it is missing. Models should be anchored, low-poly, and use `PrimaryPart` set to the base so `PivotTo` places them correctly.
+The game is playable with placeholder parts. For ready-to-paste Studio `/generate` prompts for every model, see [MODEL_PROMPTS.md](MODEL_PROMPTS.md). Models are scaled and placed automatically. Each visual looks for a model with the exact name below in `ReplicatedStorage.Assets` and falls back to a placeholder when it is missing. Models should be anchored, low-poly, and use `PrimaryPart` set to the base so `PivotTo` places them correctly.
 
 Budget for mobile: keep each enemy under 2,000 triangles, structures under 5,000, and the harbor under 60,000 in view. Use `Enabled = false` on decorative lights at night on low graphics quality.
 

@@ -17,7 +17,7 @@ function Onboarding.mount(app: any, gui: ScreenGui)
 		BackgroundColor3 = Color3.new(1, 1, 1),
 		Size = UDim2.new(0.62, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		Position = UDim2.new(0.5, 0, 1, -14),
+		Position = UDim2.new(0.5, 0, 1, -100),
 		AnchorPoint = Vector2.new(0.5, 1),
 		Visible = false,
 	})

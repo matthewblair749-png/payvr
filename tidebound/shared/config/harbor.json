@@ -1,64 +1,230 @@
 {
   "buildings": [
-    { "id": "lighthouse", "perk": "lighthouseHpPct", "perPerTier": 5 },
-    { "id": "market", "perk": "sellPricePct", "perPerTier": 2 },
-    { "id": "docks", "perk": "fishWaitPct", "perPerTier": -4 },
-    { "id": "seawall", "perk": "seawallHpPct", "perPerTier": 5 },
-    { "id": "workshop", "perk": "repairPct", "perPerTier": 5 }
+    {
+      "id": "lighthouse",
+      "perk": "lighthouseHpPct",
+      "perPerTier": 5
+    },
+    {
+      "id": "market",
+      "perk": "sellPricePct",
+      "perPerTier": 2
+    },
+    {
+      "id": "docks",
+      "perk": "fishWaitPct",
+      "perPerTier": -4
+    },
+    {
+      "id": "seawall",
+      "perk": "seawallHpPct",
+      "perPerTier": 5
+    },
+    {
+      "id": "workshop",
+      "perk": "repairPct",
+      "perPerTier": 5
+    }
   ],
   "maxTier": 5,
   "tierCosts": [
-    { "toTier": 2, "driftwood": 500, "shells": 300, "ironScrap": 100 },
-    { "toTier": 3, "driftwood": 1500, "shells": 900, "ironScrap": 300 },
-    { "toTier": 4, "driftwood": 4000, "shells": 2400, "ironScrap": 800 },
-    { "toTier": 5, "driftwood": 10000, "shells": 6000, "ironScrap": 2000 }
+    {
+      "toTier": 2,
+      "driftwood": 500,
+      "shells": 300,
+      "ironScrap": 100
+    },
+    {
+      "toTier": 3,
+      "driftwood": 1500,
+      "shells": 900,
+      "ironScrap": 300
+    },
+    {
+      "toTier": 4,
+      "driftwood": 4000,
+      "shells": 2400,
+      "ironScrap": 800
+    },
+    {
+      "toTier": 5,
+      "driftwood": 10000,
+      "shells": 6000,
+      "ironScrap": 2000
+    }
   ],
   "maxContributionPerRequest": 500,
   "seasons": {
     "anchorUtcDate": "2026-01-05",
     "lengthDays": 7,
     "list": [
-      { "id": "season_kelp_bloom", "modifiers": { "cropGrowPct": -10 } },
-      { "id": "season_ember_tide", "modifiers": { "nightSilverPct": 5 } },
-      { "id": "season_frostmoon", "modifiers": { "fishValuePct": 5 } },
-      { "id": "season_pearl_drift", "modifiers": { "forageYieldPct": 10 } },
-      { "id": "season_stormwatch", "modifiers": { "repairPct": 10 } },
-      { "id": "season_lantern_festival", "modifiers": { "happinessDecayPct": -20 } }
+      {
+        "id": "season_kelp_bloom",
+        "modifiers": {
+          "cropGrowPct": -10
+        }
+      },
+      {
+        "id": "season_ember_tide",
+        "modifiers": {
+          "nightSilverPct": 5
+        }
+      },
+      {
+        "id": "season_frostmoon",
+        "modifiers": {
+          "fishValuePct": 5
+        }
+      },
+      {
+        "id": "season_pearl_drift",
+        "modifiers": {
+          "forageYieldPct": 10
+        }
+      },
+      {
+        "id": "season_stormwatch",
+        "modifiers": {
+          "repairPct": 10
+        }
+      },
+      {
+        "id": "season_lantern_festival",
+        "modifiers": {
+          "happinessDecayPct": -20
+        }
+      }
     ]
   },
   "quests": {
     "dailyCount": 3,
     "pool": [
-      { "id": "q_catch_fish", "type": "fishCaught", "target": 15, "silver": 60, "passXp": 30 },
-      { "id": "q_harvest", "type": "cropHarvested", "target": 12, "silver": 60, "passXp": 30 },
-      { "id": "q_forage", "type": "forage", "target": 6, "silver": 50, "passXp": 25 },
-      { "id": "q_sell", "type": "silverFromSales", "target": 300, "silver": 70, "passXp": 30 },
-      { "id": "q_hatch", "type": "hatch", "target": 1, "silver": 50, "passXp": 25 },
-      { "id": "q_survive_night", "type": "nightSurvived", "target": 1, "silver": 90, "passXp": 40 },
-      { "id": "q_repair", "type": "repairHp", "target": 200, "silver": 70, "passXp": 30 },
-      { "id": "q_feed", "type": "feed", "target": 3, "silver": 50, "passXp": 25 },
-      { "id": "q_contribute", "type": "contribute", "target": 20, "silver": 60, "passXp": 30 }
+      {
+        "id": "q_catch_fish",
+        "type": "fishCaught",
+        "target": 15,
+        "silver": 60,
+        "passXp": 30
+      },
+      {
+        "id": "q_harvest",
+        "type": "cropHarvested",
+        "target": 12,
+        "silver": 60,
+        "passXp": 30
+      },
+      {
+        "id": "q_forage",
+        "type": "forage",
+        "target": 6,
+        "silver": 50,
+        "passXp": 25
+      },
+      {
+        "id": "q_sell",
+        "type": "silverFromSales",
+        "target": 300,
+        "silver": 70,
+        "passXp": 30
+      },
+      {
+        "id": "q_hatch",
+        "type": "hatch",
+        "target": 1,
+        "silver": 50,
+        "passXp": 25
+      },
+      {
+        "id": "q_survive_night",
+        "type": "nightSurvived",
+        "target": 1,
+        "silver": 90,
+        "passXp": 40
+      },
+      {
+        "id": "q_repair",
+        "type": "repairHp",
+        "target": 200,
+        "silver": 70,
+        "passXp": 30
+      },
+      {
+        "id": "q_feed",
+        "type": "feed",
+        "target": 3,
+        "silver": 50,
+        "passXp": 25
+      },
+      {
+        "id": "q_contribute",
+        "type": "contribute",
+        "target": 20,
+        "silver": 60,
+        "passXp": 30
+      }
     ],
-    "weekly": { "id": "w_survive_nights", "type": "nightSurvived", "target": 5, "silver": 400, "pearls": 5, "passXp": 150 }
+    "weekly": {
+      "id": "w_survive_nights",
+      "type": "nightSurvived",
+      "target": 5,
+      "silver": 400,
+      "pearls": 5,
+      "passXp": 150
+    }
   },
   "loginStreak": [
-    { "day": 1, "silver": 20 },
-    { "day": 2, "silver": 30 },
-    { "day": 3, "silver": 40 },
-    { "day": 4, "silver": 50 },
-    { "day": 5, "silver": 60 },
-    { "day": 6, "silver": 80 },
-    { "day": 7, "silver": 100, "pearls": 2 }
+    {
+      "day": 1,
+      "silver": 20
+    },
+    {
+      "day": 2,
+      "silver": 30
+    },
+    {
+      "day": 3,
+      "silver": 40
+    },
+    {
+      "day": 4,
+      "silver": 50
+    },
+    {
+      "day": 5,
+      "silver": 60
+    },
+    {
+      "day": 6,
+      "silver": 80
+    },
+    {
+      "day": 7,
+      "silver": 100,
+      "pearls": 2
+    }
   ],
   "notifications": {
     "maxPerDay": 2,
     "quietStartHour": 21,
     "quietEndHour": 8,
     "types": [
-      { "id": "crops_ready", "priority": 2 },
-      { "id": "worker_income_full", "priority": 3 },
-      { "id": "night_starting", "priority": 1 },
-      { "id": "season_changed", "priority": 4 }
+      {
+        "id": "crops_ready",
+        "priority": 2
+      },
+      {
+        "id": "worker_income_full",
+        "priority": 3
+      },
+      {
+        "id": "night_starting",
+        "priority": 1
+      },
+      {
+        "id": "season_changed",
+        "priority": 4
+      }
     ]
-  }
+  },
+  "assetPackageId": 0
 }

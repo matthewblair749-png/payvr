@@ -4,6 +4,10 @@
   "title": "Tidebound harbor config",
   "type": "object",
   "properties": {
+    "assetPackageId": {
+      "type": "integer",
+      "minimum": 0
+    },
     "buildings": {
       "type": "array",
       "items": {
@@ -288,6 +292,7 @@
     }
   },
   "required": [
+    "assetPackageId",
     "buildings",
     "maxTier",
     "tierCosts",

@@ -7,7 +7,7 @@ cfg = {n: json.load(open(os.path.join(ROOT, "shared", "config", n + ".json"))) f
 
 UI = {
     # HUD and panels
-    "hud_fish": "Fish", "hud_farm": "Farm", "hud_market": "Market", "hud_drifters": "Drifters", "hud_inventory": "Bag",
+    "hud_fish": "Fish", "hud_farm": "Farm", "hud_market": "Market", "hud_drifters": "Drifters", "hud_inventory": "Backpack",
     "hud_harbor": "Harbor", "hud_quests": "Quests", "hud_pass": "Pass", "hud_settings": "Settings", "hud_shop": "Shop",
     "currency_silver_short": "Silver",
     "phase_day": "Day - {time} left", "phase_dusk": "Dusk - night in {time}", "phase_night": "Night - {time} left", "phase_dawn": "Dawn - {time}",
@@ -22,6 +22,17 @@ UI = {
     "owned": "Owned", "equip": "Equip", "equipped": "Equipped", "equip_toggle": "Use / remove", "no_thanks": "No thanks",
     "reconnecting": "Reconnecting... your actions are saved and will go through.",
     "robux_amount": "R$ {robux}",
+    # Concept-art layout
+    "hud_phase_day": "DAY PHASE - {time}", "hud_phase_dusk": "DUSK - {time}", "hud_phase_night": "NIGHT PHASE - {time}", "hud_phase_dawn": "DAWN - {time}",
+    "hud_phase_first_night": "FIRST NIGHT IN {time}", "hud_today": "TODAY'S QUESTS", "hud_level": "Lv. {level}", "hud_hatch": "Hatch",
+    "lobby_tagline": "Build. Raise. Defend.", "lobby_continue": "Continue", "lobby_night_in": "Night incoming\n{time}",
+    "night_title": "NIGHT PHASE - CO-OP DEFENSE", "night_you": "You",
+    "filter_all": "All", "drifters_none": "No Drifters yet. Hatch an egg!", "drifter_level_of": "Lv. {level}/{max}",
+    "drifter_happiness": "Happiness {value}/100", "stat_power": "Power", "stat_speed": "Speed", "stat_income": "Income",
+    "drifter_make_guardian": "Make Guardian", "drifter_make_worker": "Make Worker",
+    "shop_tab_featured": "Featured", "shop_tab_gems": "Gems", "shop_tab_cosmetics": "Cosmetics", "shop_tab_passes": "Passes",
+    "shop_crate_short": "Random cosmetic. Epic+ within {n}. Odds shown.", "shop_pass_short": "Paid track: cosmetics and Gems",
+    "shop_club_short": "{gems} Gems a day + convenience", "shop_storage_short": "Auto-collect + storage",
     # Fishing
     "fishing_rod": "Rod: {rod} (tier {tier})", "fishing_ready": "Cast when you're ready.", "fishing_cast": "Cast",
     "fishing_reel": "Reel!", "fishing_waiting": "Waiting for a bite...", "fishing_bite": "Bite! Tap in the green zone.",

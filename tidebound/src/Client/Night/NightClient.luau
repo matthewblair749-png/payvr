@@ -35,35 +35,54 @@ function NightClient.mount(app: any, gui: ScreenGui)
 	local input = { attack = false, charge = false, ability = false }
 	local pressFrames = { attack = 0, ability = 0 }
 
-	-- ------------------------------------------------------------------ HUD
+	-- ------------------------------------------------------------------ HUD (concept art layout)
+	local c = Theme.colors
 	local hud = Ui.frame(gui, { Name = "NightHud", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Visible = false })
-	local top = Ui.frame(hud, { BackgroundColor3 = Theme.colors.panel, BackgroundTransparency = 0.2, Size = UDim2.new(1, -16, 0, 60), Position = UDim2.fromOffset(8, 8) })
-	Ui.corner(top, 12)
-	Ui.padding(top, 8)
-	local waveText = Ui.text(top, "", { TextSize = 20, FontFace = Theme.fontBold })
-	local structurePanel = Ui.frame(hud, { BackgroundColor3 = Theme.colors.panel, BackgroundTransparency = 0.2, Size = UDim2.new(0, 230, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, Position = UDim2.fromOffset(8, 76) })
-	Ui.corner(structurePanel, 12)
+	Ui.text(hud, L("night_title"), { TextSize = 22, FontFace = Theme.fontBold, Size = UDim2.fromOffset(420, 28), AutomaticSize = Enum.AutomaticSize.None, Position = UDim2.fromOffset(12, 10) })
+	local waveText = Ui.text(hud, "", { TextSize = 28, FontFace = Theme.fontBold, Size = UDim2.fromOffset(360, 34), AutomaticSize = Enum.AutomaticSize.None, Position = UDim2.new(1, -12, 0, 8), AnchorPoint = Vector2.new(1, 0), TextXAlignment = Enum.TextXAlignment.Right })
+
+	-- Squad list: avatar, name, ability readiness bar (red while stunned)
+	local squadPanel = Ui.glass(hud, { Size = UDim2.fromOffset(200, 0), AutomaticSize = Enum.AutomaticSize.Y, Position = UDim2.fromOffset(12, 46) })
+	Ui.padding(squadPanel, 8)
+	Ui.list(squadPanel, 6)
+	local squadRows = {}
+	local function squadRow(userId: number)
+		if squadRows[userId] then
+			return squadRows[userId]
+		end
+		local row = Ui.frame(squadPanel, { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 40), LayoutOrder = if userId == player.UserId then 0 else #squadPanel:GetChildren() })
+		Ui.avatar(row, userId, 38)
+		local other = Players:GetPlayerByUserId(userId)
+		local name = Ui.text(row, if userId == player.UserId then L("night_you") elseif other then other.DisplayName else "?", { TextSize = 14, Size = UDim2.new(1, -46, 0, 18), AutomaticSize = Enum.AutomaticSize.None, Position = UDim2.fromOffset(46, 2) })
+		name.TextTruncate = Enum.TextTruncate.AtEnd
+		local fill = Ui.progress(row, 1, c.blue, { Size = UDim2.new(1, -46, 0, 8), Position = UDim2.fromOffset(46, 24) })
+		squadRows[userId] = { row = row, fill = fill, name = name }
+		return squadRows[userId]
+	end
+
+	-- Structures
+	local structurePanel = Ui.glass(hud, { Size = UDim2.fromOffset(200, 0), AutomaticSize = Enum.AutomaticSize.Y, Position = UDim2.new(0, 12, 1, -150), AnchorPoint = Vector2.new(0, 1) })
 	Ui.padding(structurePanel, 8)
 	Ui.list(structurePanel, 6)
 	local structureRows = {}
 	for i, id in STRUCTURES do
-		local row = Ui.frame(structurePanel, { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 34), LayoutOrder = i })
-		local label = Ui.text(row, "", { TextSize = 15, Size = UDim2.new(1, 0, 0, 18), AutomaticSize = Enum.AutomaticSize.None })
-		local barBg = Ui.frame(row, { BackgroundColor3 = Theme.colors.bg, Size = UDim2.new(1, 0, 0, 10), Position = UDim2.fromOffset(0, 22) })
-		local bar = Ui.frame(barBg, { BackgroundColor3 = Theme.colors.good, Size = UDim2.fromScale(1, 1) })
+		local row = Ui.frame(structurePanel, { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 32), LayoutOrder = i })
+		local label = Ui.text(row, "", { TextSize = 13, Size = UDim2.new(1, 0, 0, 16), AutomaticSize = Enum.AutomaticSize.None })
+		local bar = Ui.progress(row, 1, c.good, { Size = UDim2.new(1, 0, 0, 9), Position = UDim2.fromOffset(0, 20) })
 		structureRows[id] = { label = label, bar = bar }
 	end
-	local bossPanel = Ui.frame(hud, { BackgroundColor3 = Theme.colors.panel, BackgroundTransparency = 0.2, Size = UDim2.new(0.6, 0, 0, 56), Position = UDim2.new(0.2, 0, 0, 76), Visible = false })
-	Ui.corner(bossPanel, 12)
-	Ui.padding(bossPanel, 6)
-	local bossText = Ui.text(bossPanel, "", { TextSize = 15, Size = UDim2.new(1, 0, 0, 20), AutomaticSize = Enum.AutomaticSize.None })
-	local bossBarBg = Ui.frame(bossPanel, { BackgroundColor3 = Theme.colors.bg, Size = UDim2.new(1, 0, 0, 12), Position = UDim2.fromOffset(0, 26) })
-	local bossBar = Ui.frame(bossBarBg, { BackgroundColor3 = Theme.colors.bad, Size = UDim2.fromScale(1, 1) })
-	local infoText = Ui.text(hud, "", { TextSize = 16, Position = UDim2.new(0, 8, 1, -200), Size = UDim2.new(0, 260, 0, 0) })
-	local smugglerText = Ui.text(hud, "", { TextSize = 16, Position = UDim2.new(0, 8, 1, -240), Size = UDim2.new(0, 300, 0, 0), TextColor3 = Theme.colors.accent })
-	local squadButton = Ui.button(hud, L("night_squad"), function()
+
+	-- Boss bar
+	local bossPanel = Ui.glass(hud, { Size = UDim2.new(0.42, 0, 0, 52), Position = UDim2.new(0.5, 0, 0, 48), AnchorPoint = Vector2.new(0.5, 0), Visible = false })
+	Ui.padding(bossPanel, 8)
+	local bossText = Ui.text(bossPanel, "", { TextSize = 15, Size = UDim2.new(1, 0, 0, 18), AutomaticSize = Enum.AutomaticSize.None, TextXAlignment = Enum.TextXAlignment.Center })
+	local bossBar = Ui.progress(bossPanel, 1, c.bad, { Size = UDim2.new(1, 0, 0, 12), Position = UDim2.fromOffset(0, 22) })
+
+	local infoText = Ui.text(hud, "", { TextSize = 15, Position = UDim2.new(0.5, 0, 1, -66), AnchorPoint = Vector2.new(0.5, 0), Size = UDim2.fromOffset(360, 0), TextXAlignment = Enum.TextXAlignment.Center })
+	local smugglerText = Ui.text(hud, "", { TextSize = 16, Position = UDim2.new(0.5, 0, 0, 106), AnchorPoint = Vector2.new(0.5, 0), Size = UDim2.fromOffset(420, 0), TextColor3 = c.gold, TextXAlignment = Enum.TextXAlignment.Center })
+	local squadButton = Ui.button(hud, "👥", function()
 		app:open("squad")
-	end, { Size = UDim2.fromOffset(100, 48), Position = UDim2.new(1, -108, 0, 76), TextSize = 15 })
+	end, { BackgroundColor3 = c.panelAlt, Size = UDim2.fromOffset(48, 48), Position = UDim2.fromOffset(222, 46), TextSize = 20 })
 	squadButton.Visible = true
 
 	-- ------------------------------------------------------------------ world visuals
@@ -110,7 +129,7 @@ function NightClient.mount(app: any, gui: ScreenGui)
 			local row = structureRows[id]
 			row.label.Text = L("structure_" .. id) .. "  " .. L("stage_" .. s[3])
 			row.bar.Size = UDim2.fromScale(s[1] / math.max(1, s[2]), 1)
-			row.bar.BackgroundColor3 = if s[3] == 0 then Theme.colors.good elseif s[3] == 1 then Theme.colors.accent else Theme.colors.bad
+			row.bar:FindFirstChildOfClass("UIGradient").Color = ColorSequence.new(if s[3] == 0 then Theme.colors.good elseif s[3] == 1 then Theme.colors.gold else Theme.colors.bad)
 			-- Three visible damage stages on the structure itself.
 			local part = session.sector and session.sector:FindFirstChild(id)
 			if part and part:IsA("BasePart") and part:GetAttribute("ClientStage") ~= s[3] then
@@ -120,10 +139,14 @@ function NightClient.mount(app: any, gui: ScreenGui)
 			end
 		end
 		local me = nil
+		local abilityCooldown = app.cfg.night.player.abilityCooldown
 		for _, p in snap.p do
 			if p[1] == player.UserId then
 				me = p
 			end
+			local r = squadRow(p[1])
+			r.fill.Size = UDim2.fromScale(1 - math.clamp(p[6] / abilityCooldown, 0, 1), 1)
+			r.fill:FindFirstChildOfClass("UIGradient").Color = ColorSequence.new(if p[4] then Theme.colors.bad else Theme.colors.blue)
 		end
 		if me then
 			infoText.Text = L("night_info", { iron = me[7], ability = if me[6] > 0 then Format.duration(me[6]) else L("ready") }) .. (if me[4] then "\n" .. L("night_stunned") else "")
@@ -322,21 +345,21 @@ function NightClient.mount(app: any, gui: ScreenGui)
 				pressFrames.attack = 2
 			end
 			return Enum.ContextActionResult.Sink
-		end, true, Enum.KeyCode.F, Enum.KeyCode.ButtonR2)
+		end, false, Enum.KeyCode.F, Enum.KeyCode.ButtonR2)
 		ContextActionService:BindAction("TideCharge", function(_, state)
 			input.charge = state == Enum.UserInputState.Begin or state == Enum.UserInputState.Change
 			return Enum.ContextActionResult.Sink
-		end, true, Enum.KeyCode.E, Enum.KeyCode.ButtonL2)
+		end, false, Enum.KeyCode.E, Enum.KeyCode.ButtonL2)
 		ContextActionService:BindAction("TideAbility", function(_, state)
 			if state == Enum.UserInputState.Begin then
 				pressFrames.ability = 2
 			end
 			return Enum.ContextActionResult.Sink
-		end, true, Enum.KeyCode.Q, Enum.KeyCode.ButtonY)
+		end, false, Enum.KeyCode.Q, Enum.KeyCode.ButtonY)
 		ContextActionService:BindAction("TideRepair", function(_, state)
 			input.repair = if state == Enum.UserInputState.Begin or state == Enum.UserInputState.Change then nearestStructure() else nil
 			return Enum.ContextActionResult.Sink
-		end, true, Enum.KeyCode.R, Enum.KeyCode.ButtonX)
+		end, false, Enum.KeyCode.R, Enum.KeyCode.ButtonX)
 		if app.cfg.night.smuggler.enabled then
 			ContextActionService:BindAction("TideInspect", function(_, state)
 				if state == Enum.UserInputState.Begin then
@@ -345,21 +368,7 @@ function NightClient.mount(app: any, gui: ScreenGui)
 					input.inspect = nil
 				end
 				return Enum.ContextActionResult.Sink
-			end, true, Enum.KeyCode.T, Enum.KeyCode.ButtonB)
-		end
-		local labels = { TideAttack = "night_attack", TideCharge = "night_charge", TideAbility = "night_ability", TideRepair = "night_repair", TideInspect = "night_inspect" }
-		local positions = {
-			TideAttack = UDim2.new(1, -150, 1, -150),
-			TideCharge = UDim2.new(1, -230, 1, -110),
-			TideAbility = UDim2.new(1, -150, 1, -230),
-			TideRepair = UDim2.new(1, -230, 1, -190),
-			TideInspect = UDim2.new(1, -310, 1, -150),
-		}
-		for action, key in labels do
-			pcall(function()
-				ContextActionService:SetTitle(action, L(key))
-				ContextActionService:SetPosition(action, positions[action])
-			end)
+			end, false, Enum.KeyCode.T, Enum.KeyCode.ButtonB)
 		end
 	end
 
@@ -369,9 +378,59 @@ function NightClient.mount(app: any, gui: ScreenGui)
 		end
 	end
 
+	-- On-screen controls (touch and mouse), styled like the concept: a big round attack button
+	-- with square skill buttons labelled with their keys.
+	local controls = Ui.frame(hud, { BackgroundTransparency = 1, Size = UDim2.fromOffset(300, 220), Position = UDim2.new(1, -12, 1, -12), AnchorPoint = Vector2.new(1, 1) })
+	local function skill(icon: string, key: string, color: Color3, pos: UDim2, size: number): TextButton
+		local b = Ui.button(controls, icon, function() end, { BackgroundColor3 = color, Size = UDim2.fromOffset(size, size), Position = pos, TextSize = math.floor(size * 0.42), FontFace = Theme.fontEmoji })
+		local tag = Ui.text(b, key, { TextSize = 13, Size = UDim2.fromOffset(size, 16), AutomaticSize = Enum.AutomaticSize.None, Position = UDim2.new(0, 0, 1, 2), TextXAlignment = Enum.TextXAlignment.Center })
+		local _ = tag
+		return b
+	end
+	local attackBtn = skill("⚔️", "F", c.accent, UDim2.new(1, -110, 1, -110), 104)
+	attackBtn:FindFirstChildOfClass("UICorner").CornerRadius = UDim.new(1, 0)
+	local chargeBtn = skill("💥", "E", c.coral, UDim2.new(1, -186, 1, -76), 64)
+	local abilityBtn = skill("✨", "Q", c.purple, UDim2.new(1, -186, 1, -160), 64)
+	local repairBtn = skill("🔧", "R", c.good, UDim2.new(1, -104, 1, -196), 64)
+	local inspectBtn = skill("🔍", "T", c.gold, UDim2.new(1, -262, 1, -76), 64)
+	inspectBtn.Visible = app.cfg.night.smuggler.enabled
+	attackBtn.MouseButton1Down:Connect(function()
+		pressFrames.attack = 2
+	end)
+	abilityBtn.MouseButton1Down:Connect(function()
+		pressFrames.ability = 2
+	end)
+	chargeBtn.MouseButton1Down:Connect(function()
+		input.charge = true
+	end)
+	chargeBtn.MouseButton1Up:Connect(function()
+		input.charge = false
+	end)
+	chargeBtn.MouseLeave:Connect(function()
+		input.charge = false
+	end)
+	repairBtn.MouseButton1Down:Connect(function()
+		input.repair = nearestStructure()
+	end)
+	repairBtn.MouseButton1Up:Connect(function()
+		input.repair = nil
+	end)
+	repairBtn.MouseLeave:Connect(function()
+		input.repair = nil
+	end)
+	inspectBtn.MouseButton1Down:Connect(function()
+		input.inspect = nearestSquadMate()
+	end)
+	inspectBtn.MouseButton1Up:Connect(function()
+		input.inspect = nil
+	end)
+
 	-- ------------------------------------------------------------------ lifecycle
 	local sendConn = nil
 	local function start(info: any)
+		if app.closeLobby then
+			app.closeLobby()
+		end
 		app.inNight = true
 		app:close()
 		local folder = Instance.new("Folder")
@@ -434,6 +493,10 @@ function NightClient.mount(app: any, gui: ScreenGui)
 		table.clear(weakParts)
 		table.clear(crateParts)
 		hud.Visible = false
+		for _, r in squadRows do
+			r.row:Destroy()
+		end
+		table.clear(squadRows)
 		app.inNight = false
 		app.StateChanged:Fire(app.state)
 	end

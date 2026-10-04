@@ -48,11 +48,20 @@ local function eyes(m: Model, root: CFrame, spread: number, height: number, forw
 	end
 end
 
-local function template(name: string): Model?
+-- Uploaded or generated models replace the built ones; they are scaled to `height` studs.
+local function template(name: string, height: number?): Model?
 	local assets = ReplicatedStorage:FindFirstChild("Assets")
 	local t = assets and assets:FindFirstChild(name)
 	if t and t:IsA("Model") then
 		local clone = t:Clone()
+		if height then
+			local _, size = clone:GetBoundingBox()
+			if size.Y > 0.01 then
+				pcall(function()
+					clone:ScaleTo(clone:GetScale() * height / size.Y)
+				end)
+			end
+		end
 		for _, d in clone:GetDescendants() do
 			if d:IsA("BasePart") then
 				d.Anchored = true
@@ -68,7 +77,7 @@ end
 -- A Drifter: round body, belly, big eyes, and an element feature on top.
 function Creatures.drifter(cfg: any, speciesId: string): Model
 	local species = cfg.index.species[speciesId]
-	local custom = template("Drifter_" .. string.sub(speciesId, 5))
+	local custom = template("Drifter_" .. string.sub(speciesId, 5), 2.8 * (RARITY_SIZE[species and species.rarity or "common"] or 1))
 	if custom then
 		return custom
 	end
@@ -140,7 +149,7 @@ local ENEMY_EYES = { tide = Color3.fromRGB(80, 220, 255), ember = Color3.fromRGB
 
 -- Night enemies: a scuttling crab, a rock brute, and a spiky puffer. Eye colour shows the wave's element.
 function Creatures.enemy(typeId: string, element: string?): Model
-	local custom = template("Enemy_" .. typeId)
+	local custom = template("Enemy_" .. typeId, ({ crawler = 2, brute = 5.5, spitter = 3 })[typeId])
 	if custom then
 		return custom
 	end
@@ -186,7 +195,7 @@ end
 
 -- The Undertow: a towering water giant with glowing eyes, a crown of coral and swaying tentacles.
 function Creatures.boss(radius: number): Model
-	local custom = template("Boss_TheUndertow")
+	local custom = template("Boss_TheUndertow", radius * 2.6)
 	if custom then
 		return custom
 	end

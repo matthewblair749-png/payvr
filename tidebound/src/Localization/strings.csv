@@ -69,12 +69,17 @@ drf_sprouty,Sprouty,,,Sprouty
 drf_surgeling,Surgeling,,,Surgeling
 drifter_active,Active,,,Active
 drifter_feed,Feed,,,Feed
+drifter_happiness,Happiness {value}/100,,,Happiness {value}/100
 drifter_level,Lv {level},,,Lv {level}
+drifter_level_of,Lv. {level}/{max},,,Lv. {level}/{max}
+drifter_make_guardian,Make Guardian,,,Make Guardian
+drifter_make_worker,Make Worker,,,Make Worker
 drifter_stats,Power {power} - Speed {speed} - Income {income} - Happy {happiness} - {trait},,,Power {power} - Speed {speed} - Income {income} - Happy {happiness} - {trait}
 drifter_stored,Stored,,,Stored
 drifters_book,Book,,,Book
 drifters_buy_egg,Buy and hatch an egg - {price} Silver,,,Buy and hatch an egg - {price} Silver
 drifters_hatch_egg,Hatch an egg ({eggs}),,,Hatch an egg ({eggs})
+drifters_none,No Drifters yet. Hatch an egg!,,,No Drifters yet. Hatch an egg!
 drifters_odds,Odds,,,Odds
 drifters_slots,Active {active}/{slots} - Stored {stored}/{capacity},,,Active {active}/{slots} - Stored {stored}/{capacity}
 drifters_storage_upgrade,+{amount} storage for {price} Silver,,,+{amount} storage for {price} Silver
@@ -182,6 +187,7 @@ farm_ready,"{crop}
 Ready!",,,"{crop}
 Ready!"
 farm_seed_cost,"{cost} Silver, {time}s",,,"{cost} Silver, {time}s"
+filter_all,All,,,All
 fish_abyss_snapper,Abyss Snapper,,,Abyss Snapper
 fish_blue_tang,Blue Tang,,,Blue Tang
 fish_coral_wrasse,Coral Wrasse,,,Coral Wrasse
@@ -249,18 +255,31 @@ hud_drifters,Drifters,,,Drifters
 hud_farm,Farm,,,Farm
 hud_fish,Fish,,,Fish
 hud_harbor,Harbor,,,Harbor
-hud_inventory,Bag,,,Bag
+hud_hatch,Hatch,,,Hatch
+hud_inventory,Backpack,,,Backpack
+hud_level,Lv. {level},,,Lv. {level}
 hud_market,Market,,,Market
 hud_pass,Pass,,,Pass
+hud_phase_dawn,DAWN - {time},,,DAWN - {time}
+hud_phase_day,DAY PHASE - {time},,,DAY PHASE - {time}
+hud_phase_dusk,DUSK - {time},,,DUSK - {time}
+hud_phase_first_night,FIRST NIGHT IN {time},,,FIRST NIGHT IN {time}
+hud_phase_night,NIGHT PHASE - {time},,,NIGHT PHASE - {time}
 hud_quests,Quests,,,Quests
 hud_settings,Settings,,,Settings
 hud_shop,Shop,,,Shop
+hud_today,TODAY'S QUESTS,,,TODAY'S QUESTS
 inv_cosmetics,Cosmetics,,,Cosmetics
 inv_crops,Crops,,,Crops
 inv_eggs,Eggs: {count},,,Eggs: {count}
 inv_fish,Fish,,,Fish
 inv_materials,Materials,,,Materials
 loading,Loading...,,,Loading...
+lobby_continue,Continue,,,Continue
+lobby_night_in,"Night incoming
+{time}",,,"Night incoming
+{time}"
+lobby_tagline,Build. Raise. Defend.,,,Build. Raise. Defend.
 market_ad_double,Watch an ad to double that sale (once a day),,,Watch an ad to double that sale (once a day)
 market_collect,Collect Worker Silver,,,Collect Worker Silver
 market_demand_down,{category}: -{pct}% today,,,{category}: -{pct}% today
@@ -285,7 +304,9 @@ night_repair,Repair,,,Repair
 night_squad,Squad,,,Squad
 night_squad_formed,Your squad of {count} is ready. Night falls soon.,,,Your squad of {count} is ready. Night falls soon.
 night_stunned,Washed back!,,,Washed back!
+night_title,NIGHT PHASE - CO-OP DEFENSE,,,NIGHT PHASE - CO-OP DEFENSE
 night_wave,Wave {wave}/{waves} ({element}) - {time},,,Wave {wave}/{waves} ({element}) - {time}
+night_you,You,,,You
 no_thanks,No thanks,,,No thanks
 notif_crops_ready,Crops ready,,,Crops ready
 notif_night_starting,Night starting,,,Night starting
@@ -441,17 +462,25 @@ settings_privacy_note,"Tidebound stores only game progress. See exactly what we 
 settings_reduced_motion,Reduce motion,,,Reduce motion
 settings_smuggler,Volunteer to be the Smuggler,,,Volunteer to be the Smuggler
 settings_text_size,Text size {pct}%,,,Text size {pct}%
+shop_club_short,{gems} Gems a day + convenience,,,{gems} Gems a day + convenience
+shop_crate_short,Random cosmetic. Epic+ within {n}. Odds shown.,,,Random cosmetic. Epic+ within {n}. Odds shown.
 shop_gem_items,Spend Gems,,,Spend Gems
 shop_gems,Gems (for cosmetics and convenience),,,Gems (for cosmetics and convenience)
 shop_gems_base,Base value,,,Base value
 shop_gems_bonus,+{pct}% bonus Gems,,,+{pct}% bonus Gems
 shop_locked,The shop opens after your first night.,,,The shop opens after your first night.
+shop_pass_short,Paid track: cosmetics and Gems,,,Paid track: cosmetics and Gems
 shop_price_gems,{gems} Gems,,,{gems} Gems
 shop_price_robux,R$ {robux},,,R$ {robux}
 shop_price_subscription,US${usd}/month (shown in your currency next),,,US${usd}/month (shown in your currency next)
 shop_prompt_opened,Confirm on the Roblox screen.,,,Confirm on the Roblox screen.
 shop_random_restricted,Crates are not available in your region.,,,Crates are not available in your region.
 shop_spending,Spending summary and limit,,,Spending summary and limit
+shop_storage_short,Auto-collect + storage,,,Auto-collect + storage
+shop_tab_cosmetics,Cosmetics,,,Cosmetics
+shop_tab_featured,Featured,,,Featured
+shop_tab_gems,Gems,,,Gems
+shop_tab_passes,Passes,,,Passes
 shop_view_odds,See all odds,,,See all odds
 skin_aurora_cloak,Aurora Cloak,,,Aurora Cloak
 skin_bandana,Bandana,,,Bandana
@@ -494,6 +523,9 @@ stage_3,Destroyed,,,Destroyed
 starter_offer_intro,"You made it through your first night! A one-time welcome pack is in the shop, if you'd like it.",,,"You made it through your first night! A one-time welcome pack is in the shop, if you'd like it."
 starter_pack,Starter Pack,,,Starter Pack
 starter_pack_body,"One egg, the Sailor skin and the Lantern rod skin. Once per account. Cosmetic items plus one ordinary egg (same odds as any egg).",,,"One egg, the Sailor skin and the Lantern rod skin. Once per account. Cosmetic items plus one ordinary egg (same odds as any egg)."
+stat_income,Income,,,Income
+stat_power,Power,,,Power
+stat_speed,Speed,,,Speed
 storage_pack_20,+20 Drifter storage,,,+20 Drifter storage
 storage_pass,Storage and Auto-collect Pass,,,Storage and Auto-collect Pass
 storage_pass_body,"Auto-collects Worker Silver and ripe crops, and adds Drifter storage up to the same cap free players reach.",,,"Auto-collects Worker Silver and ripe crops, and adds Drifter storage up to the same cap free players reach."

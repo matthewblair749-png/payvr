@@ -82,6 +82,7 @@ schemas["night"] = obj({"tickRate": {"type": "integer", "minimum": 5, "maximum":
         "deliverRange": pos, "inspectChannelSeconds": pos, "inspectRange": pos, "inspectBreakRange": pos, "smugglerSuccessSilver": int0, "catchSilver": int0}),
     "quickChatPerSecond": pos})
 schemas["harbor"] = obj({
+    "assetPackageId": int0,
     "buildings": arr(obj({"id": {"enum": ["lighthouse", "market", "docks", "seawall", "workshop"]}, "perk": s, "perPerTier": num}), 5, 5),
     "maxTier": int1, "tierCosts": arr(obj({"toTier": int1, "driftwood": int0, "shells": int0, "ironScrap": int0})),
     "maxContributionPerRequest": int1,

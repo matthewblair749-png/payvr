@@ -10,6 +10,7 @@
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local InsertService = game:GetService("InsertService")
 
 local WorldBuilder = {}
 
@@ -94,16 +95,62 @@ local function model(parent: Instance, name: string): Model
 	return m
 end
 
--- Uses an uploaded asset when one exists with this name; otherwise runs the builder.
-local function placeAsset(assetName: string, cframe: CFrame, parent: Instance, build: (Model) -> ()): Instance
-	local template = assets and assets:FindFirstChild(assetName)
-	if template then
-		local inst = template:Clone()
-		if inst:IsA("Model") then
-			inst:PivotTo(cframe)
-		elseif inst:IsA("BasePart") then
+--[[
+	Scales an uploaded or generated model to a target height and stands it on `cframe`
+	(bounding-box bottom on the point), so models from Studio's /generate drop in at the right size.
+]]
+local function fitTo(inst: Instance, height: number?, cframe: CFrame)
+	if not inst:IsA("Model") then
+		if inst:IsA("BasePart") then
 			inst.CFrame = cframe
 		end
+		return
+	end
+	inst:PivotTo(cframe)
+	if height then
+		local _, size = inst:GetBoundingBox()
+		if size.Y > 0.01 then
+			pcall(function()
+				inst:ScaleTo(inst:GetScale() * height / size.Y)
+			end)
+		end
+	end
+	local box, size = inst:GetBoundingBox()
+	local bottom = box.Position - Vector3.new(0, size.Y / 2, 0)
+	inst:PivotTo(inst:GetPivot() + (cframe.Position - bottom))
+	for _, d in inst:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.Anchored = true
+		end
+	end
+end
+
+-- Target heights (studs) for replaceable models. See docs/MODEL_PROMPTS.md.
+local HEIGHTS = {
+	Harbor_MarketStall = 11,
+	Harbor_Pier = nil,
+	Harbor_FarmPatch = nil,
+	Landmark_Lighthouse = 52,
+	PalmTree = 17,
+	Lantern = 8,
+	Forage_driftwood = 2.5,
+	Forage_shells = 1.5,
+	Forage_ironScrap = 2,
+	Structure_lighthouse = 28,
+	Structure_dock = nil,
+	Structure_seawall = nil,
+}
+
+local function asset(name: string): Instance?
+	return assets and assets:FindFirstChild(name)
+end
+
+-- Uses an uploaded asset when one exists with this name; otherwise runs the builder.
+local function placeAsset(assetName: string, cframe: CFrame, parent: Instance, build: (Model) -> ()): Instance
+	local template = asset(assetName)
+	if template then
+		local inst = template:Clone()
+		fitTo(inst, HEIGHTS[assetName], cframe)
 		inst.Parent = parent
 		return inst
 	end
@@ -115,6 +162,12 @@ end
 -- ---------------------------------------------------------------- props
 
 local function palmTree(parent: Instance, base: Vector3, height: number, lean: number)
+	if asset("PalmTree") then
+		local inst = asset("PalmTree"):Clone()
+		fitTo(inst, height + 3, CFrame.new(base) * CFrame.Angles(0, math.rad((base.X * 13) % 360), 0))
+		inst.Parent = parent
+		return
+	end
 	local m = model(parent, "PalmTree")
 	local segments = 6
 	local pos = base
@@ -139,6 +192,12 @@ local function palmTree(parent: Instance, base: Vector3, height: number, lean: n
 end
 
 local function lantern(parent: Instance, at: Vector3)
+	if asset("Lantern") then
+		local inst = asset("Lantern"):Clone()
+		fitTo(inst, HEIGHTS.Lantern, CFrame.new(at))
+		inst.Parent = parent
+		return
+	end
 	local m = model(parent, "Lantern")
 	cylinder(m, CFrame.new(at + Vector3.new(0, 3, 0)), 6, 0.5, { Color = PALETTE.woodDark, Material = Enum.Material.Wood })
 	part(m, { Size = Vector3.new(1.4, 0.3, 1.4), CFrame = CFrame.new(at + Vector3.new(0, 6.1, 0)), Color = PALETTE.woodDark })
@@ -395,8 +454,9 @@ function WorldBuilder.buildHarbor(cfg: any): Folder
 	end
 
 	-- Landmark lighthouse on the rocky point
-	local landmark = model(folder, "Landmark_Lighthouse")
-	lighthouseTower(landmark, Vector3.new(-150, 5, -110), 46, 5)
+	placeAsset("Landmark_Lighthouse", CFrame.new(-150, 5, -110), folder, function(landmark)
+		lighthouseTower(landmark, Vector3.new(-150, 5, -110), 46, 5)
+	end)
 
 	-- Palms, lanterns and crates around town
 	local deco = model(folder, "Decor")
@@ -424,10 +484,10 @@ function WorldBuilder.buildHarbor(cfg: any): Folder
 		local a = math.rad(200 + i * 22)
 		local pos = Vector3.new(math.cos(a) * 140, 2.4, math.sin(a) * 140)
 		local base = part(nodes, { Name = node.id, Size = Vector3.new(5, 1, 5), CFrame = CFrame.new(pos), Transparency = 1, CanCollide = false })
-		local template = assets and assets:FindFirstChild("Forage_" .. node.material)
+		local template = asset("Forage_" .. node.material)
 		if template then
 			local inst = template:Clone()
-			inst:PivotTo(base.CFrame)
+			fitTo(inst, HEIGHTS["Forage_" .. node.material], base.CFrame - Vector3.new(0, 0.5, 0))
 			inst.Parent = base
 		else
 			FORAGE_LOOK[node.material](base, base)
@@ -466,11 +526,12 @@ local BUILDING_PIVOTS = {
 
 function WorldBuilder.buildBuilding(parent: Instance, id: string, index: number, tier: number): Instance
 	local pivot = BUILDING_PIVOTS[(index - 1) % #BUILDING_PIVOTS + 1]
-	local template = assets and assets:FindFirstChild("Building_" .. id .. "_T" .. tier)
+	local template = asset("Building_" .. id .. "_T" .. tier) or asset("Building_" .. id)
 	local inst
 	if template then
 		inst = template:Clone()
-		inst:PivotTo(pivot)
+		-- One model per tier, or one model that grows a little each tier.
+		fitTo(inst, 20 + (tier - 1) * 4, pivot)
 	else
 		inst = Instance.new("Model")
 		cottage(inst, index, tier, pivot)
@@ -543,9 +604,17 @@ function WorldBuilder.buildSector(cfg: any, name: string, origin: Vector3): Fold
 				part(decor, { Size = Vector3.new(2.6, 2, 3.2), CFrame = CFrame.new(origin.X + i * 6 + 1.5, 6, wallZ), Color = PALETTE.stoneDark, Material = Enum.Material.Slate })
 			end
 		elseif s.id == "lighthouse" then
-			main = lighthouseTower(decor, pos, 26, s.radius * S * 0.6)
-			main.Parent = folder
-			main.Name = "lighthouse"
+			if asset("Structure_lighthouse") then
+				local inst = asset("Structure_lighthouse"):Clone()
+				fitTo(inst, HEIGHTS.Structure_lighthouse, CFrame.new(pos))
+				inst.Parent = decor
+				-- The gameplay part stays: a hidden base the client tints by damage stage.
+				main = part(folder, { Name = "lighthouse", Size = Vector3.new(s.radius * 2 * S, 2, s.radius * 2 * S), CFrame = CFrame.new(pos + Vector3.new(0, 1, 0)), Color = PALETTE.stone })
+			else
+				main = lighthouseTower(decor, pos, 26, s.radius * S * 0.6)
+				main.Parent = folder
+				main.Name = "lighthouse"
+			end
 		else
 			-- Wooden dock out over the water, with posts and a crate
 			local dockLen = 18
@@ -575,8 +644,32 @@ function WorldBuilder.buildSector(cfg: any, name: string, origin: Vector3): Fold
 	return folder
 end
 
-function WorldBuilder.init()
+--[[
+	Loads art from a Roblox package (harbor.assetPackageId) into ReplicatedStorage.Assets, so models made
+	in Studio survive every new build of the game. Models already in ReplicatedStorage.Assets also work.
+]]
+function WorldBuilder.init(cfg: any?)
 	assets = ReplicatedStorage:FindFirstChild("Assets")
+	local id = cfg and cfg.harbor and cfg.harbor.assetPackageId or 0
+	if id and id > 0 then
+		local ok, loaded = pcall(InsertService.LoadAsset, InsertService, id)
+		if ok and loaded then
+			if not assets then
+				assets = Instance.new("Folder")
+				assets.Name = "Assets"
+				assets.Parent = ReplicatedStorage
+			end
+			local source = loaded:FindFirstChild("Assets") or loaded
+			for _, child in source:GetChildren() do
+				if not assets:FindFirstChild(child.Name) then
+					child.Parent = assets
+				end
+			end
+			loaded:Destroy()
+		else
+			warn("[tidebound] could not load asset package " .. tostring(id) .. ": " .. tostring(loaded))
+		end
+	end
 end
 
 return WorldBuilder

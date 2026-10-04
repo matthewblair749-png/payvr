@@ -131,7 +131,8 @@ function Ui.text(parent: Instance, text: string, props: any?): TextLabel
 		t.TextSize = Theme.size(props.TextSize)
 	end
 	if outline then
-		Ui.stroke(t, Theme.colors.outline, if t.TextSize >= 22 then 2.5 else 1.5)
+		local stroke = Ui.stroke(t, Theme.colors.outline, if t.TextSize >= 22 then 1.6 else 1)
+		stroke.Transparency = 0.35
 	end
 	t.Parent = parent
 	return t
@@ -176,15 +177,16 @@ function Ui.button(parent: Instance, text: string, onClick: () -> (), props: any
 		b.TextSize = Theme.size(props.TextSize)
 	end
 	-- White background tinted by the gradient keeps colours bright on every device.
-	local gradient = Ui.gradient(b, base:Lerp(Color3.new(1, 1, 1), 0.18), Theme.darker(base, 0.22))
-	Ui.corner(b, 12)
-	Ui.stroke(b, Theme.darker(base, 0.6), 2.5, true)
+	local gradient = Ui.gradient(b, base:Lerp(Color3.new(1, 1, 1), 0.22), Theme.darker(base, 0.18))
+	Ui.corner(b, 10)
+	local border = Ui.stroke(b, base:Lerp(Color3.new(1, 1, 1), 0.45), 1.5, true)
+	border.Transparency = 0.2
 	if not customText then
 		b.TextColor3 = Theme.colors.text
 	end
 	-- One UIStroke per object (the border); the text outline uses the built-in text stroke.
 	b.TextStrokeColor3 = Theme.colors.outline
-	b.TextStrokeTransparency = 0.15
+	b.TextStrokeTransparency = 0.6
 	local c = Instance.new("UISizeConstraint")
 	c.MinSize = Vector2.new(Theme.MIN_TOUCH, Theme.MIN_TOUCH)
 	c.Parent = b
@@ -214,13 +216,69 @@ function Ui.button(parent: Instance, text: string, onClick: () -> (), props: any
 end
 
 -- Square menu button: big emoji icon with a label underneath (HUD side bar).
+-- Dark glass square with an icon and a label underneath (side menus in the concept art).
 function Ui.iconButton(parent: Instance, icon: string, label: string, color: Color3, onClick: () -> (), props: any?): TextButton
-	local b = Ui.button(parent, "", onClick, { BackgroundColor3 = color, Size = UDim2.fromOffset(76, 76) })
+	local b = Ui.button(parent, "", onClick, { BackgroundColor3 = Theme.colors.panel, Size = UDim2.fromOffset(72, 72) })
+	b:FindFirstChildOfClass("UIStroke").Color = Theme.colors.border
 	apply(b, props)
-	local iconLabel = Ui.text(b, icon, { TextSize = 32, outline = false, TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.new(1, 0, 0, 44), AutomaticSize = Enum.AutomaticSize.None, Position = UDim2.fromOffset(0, 2), FontFace = Theme.fontBody })
+	local iconLabel = Ui.text(b, icon, { TextSize = 30, outline = false, TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.new(1, 0, 0, 42), AutomaticSize = Enum.AutomaticSize.None, Position = UDim2.fromOffset(0, 3), FontFace = Theme.fontEmoji })
 	iconLabel.TextWrapped = false
-	Ui.text(b, label, { TextSize = 14, TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.new(1, 0, 0, 22), AutomaticSize = Enum.AutomaticSize.None, Position = UDim2.new(0, 0, 1, -26) })
+	local text = Ui.text(b, label, { TextSize = 13, TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.new(1, 0, 0, 20), AutomaticSize = Enum.AutomaticSize.None, Position = UDim2.new(0, 0, 1, -23) })
+	text.TextColor3 = color:Lerp(Color3.new(1, 1, 1), 0.55)
 	return b
+end
+
+-- Glass panel: translucent navy fill, thin light-blue border.
+function Ui.glass(parent: Instance, props: any?): Frame
+	local f = Ui.frame(parent, { BackgroundColor3 = Theme.colors.panel, BackgroundTransparency = 0.12 })
+	apply(f, props)
+	Ui.corner(f, Theme.RADIUS)
+	local s = Ui.stroke(f, Theme.colors.border, 1.5, true)
+	s.Transparency = 0.25
+	return f
+end
+
+-- Horizontal progress bar; returns the fill frame.
+function Ui.progress(parent: Instance, fraction: number, color: Color3, props: any?): Frame
+	local bg = Ui.frame(parent, { BackgroundColor3 = Theme.colors.bg, Size = UDim2.new(1, 0, 0, 10) })
+	apply(bg, props)
+	Ui.corner(bg, 5)
+	local fill = Ui.frame(bg, { BackgroundColor3 = Color3.new(1, 1, 1), Size = UDim2.fromScale(math.clamp(fraction, 0, 1), 1) })
+	Ui.corner(fill, 5)
+	Ui.gradient(fill, color:Lerp(Color3.new(1, 1, 1), 0.25), color, 0)
+	fill.Name = "Fill"
+	return fill
+end
+
+-- Round avatar headshot for a Roblox user.
+function Ui.avatar(parent: Instance, userId: number, size: number, props: any?): ImageLabel
+	local img = Instance.new("ImageLabel")
+	img.BackgroundColor3 = Theme.colors.panelAlt
+	img.Size = UDim2.fromOffset(size, size)
+	img.Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(userId) .. "&w=150&h=150"
+	apply(img, props)
+	Ui.corner(img, size)
+	Ui.stroke(img, Theme.colors.border, 2, true)
+	img.Parent = parent
+	return img
+end
+
+-- Pill tabs; the selected one is filled blue. onSelect(id) is called on tap.
+function Ui.tabs(parent: Instance, items: { { id: string, label: string } }, selected: string, onSelect: (string) -> ()): Frame
+	local row = Ui.frame(parent, { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 40), AutomaticSize = Enum.AutomaticSize.Y })
+	local list = Ui.list(row, 6, true)
+	list.Wraps = true
+	for i, item in items do
+		local active = item.id == selected
+		local b = Ui.button(row, item.label, function()
+			onSelect(item.id)
+		end, { LayoutOrder = i, Size = UDim2.fromOffset(0, 40), AutomaticSize = Enum.AutomaticSize.X, TextSize = 15, BackgroundColor3 = if active then Theme.colors.accent else Theme.colors.panelAlt })
+		Ui.padding(b, 0)
+		local pad = b:FindFirstChildOfClass("UIPadding")
+		pad.PaddingLeft = UDim.new(0, 16)
+		pad.PaddingRight = UDim.new(0, 16)
+	end
+	return row
 end
 
 function Ui.scroll(parent: Instance, props: any?): ScrollingFrame
@@ -271,7 +329,7 @@ function Ui.row(parent: Instance, height: number?): Frame
 	return f
 end
 
--- Rounded card with an outline and a soft top highlight.
+-- Card inside a panel: slightly lighter glass with a thin border.
 function Ui.card(parent: Instance, props: any?): Frame
 	local f = Ui.frame(parent, { BackgroundColor3 = Color3.new(1, 1, 1), Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y })
 	local base = (props and props.BackgroundColor3) or Theme.colors.panelAlt
@@ -280,9 +338,10 @@ function Ui.card(parent: Instance, props: any?): Frame
 		props.BackgroundColor3 = nil
 	end
 	apply(f, props)
-	Ui.gradient(f, base:Lerp(Color3.new(1, 1, 1), 0.08), Theme.darker(base, 0.12))
+	Ui.gradient(f, base:Lerp(Color3.new(1, 1, 1), 0.06), Theme.darker(base, 0.2))
 	Ui.corner(f, Theme.RADIUS)
-	Ui.stroke(f, Theme.colors.outline, 2.5, true)
+	local s = Ui.stroke(f, Theme.colors.border, 1.2, true)
+	s.Transparency = 0.45
 	Ui.padding(f, 12)
 	Ui.list(f, 8)
 	return f
@@ -290,17 +349,20 @@ end
 
 -- Rounded pill (currency counters, badges).
 function Ui.pill(parent: Instance, icon: string, color: Color3, props: any?): TextLabel
-	local f = Ui.frame(parent, { BackgroundColor3 = Color3.new(1, 1, 1), Size = UDim2.fromOffset(130, 44) })
+	local f = Ui.frame(parent, { BackgroundColor3 = Theme.colors.bg, BackgroundTransparency = 0.15, Size = UDim2.fromOffset(120, 38) })
 	apply(f, props)
-	Ui.gradient(f, Theme.colors.bg:Lerp(Color3.new(1, 1, 1), 0.08), Theme.colors.outline)
-	Ui.corner(f, 22)
-	Ui.stroke(f, color, 2.5, true)
-	local iconLabel = Ui.text(f, icon, { TextSize = 24, outline = false, FontFace = Theme.fontBody, Size = UDim2.fromOffset(36, 44), AutomaticSize = Enum.AutomaticSize.None, Position = UDim2.fromOffset(6, 0), TextXAlignment = Enum.TextXAlignment.Center })
+	Ui.corner(f, 19)
+	local border = Ui.stroke(f, color:Lerp(Theme.colors.border, 0.4), 1.4, true)
+	border.Transparency = 0.2
+	local iconLabel = Ui.text(f, icon, { TextSize = 24, outline = false, FontFace = Theme.fontEmoji, Size = UDim2.fromOffset(38, 38), AutomaticSize = Enum.AutomaticSize.None, Position = UDim2.fromOffset(-4, 0), TextXAlignment = Enum.TextXAlignment.Center })
 	iconLabel.TextYAlignment = Enum.TextYAlignment.Center
 	iconLabel.Name = "Icon"
-	local value = Ui.text(f, "0", { TextSize = 20, Size = UDim2.new(1, -46, 1, 0), AutomaticSize = Enum.AutomaticSize.None, Position = UDim2.fromOffset(42, 0) })
+	local value = Ui.text(f, "0", { TextSize = 19, Size = UDim2.new(1, -44, 1, 0), AutomaticSize = Enum.AutomaticSize.None, Position = UDim2.fromOffset(36, 0), TextXAlignment = Enum.TextXAlignment.Right })
 	value.TextYAlignment = Enum.TextYAlignment.Center
-	value.TextColor3 = color
+	value.Name = "Value"
+	local valuePad = Instance.new("UIPadding")
+	valuePad.PaddingRight = UDim.new(0, 6)
+	valuePad.Parent = value
 	return value
 end
 

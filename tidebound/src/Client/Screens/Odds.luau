@@ -51,5 +51,37 @@ return {
 			Ui.text(container, L("odds_duplicates"), { TextColor3 = Theme.colors.textDim, TextSize = 15 })
 		end
 		Ui.text(container, L("odds_explainer"), { TextColor3 = Theme.colors.textDim, TextSize = 15 })
+		-- Buying from the odds screen guarantees the odds were seen first.
+		if args and args.buyProductId then
+			local product
+			for _, p in catalog.products do
+				if p.id == args.buyProductId then
+					product = p
+				end
+			end
+			if product then
+				Ui.button(container, L("shop_price_robux", { robux = Format.int(product.liveRobux or product.robux) }), function()
+					local reply = app:store("buy", { productId = product.id })
+					if reply.ok then
+						app:toast(L("shop_prompt_opened"))
+					end
+				end, { BackgroundColor3 = Theme.colors.good, Size = UDim2.new(1, 0, 0, 52), TextSize = 20 })
+			end
+		elseif args and args.buyGemItemId then
+			local item
+			for _, g in catalog.gemItems do
+				if g.id == args.buyGemItemId then
+					item = g
+				end
+			end
+			if item then
+				Ui.button(container, "💎 " .. Format.int(item.gems), function()
+					local reply = app:intent("buyGemItem", { item = item.id })
+					if reply.ok and reply.data.crate then
+						app:toast(L("crate_result", { item = L(reply.data.crate.itemId), rarity = L("rarity_" .. reply.data.crate.rarity) }))
+					end
+				end, { BackgroundColor3 = Theme.colors.purple, Size = UDim2.new(1, 0, 0, 52), TextSize = 20 })
+			end
+		end
 	end,
 }
