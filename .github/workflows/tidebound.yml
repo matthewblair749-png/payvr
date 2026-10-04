@@ -1,0 +1,83 @@
+name: Tidebound
+
+on:
+  push:
+    paths: ["tidebound/**", ".github/workflows/tidebound.yml"]
+  pull_request:
+    paths: ["tidebound/**", ".github/workflows/tidebound.yml"]
+
+defaults:
+  run:
+    working-directory: tidebound
+
+jobs:
+  config:
+    name: Config and generated files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Validate config against JSON Schemas
+        run: npm ci --prefix shared/tools && node shared/tools/validate-config.mjs
+      - name: Schemas and string table are up to date
+        run: |
+          python3 shared/tools/gen-schemas.py
+          python3 shared/tools/gen-strings.py
+          git diff --exit-code -- shared/schemas src/Localization
+
+  luau:
+    name: Luau lint, tests and place build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ok-nick/setup-aftman@v0.4.2
+        with:
+          path: tidebound
+      - name: Format
+        run: stylua --check src tests
+      - name: Lint
+        run: selene generate-roblox-std && selene src
+      - name: Unit, simulation and server integration tests (Lune)
+        run: lune run tests/run
+      - name: Build release place and check it
+        run: |
+          rojo build release.project.json -o build/Tidebound.rbxl
+          lune run tests/tools/inspect-place build/Tidebound.rbxl release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tidebound-place
+          path: tidebound/build/Tidebound.rbxl
+
+  backend:
+    name: Companion backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tidebound/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  model:
+    name: Revenue model
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Rebuild from config and check the planning numbers
+        run: |
+          pip install openpyxl
+          python3 model/build_model.py
+          git diff --exit-code -- model/revenue-model.html
+          node model/check_model.mjs

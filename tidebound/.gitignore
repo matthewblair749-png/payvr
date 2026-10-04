@@ -7,3 +7,4 @@ sourcemap.json
 backend/dist/
 model/~$*
 tests/.build/
+build/
