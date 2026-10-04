@@ -4,13 +4,13 @@
 	Servers cache it, refresh every 30 seconds, and hear about tier unlocks right away over MessagingService.
 ]]
 
-local DataStoreService = game:GetService("DataStoreService")
 local MessagingService = game:GetService("MessagingService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Harbor = require(Shared.Rules.Harbor)
 local Signal = require(Shared.Util.Signal)
+local Stores = require(script.Parent.Stores)
 local ConfigService = require(script.Parent.ConfigService)
 local Logger = require(script.Parent.Logger)
 
@@ -71,7 +71,7 @@ function HarborService.contribute(contribution: any): (boolean, { any })
 end
 
 function HarborService.init()
-	store = DataStoreService:GetDataStore(STORE)
+	store = Stores.get(STORE)
 	state = Harbor.newState(ConfigService.get())
 	refresh()
 	task.spawn(function()

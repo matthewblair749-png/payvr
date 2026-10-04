@@ -11,7 +11,6 @@
 ]]
 
 local MarketplaceService = game:GetService("MarketplaceService")
-local DataStoreService = game:GetService("DataStoreService")
 local MessagingService = game:GetService("MessagingService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -27,6 +26,7 @@ local Rng = require(Shared.Util.Rng)
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Validate = require(Shared.Util.Validate)
 
+local Stores = require(script.Parent.Stores)
 local ConfigService = require(script.Parent.ConfigService)
 local DataService = require(script.Parent.DataService)
 local PlayerService = require(script.Parent.PlayerService)
@@ -315,8 +315,8 @@ local function onStore(player: Player, action: any, args: any): any
 end
 
 function StoreService.init()
-	audit = DataStoreService:GetDataStore(AUDIT_STORE)
-	pending = DataStoreService:GetDataStore(PENDING_STORE)
+	audit = Stores.get(AUDIT_STORE)
+	pending = Stores.get(PENDING_STORE)
 	promptLimiter = RateLimiter.new(ConfigService.get().compliance.rateLimits.purchasePromptsPerMinute / 60, 3)
 	MarketplaceService.ProcessReceipt = processReceipt
 	Remotes.get("Store").OnServerInvoke = onStore
@@ -338,8 +338,10 @@ function StoreService.init()
 			end
 		end
 	end)
-	Players.UserSubscriptionStatusChanged:Connect(function(player, _subscriptionId)
-		syncSubscription(player)
+	pcall(function()
+		Players.UserSubscriptionStatusChanged:Connect(function(player, _subscriptionId)
+			syncSubscription(player)
+		end)
 	end)
 	PlayerService.Loaded:Connect(function(player)
 		task.spawn(syncGamePasses, player)

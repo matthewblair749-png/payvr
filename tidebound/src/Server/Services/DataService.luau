@@ -13,10 +13,10 @@
 	Purchases call saveNow() and only confirm the receipt to Roblox once the write succeeded.
 ]]
 
-local DataStoreService = game:GetService("DataStoreService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
+local Stores = require(script.Parent.Stores)
 local Logger = require(script.Parent.Logger)
 
 local DataService = {}
@@ -36,7 +36,7 @@ end
 
 local function waitForBudget(requestType: Enum.DataStoreRequestType)
 	local deadline = os.clock() + 10
-	while DataStoreService:GetRequestBudgetForRequestType(requestType) < 1 and os.clock() < deadline do
+	while Stores.budget(requestType) < 1 and os.clock() < deadline do
 		task.wait(0.5)
 	end
 end
@@ -158,7 +158,7 @@ function DataService.erase(userId: number): boolean
 end
 
 function DataService.init()
-	store = DataStoreService:GetDataStore(STORE_NAME)
+	store = Stores.get(STORE_NAME)
 	task.spawn(function()
 		while true do
 			task.wait(AUTOSAVE_SECONDS)

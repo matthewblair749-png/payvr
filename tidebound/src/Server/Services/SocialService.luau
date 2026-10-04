@@ -6,13 +6,13 @@
 ]]
 
 local Players = game:GetService("Players")
-local DataStoreService = game:GetService("DataStoreService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local RateLimiter = require(Shared.Util.RateLimiter)
 local Validate = require(Shared.Util.Validate)
 
+local Stores = require(script.Parent.Stores)
 local ConfigService = require(script.Parent.ConfigService)
 local DataService = require(script.Parent.DataService)
 local PlayerService = require(script.Parent.PlayerService)
@@ -96,7 +96,7 @@ end
 
 function SocialService.init()
 	chatLimiter = RateLimiter.new(ConfigService.get().night.quickChatPerSecond, 3)
-	reports = DataStoreService:GetDataStore("Reports")
+	reports = Stores.get("Reports")
 	Remotes.get("QuickChat").OnServerEvent:Connect(onQuickChat)
 	Remotes.get("Social").OnServerInvoke = onSocial
 	Players.PlayerRemoving:Connect(function(p)

@@ -165,6 +165,7 @@ function Runtime.new(placePath: string, opts: any?)
 	local self = setmetatable({}, Runtime)
 	self.backend = opts.backend or Runtime.newBackend()
 	self.jobId = opts.jobId or "job-1"
+	self.unpublished = opts.unpublished == true
 	self.epoch = opts.epoch or 1791460800 -- 2026-10-08 12:00 UTC
 	self.clock = 0
 	self.errors = {}
@@ -303,6 +304,9 @@ function Runtime:_buildServices()
 
 	local DataStoreService = {}
 	function DataStoreService:GetDataStore(name)
+		if rt.unpublished then
+			error("You must publish this place to the web to access DataStore.")
+		end
 		return dataStore(backend, name)
 	end
 	function DataStoreService:GetRequestBudgetForRequestType()

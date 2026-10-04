@@ -5,7 +5,6 @@
 	Invalid overrides are rejected and the server keeps the last good config.
 ]]
 
-local DataStoreService = game:GetService("DataStoreService")
 local MessagingService = game:GetService("MessagingService")
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -13,6 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local ConfigLoader = require(Shared.ConfigLoader)
 local Signal = require(Shared.Util.Signal)
+local Stores = require(script.Parent.Stores)
 local Logger = require(script.Parent.Logger)
 
 local ConfigService = {}
@@ -36,7 +36,7 @@ function ConfigService.overrides(): any
 end
 
 local function fetchOverrides(): any
-	local store = DataStoreService:GetDataStore(STORE_NAME)
+	local store = Stores.get(STORE_NAME)
 	local ok, value = pcall(store.GetAsync, store, KEY)
 	if not ok then
 		Logger.warn("config_fetch_failed", { error = tostring(value) })
