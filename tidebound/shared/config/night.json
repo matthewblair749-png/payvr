@@ -11,18 +11,100 @@
   "enemyCountPerSquadMember": 1.5,
   "enemyHealthGrowthPerWave": 0.08,
   "spawnSpreadSeconds": 14,
-  "sector": { "width": 24, "height": 30, "spawnY": 29, "seawallY": 20, "playerMaxY": 26 },
+  "sector": {
+    "width": 24,
+    "height": 30,
+    "spawnY": 29,
+    "seawallY": 20,
+    "playerMaxY": 26
+  },
   "structures": [
-    { "id": "lighthouse", "maxHp": 600, "x": 12, "y": 5, "radius": 1.5, "losesNight": true, "repairable": true },
-    { "id": "seawall", "maxHp": 800, "x": 12, "y": 20, "radius": 0.6, "losesNight": false, "repairable": true },
-    { "id": "dock", "maxHp": 400, "x": 19, "y": 22, "radius": 1.5, "losesNight": false, "repairable": true }
+    {
+      "id": "lighthouse",
+      "maxHp": 800,
+      "x": 12,
+      "y": 5,
+      "radius": 1.5,
+      "losesNight": true,
+      "repairable": true
+    },
+    {
+      "id": "seawall",
+      "maxHp": 1100,
+      "x": 12,
+      "y": 20,
+      "radius": 0.6,
+      "losesNight": false,
+      "repairable": true
+    },
+    {
+      "id": "dock",
+      "maxHp": 400,
+      "x": 19,
+      "y": 22,
+      "radius": 1.5,
+      "losesNight": false,
+      "repairable": true
+    }
   ],
-  "damageStageThresholds": [0.66, 0.33],
-  "repair": { "range": 2.5, "intervalSeconds": 0.5, "hpPerInterval": 25, "ironScrapPerInterval": 1 },
+  "damageStageThresholds": [
+    0.66,
+    0.33
+  ],
+  "repair": {
+    "range": 2.5,
+    "intervalSeconds": 0.5,
+    "hpPerInterval": 25,
+    "ironScrapPerInterval": 1
+  },
   "enemies": [
-    { "id": "crawler", "hp": 30, "speed": 3.2, "damage": 4, "attackInterval": 1.0, "range": 1.0, "radius": 0.4, "firstWave": 1, "spawnShare": 0.6, "targets": ["dock", "seawall", "lighthouse"] },
-    { "id": "brute", "hp": 110, "speed": 1.3, "damage": 12, "attackInterval": 1.6, "range": 1.2, "radius": 0.8, "firstWave": 2, "spawnShare": 0.2, "targets": ["seawall", "lighthouse"] },
-    { "id": "spitter", "hp": 45, "speed": 2.0, "damage": 6, "attackInterval": 2.0, "range": 7.0, "radius": 0.5, "firstWave": 3, "spawnShare": 0.2, "targets": ["dock", "seawall", "lighthouse"] }
+    {
+      "id": "crawler",
+      "hp": 30,
+      "speed": 3.2,
+      "damage": 4,
+      "attackInterval": 1.0,
+      "range": 1.0,
+      "radius": 0.4,
+      "firstWave": 1,
+      "spawnShare": 0.6,
+      "targets": [
+        "dock",
+        "seawall",
+        "lighthouse"
+      ]
+    },
+    {
+      "id": "brute",
+      "hp": 110,
+      "speed": 1.3,
+      "damage": 12,
+      "attackInterval": 1.6,
+      "range": 1.2,
+      "radius": 0.8,
+      "firstWave": 2,
+      "spawnShare": 0.2,
+      "targets": [
+        "seawall",
+        "lighthouse"
+      ]
+    },
+    {
+      "id": "spitter",
+      "hp": 45,
+      "speed": 2.0,
+      "damage": 6,
+      "attackInterval": 2.0,
+      "range": 7.0,
+      "radius": 0.5,
+      "firstWave": 3,
+      "spawnShare": 0.2,
+      "targets": [
+        "dock",
+        "seawall",
+        "lighthouse"
+      ]
+    }
   ],
   "player": {
     "moveSpeed": 5.0,
@@ -40,23 +122,64 @@
     "knockback": 3.0
   },
   "abilities": {
-    "tide": { "radius": 4, "damageMultiplier": 2.0, "knockback": 3, "slowPct": 0, "slowSeconds": 0, "healStructure": 0 },
-    "ember": { "radius": 3, "damageMultiplier": 3.0, "knockback": 0, "slowPct": 0, "slowSeconds": 0, "healStructure": 0 },
-    "moss": { "radius": 3, "damageMultiplier": 1.0, "knockback": 0, "slowPct": 0, "slowSeconds": 0, "healStructure": 60 },
-    "frost": { "radius": 5, "damageMultiplier": 1.5, "knockback": 0, "slowPct": 50, "slowSeconds": 4, "healStructure": 0 }
+    "tide": {
+      "radius": 4,
+      "damageMultiplier": 2.0,
+      "knockback": 3,
+      "slowPct": 0,
+      "slowSeconds": 0,
+      "healStructure": 0
+    },
+    "ember": {
+      "radius": 3,
+      "damageMultiplier": 3.0,
+      "knockback": 0,
+      "slowPct": 0,
+      "slowSeconds": 0,
+      "healStructure": 0
+    },
+    "moss": {
+      "radius": 3,
+      "damageMultiplier": 1.0,
+      "knockback": 0,
+      "slowPct": 0,
+      "slowSeconds": 0,
+      "healStructure": 60
+    },
+    "frost": {
+      "radius": 5,
+      "damageMultiplier": 1.5,
+      "knockback": 0,
+      "slowPct": 50,
+      "slowSeconds": 4,
+      "healStructure": 0
+    }
   },
   "boss": {
     "id": "the_undertow",
     "enabled": true,
     "wave": 6,
-    "baseHp": 700,
-    "hpPerSquadMember": 0.5,
-    "x": 12, "y": 27, "radius": 2.5,
-    "phaseThresholds": [0.66, 0.33],
+    "baseHp": 450,
+    "hpPerSquadMember": 0.4,
+    "x": 12,
+    "y": 27,
+    "radius": 2.5,
+    "phaseThresholds": [
+      0.66,
+      0.33
+    ],
     "telegraphRadius": 3,
     "telegraphWarningSeconds": 1.5,
-    "telegraphIntervalSeconds": [6, 5, 4],
-    "telegraphCount": [1, 2, 3],
+    "telegraphIntervalSeconds": [
+      6,
+      5,
+      4
+    ],
+    "telegraphCount": [
+      1,
+      2,
+      3
+    ],
     "telegraphStructureDamage": 40,
     "shieldDamageTaken": 0.1,
     "weakPointWindowSeconds": 4,
@@ -67,16 +190,29 @@
   },
   "rewards": {
     "silverPerWave": 25,
-    "materialsPerWave": { "driftwood": 2, "shells": 2, "ironScrap": 1 },
+    "materialsPerWave": {
+      "driftwood": 2,
+      "shells": 2,
+      "ironScrap": 1
+    },
     "passXpPerWave": 10,
     "bossSilver": 60,
     "bossPearls": 3,
-    "contribution": { "damagePoint": 1, "repairHpPoint": 1.5, "weakPointHit": 50 },
+    "contribution": {
+      "damagePoint": 1,
+      "repairHpPoint": 1.5,
+      "weakPointHit": 50
+    },
     "contributionWeight": 0.5,
     "minShare": 0.5,
     "maxShare": 2.0
   },
-  "onboardingNight": { "waveCount": 3, "boss": false, "enemyHealthMultiplier": 0.8, "enemyCountMultiplier": 0.8 },
+  "onboardingNight": {
+    "waveCount": 3,
+    "boss": false,
+    "enemyHealthMultiplier": 0.8,
+    "enemyCountMultiplier": 0.8
+  },
   "smuggler": {
     "enabled": true,
     "minOptIns": 3,

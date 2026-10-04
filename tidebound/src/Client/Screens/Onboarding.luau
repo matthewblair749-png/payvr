@@ -14,19 +14,25 @@ function Onboarding.mount(app: any, gui: ScreenGui)
 	local L = app.L
 	local card = Ui.frame(gui, {
 		Name = "Guide",
-		BackgroundColor3 = Theme.colors.panel,
-		Size = UDim2.new(1, -24, 0, 0),
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		Size = UDim2.new(0.62, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		Position = UDim2.new(0, 12, 1, -12),
-		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.new(0.5, 0, 1, -14),
+		AnchorPoint = Vector2.new(0.5, 1),
 		Visible = false,
 	})
-	Ui.corner(card, 14)
-	Ui.padding(card, 12)
-	Ui.list(card, 8)
-	local text = Ui.text(card, "", { TextSize = 20 })
-	local actions = Ui.frame(card, { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 52) })
-	Ui.list(actions, 8, true)
+	Ui.gradient(card, Theme.colors.panelAlt, Theme.colors.bg)
+	Ui.corner(card, 18)
+	Ui.stroke(card, Theme.colors.accent, 3.5, true)
+	Ui.padding(card, 14)
+	Ui.list(card, 10, false, Enum.HorizontalAlignment.Center)
+	local width = Instance.new("UISizeConstraint")
+	width.MinSize = Vector2.new(320, 0)
+	width.MaxSize = Vector2.new(620, math.huge)
+	width.Parent = card
+	local text = Ui.text(card, "", { TextSize = 22, TextXAlignment = Enum.TextXAlignment.Center })
+	local actions = Ui.frame(card, { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 56) })
+	Ui.list(actions, 10, true, Enum.HorizontalAlignment.Center)
 
 	local lastKey = nil
 	local function render()
@@ -90,13 +96,13 @@ function Onboarding.mount(app: any, gui: ScreenGui)
 		text.Text = L(key, args)
 		if key ~= lastKey then
 			lastKey = key
+			Ui.popIn(card)
 			Ui.clear(actions)
 			for _, b in buttons do
 				local small = b[3] == true
 				Ui.button(actions, b[1], b[2], {
 					Size = UDim2.new(0, if small then 100 else 180, 0, 48),
-					BackgroundColor3 = if small then Theme.colors.panelAlt else Theme.colors.accent,
-					TextColor3 = if small then Theme.colors.textDim else Theme.colors.buttonText,
+					BackgroundColor3 = if small then Theme.colors.panelAlt else Theme.colors.good,
 					TextSize = if small then 14 else 18,
 				})
 			end

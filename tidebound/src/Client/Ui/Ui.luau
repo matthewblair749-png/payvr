@@ -1,6 +1,9 @@
 --[[
-	Tiny UI kit on top of Roblox GUI objects. Every interactive element is at least 48 x 48,
-	all text goes through the localization function, and animations respect reduced motion.
+	UI kit in the style of top Roblox games. Every interactive element is at least 48 x 48,
+	all text goes through the localization function, and animations respect Reduce Motion.
+	  * Buttons: rounded, vertical gradient, dark outline, outlined bold text, squash on press.
+	  * Text: bold cartoon font with a dark outline so it reads on any background.
+	  * Cards and panels: rounded, outlined, with padding.
 ]]
 
 local TweenService = game:GetService("TweenService")
@@ -41,20 +44,29 @@ function Ui.screen(name: string, parent: Instance, order: number?): ScreenGui
 	return gui
 end
 
-function Ui.frame(parent: Instance, props: any?): Frame
-	local f = Instance.new("Frame")
-	f.BackgroundColor3 = Theme.colors.panel
-	f.BorderSizePixel = 0
-	apply(f, props)
-	f.Parent = parent
-	return f
-end
-
 function Ui.corner(parent: Instance, radius: number?)
 	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0, radius or 12)
+	c.CornerRadius = UDim.new(0, radius or Theme.RADIUS)
 	c.Parent = parent
 	return c
+end
+
+function Ui.stroke(parent: Instance, color: Color3?, thickness: number?, border: boolean?)
+	local s = Instance.new("UIStroke")
+	s.Color = color or Theme.colors.outline
+	s.Thickness = thickness or 2
+	s.ApplyStrokeMode = if border then Enum.ApplyStrokeMode.Border else Enum.ApplyStrokeMode.Contextual
+	s.LineJoinMode = Enum.LineJoinMode.Round
+	s.Parent = parent
+	return s
+end
+
+function Ui.gradient(parent: Instance, top: Color3, bottom: Color3, rotation: number?)
+	local g = Instance.new("UIGradient")
+	g.Color = ColorSequence.new(top, bottom)
+	g.Rotation = rotation or 90
+	g.Parent = parent
+	return g
 end
 
 function Ui.padding(parent: Instance, px: number)
@@ -65,6 +77,15 @@ function Ui.padding(parent: Instance, px: number)
 	p.PaddingRight = UDim.new(0, px)
 	p.Parent = parent
 	return p
+end
+
+function Ui.frame(parent: Instance, props: any?): Frame
+	local f = Instance.new("Frame")
+	f.BackgroundColor3 = Theme.colors.panel
+	f.BorderSizePixel = 0
+	apply(f, props)
+	f.Parent = parent
+	return f
 end
 
 function Ui.list(parent: Instance, gap: number?, horizontal: boolean?, align: Enum.HorizontalAlignment?): UIListLayout
@@ -87,6 +108,7 @@ function Ui.grid(parent: Instance, cell: Vector2, gap: number?): UIGridLayout
 	return g
 end
 
+-- Text with the cartoon font and a dark outline (pass outline = false for plain body text).
 function Ui.text(parent: Instance, text: string, props: any?): TextLabel
 	local t = Instance.new("TextLabel")
 	t.BackgroundTransparency = 1
@@ -94,43 +116,91 @@ function Ui.text(parent: Instance, text: string, props: any?): TextLabel
 	t.TextColor3 = Theme.colors.text
 	t.TextSize = Theme.size(18)
 	t.TextWrapped = true
+	t.RichText = true
 	t.TextXAlignment = Enum.TextXAlignment.Left
 	t.AutomaticSize = Enum.AutomaticSize.Y
 	t.Size = UDim2.new(1, 0, 0, 0)
 	t.Text = text
+	local outline = true
+	if props then
+		outline = props.outline ~= false
+		props.outline = nil
+	end
 	apply(t, props)
 	if props and props.TextSize then
 		t.TextSize = Theme.size(props.TextSize)
+	end
+	if outline then
+		Ui.stroke(t, Theme.colors.outline, if t.TextSize >= 22 then 2.5 else 1.5)
 	end
 	t.Parent = parent
 	return t
 end
 
+local function press(inst: GuiObject)
+	if Theme.reducedMotion then
+		return
+	end
+	local scale = inst:FindFirstChildOfClass("UIScale") or Instance.new("UIScale")
+	scale.Parent = inst
+	TweenService:Create(scale, TweenInfo.new(0.06, Enum.EasingStyle.Quad), { Scale = 0.9 }):Play()
+	task.delay(0.06, function()
+		TweenService:Create(scale, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+	end)
+end
+
+--[[
+	Chunky game button. props.BackgroundColor3 picks the colour family; the gradient and outline
+	are derived from it. Text colour adapts to the background unless TextColor3 is given.
+]]
 function Ui.button(parent: Instance, text: string, onClick: () -> (), props: any?): TextButton
 	local b = Instance.new("TextButton")
-	b.AutoButtonColor = true
-	b.BackgroundColor3 = Theme.colors.accent
+	b.AutoButtonColor = false
+	b.BackgroundColor3 = Color3.new(1, 1, 1)
 	b.TextColor3 = Theme.colors.buttonText
 	b.FontFace = Theme.fontBold
 	b.TextSize = Theme.size(18)
 	b.TextWrapped = true
+	b.RichText = true
 	b.Size = UDim2.new(0, 160, 0, Theme.MIN_TOUCH)
 	b.Text = text
+	local base = Theme.colors.accent
+	local customText = props and props.TextColor3
+	if props then
+		base = props.BackgroundColor3 or base
+		props = table.clone(props)
+		props.BackgroundColor3 = nil
+	end
 	apply(b, props)
 	if props and props.TextSize then
 		b.TextSize = Theme.size(props.TextSize)
 	end
-	-- Never smaller than a 48 x 48 touch target, whatever the layout asks for.
+	-- White background tinted by the gradient keeps colours bright on every device.
+	local gradient = Ui.gradient(b, base:Lerp(Color3.new(1, 1, 1), 0.18), Theme.darker(base, 0.22))
+	Ui.corner(b, 12)
+	Ui.stroke(b, Theme.darker(base, 0.6), 2.5, true)
+	if not customText then
+		b.TextColor3 = Theme.colors.text
+	end
+	-- One UIStroke per object (the border); the text outline uses the built-in text stroke.
+	b.TextStrokeColor3 = Theme.colors.outline
+	b.TextStrokeTransparency = 0.15
 	local c = Instance.new("UISizeConstraint")
 	c.MinSize = Vector2.new(Theme.MIN_TOUCH, Theme.MIN_TOUCH)
 	c.Parent = b
-	Ui.corner(b, 10)
 	local busy = false
+	b.MouseEnter:Connect(function()
+		gradient.Offset = Vector2.new(0, -0.08)
+	end)
+	b.MouseLeave:Connect(function()
+		gradient.Offset = Vector2.new()
+	end)
 	b.Activated:Connect(function()
-		if busy then
+		if busy or not b.Active then
 			return
 		end
 		busy = true
+		press(b)
 		task.spawn(function()
 			local ok, err = pcall(onClick)
 			busy = false
@@ -143,11 +213,22 @@ function Ui.button(parent: Instance, text: string, onClick: () -> (), props: any
 	return b
 end
 
+-- Square menu button: big emoji icon with a label underneath (HUD side bar).
+function Ui.iconButton(parent: Instance, icon: string, label: string, color: Color3, onClick: () -> (), props: any?): TextButton
+	local b = Ui.button(parent, "", onClick, { BackgroundColor3 = color, Size = UDim2.fromOffset(76, 76) })
+	apply(b, props)
+	local iconLabel = Ui.text(b, icon, { TextSize = 32, outline = false, TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.new(1, 0, 0, 44), AutomaticSize = Enum.AutomaticSize.None, Position = UDim2.fromOffset(0, 2), FontFace = Theme.fontBody })
+	iconLabel.TextWrapped = false
+	Ui.text(b, label, { TextSize = 14, TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.new(1, 0, 0, 22), AutomaticSize = Enum.AutomaticSize.None, Position = UDim2.new(0, 0, 1, -26) })
+	return b
+end
+
 function Ui.scroll(parent: Instance, props: any?): ScrollingFrame
 	local s = Instance.new("ScrollingFrame")
 	s.BackgroundTransparency = 1
 	s.BorderSizePixel = 0
 	s.ScrollBarThickness = 8
+	s.ScrollBarImageColor3 = Theme.colors.accent
 	s.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	s.CanvasSize = UDim2.new()
 	s.Size = UDim2.fromScale(1, 1)
@@ -156,13 +237,12 @@ function Ui.scroll(parent: Instance, props: any?): ScrollingFrame
 	return s
 end
 
--- Rarity shown as shape + colored word, so it reads without color vision.
+-- Rarity shown as shape + coloured word, so it reads without colour vision.
 function Ui.rarity(parent: Instance, cfg: any, rarity: string, props: any?): TextLabel
 	local r = cfg.index.rarities[rarity]
 	local glyph = Theme.shapeGlyph[r and r.shape or "circle"] or "●"
 	local label = Ui.text(parent, glyph .. " " .. Ui.L("rarity_" .. rarity), props)
-	label.TextColor3 = if r then Theme.hex(r.color) else Theme.colors.text
-	label.FontFace = Theme.fontBold
+	label.TextColor3 = if r then Theme.hex(r.color):Lerp(Color3.new(1, 1, 1), 0.25) else Theme.colors.text
 	return label
 end
 
@@ -174,25 +254,59 @@ function Ui.tween(inst: Instance, props: any, seconds: number)
 	TweenService:Create(inst, TweenInfo.new(seconds, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props):Play()
 end
 
--- A row with a label on the left and content on the right.
+-- Pops an element in with a bounce (skipped with Reduce Motion).
+function Ui.popIn(inst: GuiObject)
+	if Theme.reducedMotion then
+		return
+	end
+	local scale = inst:FindFirstChildOfClass("UIScale") or Instance.new("UIScale")
+	scale.Scale = 0.6
+	scale.Parent = inst
+	TweenService:Create(scale, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+end
+
 function Ui.row(parent: Instance, height: number?): Frame
 	local f = Ui.frame(parent, { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, height or Theme.MIN_TOUCH), AutomaticSize = Enum.AutomaticSize.Y })
 	Ui.list(f, 8, true)
 	return f
 end
 
+-- Rounded card with an outline and a soft top highlight.
 function Ui.card(parent: Instance, props: any?): Frame
-	local f = Ui.frame(parent, { BackgroundColor3 = Theme.colors.panelAlt, Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y })
+	local f = Ui.frame(parent, { BackgroundColor3 = Color3.new(1, 1, 1), Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y })
+	local base = (props and props.BackgroundColor3) or Theme.colors.panelAlt
+	if props then
+		props = table.clone(props)
+		props.BackgroundColor3 = nil
+	end
 	apply(f, props)
-	Ui.corner(f, 12)
-	Ui.padding(f, 10)
-	Ui.list(f, 6)
+	Ui.gradient(f, base:Lerp(Color3.new(1, 1, 1), 0.08), Theme.darker(base, 0.12))
+	Ui.corner(f, Theme.RADIUS)
+	Ui.stroke(f, Theme.colors.outline, 2.5, true)
+	Ui.padding(f, 12)
+	Ui.list(f, 8)
 	return f
+end
+
+-- Rounded pill (currency counters, badges).
+function Ui.pill(parent: Instance, icon: string, color: Color3, props: any?): TextLabel
+	local f = Ui.frame(parent, { BackgroundColor3 = Color3.new(1, 1, 1), Size = UDim2.fromOffset(130, 44) })
+	apply(f, props)
+	Ui.gradient(f, Theme.colors.bg:Lerp(Color3.new(1, 1, 1), 0.08), Theme.colors.outline)
+	Ui.corner(f, 22)
+	Ui.stroke(f, color, 2.5, true)
+	local iconLabel = Ui.text(f, icon, { TextSize = 24, outline = false, FontFace = Theme.fontBody, Size = UDim2.fromOffset(36, 44), AutomaticSize = Enum.AutomaticSize.None, Position = UDim2.fromOffset(6, 0), TextXAlignment = Enum.TextXAlignment.Center })
+	iconLabel.TextYAlignment = Enum.TextYAlignment.Center
+	iconLabel.Name = "Icon"
+	local value = Ui.text(f, "0", { TextSize = 20, Size = UDim2.new(1, -46, 1, 0), AutomaticSize = Enum.AutomaticSize.None, Position = UDim2.fromOffset(42, 0) })
+	value.TextYAlignment = Enum.TextYAlignment.Center
+	value.TextColor3 = color
+	return value
 end
 
 function Ui.clear(container: Instance)
 	for _, child in container:GetChildren() do
-		if not child:IsA("UIListLayout") and not child:IsA("UIGridLayout") and not child:IsA("UIPadding") and not child:IsA("UICorner") then
+		if not (child:IsA("UIListLayout") or child:IsA("UIGridLayout") or child:IsA("UIPadding") or child:IsA("UICorner") or child:IsA("UIStroke") or child:IsA("UIGradient")) then
 			child:Destroy()
 		end
 	end

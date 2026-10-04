@@ -15,6 +15,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Interpolator = require(ReplicatedStorage.Shared.Night.Interpolator)
+local Creatures = require(script.Parent.Parent.World.Creatures)
 local Ui = require(script.Parent.Parent.Ui.Ui)
 local Theme = require(script.Parent.Parent.Ui.Theme)
 local Format = require(script.Parent.Parent.Ui.Format)
@@ -23,18 +24,12 @@ local NightClient = {}
 
 local ENEMY_TYPES = { "crawler", "brute", "spitter" }
 local STRUCTURES = { "lighthouse", "seawall", "dock" }
-local ENEMY_LOOK = {
-	crawler = { size = Vector3.new(2, 1.2, 2), color = Color3.fromRGB(220, 90, 80) },
-	brute = { size = Vector3.new(4, 4, 4), color = Color3.fromRGB(130, 80, 170) },
-	spitter = { size = Vector3.new(2, 3, 2), color = Color3.fromRGB(90, 180, 110) },
-}
 local SEND_RATE = 20
 
 function NightClient.mount(app: any, gui: ScreenGui)
 	local L = app.L
 	local remotes = app.remotes
 	local player = Players.LocalPlayer
-	local assets = ReplicatedStorage:FindFirstChild("Assets")
 
 	local session = nil -- { origin, studs, squad, onboarding, folder, interp, enemies = {id -> part}, latest }
 	local input = { attack = false, charge = false, ability = false }
@@ -73,39 +68,12 @@ function NightClient.mount(app: any, gui: ScreenGui)
 
 	-- ------------------------------------------------------------------ world visuals
 	local function newEnemy(typeId: string): Instance
-		local template = assets and assets:FindFirstChild("Enemy_" .. typeId)
-		local inst
-		if template then
-			inst = template:Clone()
-		else
-			local look = ENEMY_LOOK[typeId]
-			inst = Instance.new("Part")
-			inst.Size = look.size
-			inst.Color = look.color
-			inst.Material = Enum.Material.SmoothPlastic
-		end
-		for _, p in (if inst:IsA("BasePart") then { inst } else inst:GetDescendants()) do
-			if p:IsA("BasePart") then
-				p.Anchored = true
-				p.CanCollide = false
-				p.CanQuery = false
-				p.CastShadow = false
-			end
-		end
-		inst.Name = typeId
-		return inst
+		local element = session and session.latest and session.latest.element or "tide"
+		return Creatures.enemy(typeId, element)
 	end
 
 	local function toWorld(x: number, y: number, h: number?): Vector3
 		return session.origin + Vector3.new(x * session.studs, h or 2, -y * session.studs)
-	end
-
-	local function setPivot(inst: Instance, pos: Vector3)
-		if inst:IsA("Model") then
-			inst:PivotTo(CFrame.new(pos))
-		else
-			(inst :: BasePart).CFrame = CFrame.new(pos)
-		end
 	end
 
 	local function flatDisc(radius: number, color: Color3, transparency: number): Part
@@ -202,12 +170,24 @@ function NightClient.mount(app: any, gui: ScreenGui)
 				inst.Parent = session.folder
 				session.enemies[id] = inst
 			end
-			setPivot(inst, toWorld(e.x, e.y, 2))
+			local pos = toWorld(e.x, e.y, 1.6)
+			local last = session.lastPos[id] or pos
+			session.lastPos[id] = pos
+			local dir = (pos - last) * Vector3.new(1, 0, 1)
+			local facing = session.facing[id] or Vector3.new(0, 0, 1)
+			if dir.Magnitude > 0.01 then
+				facing = dir.Unit
+				session.facing[id] = facing
+			end
+			local bob = if Theme.reducedMotion then 0 else math.abs(math.sin(os.clock() * 8 + id)) * 0.4
+			inst:PivotTo(CFrame.lookAt(pos + Vector3.new(0, bob, 0), pos + Vector3.new(0, bob, 0) + facing))
 		end
 		for id, inst in session.enemies do
 			if not seen[id] then
 				inst:Destroy()
 				session.enemies[id] = nil
+				session.lastPos[id] = nil
+				session.facing[id] = nil
 			end
 		end
 		local snap = session.latest
@@ -216,20 +196,18 @@ function NightClient.mount(app: any, gui: ScreenGui)
 		if b and not b[7] then
 			local cfgBoss = app.cfg.night.boss
 			if not bossPart then
-				local template = assets and assets:FindFirstChild("Boss_TheUndertow")
-				bossPart = if template then template:Clone() else Instance.new("Part")
-				if bossPart:IsA("BasePart") then
-					bossPart.Shape = Enum.PartType.Ball
-					bossPart.Size = Vector3.one * cfgBoss.radius * 2 * session.studs
-					bossPart.Color = Color3.fromRGB(30, 60, 110)
-					bossPart.Anchored = true
-					bossPart.CanCollide = false
-				end
+				bossPart = Creatures.boss(cfgBoss.radius * session.studs * 0.9)
 				bossPart.Parent = session.folder
-				setPivot(bossPart, toWorld(cfgBoss.x, cfgBoss.y, cfgBoss.radius * session.studs * 0.6))
+				bossPart:PivotTo(CFrame.new(toWorld(cfgBoss.x, cfgBoss.y, cfgBoss.radius * session.studs * 0.7)) * CFrame.Angles(0, math.rad(180), 0))
 			end
-			if bossPart:IsA("BasePart") then
-				bossPart.Material = if b[3] then Enum.Material.ForceField else Enum.Material.SmoothPlastic
+			-- Shielded: glassy force field; stunned: sinks and tilts; otherwise a slow menacing sway.
+			local body = bossPart.PrimaryPart
+			if body then
+				body.Material = if b[3] then Enum.Material.ForceField else Enum.Material.Glass
+			end
+			if not Theme.reducedMotion then
+				local sway = if b[4] then -2 else math.sin(os.clock() * 1.5) * 0.8
+				bossPart:PivotTo(CFrame.new(toWorld(cfgBoss.x, cfgBoss.y, cfgBoss.radius * session.studs * 0.7 + sway)) * CFrame.Angles(if b[4] then math.rad(12) else 0, math.rad(180 + math.sin(os.clock() * 0.7) * 10), 0))
 			end
 			for i, wp in b[5] do
 				local p = weakParts[i]
@@ -409,7 +387,7 @@ function NightClient.mount(app: any, gui: ScreenGui)
 				end
 			end
 		end
-		session = { origin = info.origin, studs = info.studs, squad = info.squad, onboarding = info.onboarding, folder = folder, sector = sector, interp = Interpolator.new(), enemies = {}, latest = nil }
+		session = { origin = info.origin, studs = info.studs, squad = info.squad, onboarding = info.onboarding, folder = folder, sector = sector, interp = Interpolator.new(), enemies = {}, lastPos = {}, facing = {}, latest = nil }
 		hud.Visible = true
 		bind()
 		renderConn = RunService.RenderStepped:Connect(render)

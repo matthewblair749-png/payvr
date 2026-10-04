@@ -50,15 +50,21 @@ Hatch odds: Common 60, Uncommon 25, Rare 10, Epic 4, Legendary 1. Pity guarantee
 
 ## Night
 
-| Squad (power per player) | Result in simulation |
-| --- | --- |
-| 5 new players (power 14, one repairing) | Survive all 6 waves and defeat The Undertow |
-| 3 new players (power 11) | Survive all 6 waves |
-| 2 new players (power 11) | Survive all 6 waves |
-| 1 player, level 4 Guardian (power 14) | Survives all 6 waves |
-| 1 brand-new player (power 11) | Usually falls in wave 5 (still earns 25% of rewards) |
+Measured over 40 nights each with `lune run tests/tools/night-odds <power> <squad>` (bots that fight but do not repair, so real squads do better):
 
-Enemy count per wave = 3 + 2 x wave + 1.5 x squad size (rounded). Health +8% per wave, compounding. The boss has 700 x (1 + 0.5 x (squad - 1)) x wave health and raises a shield at 66% and 33% that needs one weak-point hit per squad member within 4 seconds.
+| Squad (power per player) | Night survived | The Undertow defeated |
+| --- | --- | --- |
+| Tutorial night, 1 brand-new player (power 11) | 100% | no boss |
+| 1 brand-new player (power 11) | 40% | 0% |
+| 1 player, level 4 Guardian (power 14) | 87% | 0% |
+| 3 brand-new players (power 11) | 100% | 40% |
+| 3 players (power 14) | 100% | 60% |
+| 5 players (power 14) | 100% | 57% |
+| 5 players (power 18) | 100% | 62% |
+
+Squads fill automatically, so most players defend in groups. A failed night still pays 25% and never takes anything.
+
+Enemy count per wave = 3 + 2 x wave + 1.5 x squad size (rounded). Health +8% per wave, compounding. The boss has 450 x (1 + 0.4 x (squad - 1)) x wave health. The lighthouse has 800 health and the seawall 1,100, and raises a shield at 66% and 33% that needs one weak-point hit per squad member within 4 seconds.
 
 Rewards: 25 Silver, 2 driftwood, 2 shells and 1 iron scrap per wave survived; boss +60 Silver and 3 Pearls. Silver is split by contribution: 50% equal share and 50% by contribution score (damage 1 point, repair 1.5 points per health, weak point 50 points), clamped to 0.5x to 2x. A survived night adds +5% per consecutive night (max +30%); a failed night pays 25% and resets the streak.
 
@@ -74,4 +80,4 @@ Rewards: 25 Silver, 2 driftwood, 2 shells and 1 iron scrap per wave survived; bo
 | Offline income too strong | Lower `worker.silverPerIncomePointPerMinute` or `cycle.offlineCapHours` | economy.json, cycle.json |
 | Harbor tiers unlock too fast or slow | Scale `tierCosts` with your daily players | harbor.json |
 
-After any economy change, run `lune run tests/run economy` and `lune run tests/tools/economy-trace` to see the effect on a scripted new player, and `lune run tests/tools/night-trace <power> <squad>` for night difficulty.
+After any economy change, run `lune run tests/run economy` and `lune run tests/tools/economy-trace` to see the effect on a scripted new player, and `lune run tests/tools/night-odds <power> <squad>` for night survival rates.

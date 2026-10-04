@@ -79,7 +79,7 @@ function QuickChat.mount(app: any, gui: ScreenGui)
 	local open = Ui.button(gui, "💬", function()
 		fill()
 		wheel.Visible = not wheel.Visible
-	end, { Size = UDim2.fromOffset(56, 56), Position = UDim2.new(0, 8, 1, -130), TextSize = 24 })
+	end, { BackgroundColor3 = Theme.colors.good, Size = UDim2.fromOffset(56, 56), Position = UDim2.new(0, 96, 1, -66), TextSize = 26 })
 	open.Name = "QuickChatButton"
 	ContextActionService:BindAction("TideQuickChat", function(_, state)
 		if state == Enum.UserInputState.Begin then

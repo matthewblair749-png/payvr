@@ -1,6 +1,7 @@
 --[[ Drifter manager: hatch, set Worker or Guardian, choose active slots, feed, and apply skins. ]]
 
 local Ui = require(script.Parent.Parent.Ui.Ui)
+local Creatures = require(script.Parent.Parent.World.Creatures)
 local Theme = require(script.Parent.Parent.Ui.Theme)
 local Format = require(script.Parent.Parent.Ui.Format)
 
@@ -55,7 +56,12 @@ return {
 			local species = cfg.index.species[d.speciesId]
 			local stats = Drifters.stats(cfg, d)
 			local card = Ui.card(container)
-			local head = Ui.row(card, 28)
+			local portraitRow = Ui.row(card, 96)
+			local portrait = Ui.frame(portraitRow, { BackgroundColor3 = Theme.colors.bg, Size = UDim2.fromOffset(96, 96) })
+			Ui.corner(portrait, 14)
+			Creatures.viewport(portrait, Creatures.drifter(cfg, d.speciesId), UDim2.fromScale(1, 1), false, Theme)
+			local head = Ui.row(portraitRow, 28)
+			head.Size = UDim2.new(1, -110, 0, 28)
 			Ui.rarity(head, cfg, species.rarity, { Size = UDim2.new(0, 130, 0, 28), AutomaticSize = Enum.AutomaticSize.None })
 			Ui.text(head, L(d.speciesId) .. "  " .. L("drifter_level", { level = d.level }) .. "  " .. L("element_" .. species.element), {
 				Size = UDim2.new(1, -140, 0, 28),

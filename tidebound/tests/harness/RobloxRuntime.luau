@@ -427,6 +427,9 @@ function Runtime:_buildServices()
 		UDim = roblox.UDim,
 		UDim2 = roblox.UDim2,
 		Font = roblox.Font,
+		ColorSequence = roblox.ColorSequence,
+		NumberSequence = roblox.NumberSequence,
+		NumberRange = roblox.NumberRange,
 		Random = Random,
 		task = self.task,
 		os = rtOs,
@@ -539,6 +542,13 @@ function Runtime:join(userId: number, opts: any?)
 	end
 	function player:GetJoinData()
 		return player.joinData
+	end
+	player.attributes = {}
+	function player:SetAttribute(name, value)
+		player.attributes[name] = value
+	end
+	function player:GetAttribute(name)
+		return player.attributes[name]
 	end
 	function player:IsFriendsWith(_otherId)
 		return false

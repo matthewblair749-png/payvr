@@ -81,6 +81,17 @@ function PlayerService.pushState(player: Player)
 	end
 	local now = PlayerService.now()
 	local cfg = ConfigService.get()
+	-- Every client renders each player's active Drifters as followers.
+	local active = {}
+	for _, d in save.drifters do
+		if d.active then
+			table.insert(active, d.speciesId)
+		end
+	end
+	local list = table.concat(active, ",")
+	if player:GetAttribute("Drifters") ~= list then
+		player:SetAttribute("Drifters", list)
+	end
 	Remotes.get("State"):FireClient(player, ClientState.build(cfg, save, now, PlayerService.mods(now), HarborService.tiers()), cfg.version)
 end
 

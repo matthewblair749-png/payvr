@@ -2,6 +2,7 @@
 
 local Ui = require(script.Parent.Parent.Ui.Ui)
 local Theme = require(script.Parent.Parent.Ui.Theme)
+local Creatures = require(script.Parent.Parent.World.Creatures)
 
 return {
 	title = "panel_hatch",
@@ -12,11 +13,15 @@ return {
 			return
 		end
 		local d = data.drifter
-		local egg = Ui.text(container, "🥚", { TextSize = 72, TextXAlignment = Enum.TextXAlignment.Center })
+		local stage = Ui.frame(container, { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 220) })
+		local egg = Ui.text(stage, "🥚", { TextSize = 96, FontFace = Theme.fontBody, outline = false, TextXAlignment = Enum.TextXAlignment.Center, Size = UDim2.fromScale(1, 1), AutomaticSize = Enum.AutomaticSize.None })
+		egg.TextYAlignment = Enum.TextYAlignment.Center
 		local name = Ui.text(container, "", { TextSize = 28, FontFace = Theme.fontBold, TextXAlignment = Enum.TextXAlignment.Center })
 		local rarityRow = Ui.frame(container, { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 36) })
 		local reveal = function()
-			egg.Text = "✨"
+			egg.Visible = false
+			local vp = Creatures.viewport(stage, Creatures.drifter(cfg, d.speciesId), UDim2.fromScale(1, 1), true, Theme)
+			Ui.popIn(vp)
 			name.Text = L(d.speciesId)
 			Ui.rarity(rarityRow, cfg, data.rarity, { TextSize = 24, TextXAlignment = Enum.TextXAlignment.Center })
 			if data.newSpecies then

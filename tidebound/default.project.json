@@ -45,8 +45,15 @@
     },
     "Lighting": {
       "$properties": {
-        "Technology": "Voxel",
-        "GlobalShadows": true
+        "Technology": "Future",
+        "GlobalShadows": true,
+        "Brightness": 2.6,
+        "ClockTime": 14
+      }
+    },
+    "StarterGui": {
+      "$properties": {
+        "ScreenOrientation": "LandscapeSensor"
       }
     }
   }

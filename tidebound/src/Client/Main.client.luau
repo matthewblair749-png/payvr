@@ -14,6 +14,8 @@ local Onboarding = require(script.Parent.Screens.Onboarding)
 local NightClient = require(script.Parent.Night.NightClient)
 local QuickChat = require(script.Parent.QuickChat)
 local ForageNodes = require(script.Parent.World.ForageNodes)
+local Environment = require(script.Parent.World.Environment)
+local Companions = require(script.Parent.World.Companions)
 
 local player = Players.LocalPlayer
 local app = App.new()
@@ -43,15 +45,21 @@ local main = Ui.screen("Tidebound", playerGui, 1)
 local overlay = Ui.screen("TideboundOverlay", playerGui, 5)
 
 -- Toasts and the reconnect banner.
-local toast = Ui.text(overlay, "", { Position = UDim2.new(0.5, 0, 0, 74), AnchorPoint = Vector2.new(0.5, 0), Size = UDim2.new(0.8, 0, 0, 0), TextXAlignment = Enum.TextXAlignment.Center, BackgroundTransparency = 0.1, BackgroundColor3 = Theme.colors.panelAlt, Visible = false })
-Ui.corner(toast, 10)
-Ui.padding(toast, 8)
+local toast = Ui.text(overlay, "", { TextSize = 22, Position = UDim2.new(0.5, 0, 0, 104), AnchorPoint = Vector2.new(0.5, 0), Size = UDim2.new(0.6, 0, 0, 0), TextXAlignment = Enum.TextXAlignment.Center, BackgroundTransparency = 0, BackgroundColor3 = Theme.colors.bg, Visible = false })
+Ui.corner(toast, 16)
+Ui.padding(toast, 10)
+local toastBorder = Instance.new("UIStroke")
+toastBorder.Color = Theme.colors.accent
+toastBorder.Thickness = 3
+toastBorder.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+toastBorder.Parent = toast
 local toastSerial = 0
 app.Toast:Connect(function(text)
 	toastSerial += 1
 	local mine = toastSerial
 	toast.Text = text
 	toast.Visible = true
+	Ui.popIn(toast)
 	task.delay(2.5, function()
 		if toastSerial == mine then
 			toast.Visible = false
@@ -59,8 +67,8 @@ app.Toast:Connect(function(text)
 	end)
 end)
 local banner = Ui.text(overlay, app.L("reconnecting"), { Position = UDim2.new(0.5, 0, 1, -70), AnchorPoint = Vector2.new(0.5, 0), Size = UDim2.new(0.6, 0, 0, 0), TextXAlignment = Enum.TextXAlignment.Center, BackgroundTransparency = 0, BackgroundColor3 = Theme.colors.bad, Visible = false })
-Ui.corner(banner, 10)
-Ui.padding(banner, 8)
+Ui.corner(banner, 16)
+Ui.padding(banner, 10)
 app.ConnectionChanged:Connect(function(status)
 	banner.Visible = status ~= "online"
 end)
@@ -74,7 +82,7 @@ QuickChat.mount(app, main)
 -- People button sits next to quick chat so report and block are always one tap away.
 Ui.button(main, "👥", function()
 	app:open("people")
-end, { Size = UDim2.fromOffset(56, 56), Position = UDim2.new(0, 72, 1, -130), TextSize = 22 })
+end, { BackgroundColor3 = Theme.colors.blue, Size = UDim2.fromOffset(56, 56), Position = UDim2.new(0, 160, 1, -66), TextSize = 26 })
 
 app.remotes.State.OnClientEvent:Connect(function(state, configVersion)
 	if configVersion ~= app.cfg.version then
@@ -103,4 +111,6 @@ GuiService.MenuOpened:Connect(function()
 end)
 
 app:loadConfig()
+Environment.mount(app)
+Companions.mount(app)
 ForageNodes.mount(app)
