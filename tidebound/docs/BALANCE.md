@@ -64,7 +64,7 @@ Measured over 40 nights each with `lune run tests/tools/night-odds <power> <squa
 
 Squads fill automatically, so most players defend in groups. A failed night still pays 25% and never takes anything.
 
-Enemy count per wave = 3 + 2 x wave + 1.5 x squad size (rounded). Health +8% per wave, compounding. The boss has 450 x (1 + 0.4 x (squad - 1)) x wave health. The lighthouse has 800 health and the seawall 1,100, and raises a shield at 66% and 33% that needs one weak-point hit per squad member within 4 seconds.
+Enemy count per wave = 3 + 2 x wave + 1.5 x squad size (rounded). Health +8% per wave, compounding. The lighthouse has 800 health and the seawall 1,100. The boss has 450 x (1 + 0.4 x (squad - 1)) x wave health and raises a shield at 66% and 33% that needs one weak-point hit per squad member within 4 seconds.
 
 Rewards: 25 Silver, 2 driftwood, 2 shells and 1 iron scrap per wave survived; boss +60 Silver and 3 Pearls. Silver is split by contribution: 50% equal share and 50% by contribution score (damage 1 point, repair 1.5 points per health, weak point 50 points), clamped to 0.5x to 2x. A survived night adds +5% per consecutive night (max +30%); a failed night pays 25% and resets the streak.
 
