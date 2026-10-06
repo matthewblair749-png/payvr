@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 /** Security headers applied to every response (CSP is per-request in src/proxy.ts). */
@@ -12,6 +13,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // PIVOT lives in a subfolder of a repo with its own lockfile: pin the root here.
+  turbopack: { root: path.join(__dirname) },
   devIndicators: { position: "bottom-right" },
   experimental: {
     // Inline Tailwind's small stylesheet into <head>: one less render-blocking request.

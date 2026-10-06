@@ -11,11 +11,11 @@ export function LogoMark({ size = 32, animate = false, className }: { size?: num
       <rect width="32" height="32" rx="9" fill="var(--pv-ink, #0a1020)" />
       <g transform="rotate(45 16 16)">
         <g className={cn("pv-needle", animate && "anim-needle")}>
-          <path d="M16 5.5 L19.6 16 L12.4 16 Z" fill="#fff" />
-          <path d="M12.4 16 L19.6 16 L16 26.5 Z" fill="#fff" fillOpacity="0.38" />
+          <path d="M16 4.5 L20.4 16 L11.6 16 Z" fill="#fff" />
+          <path d="M11.6 16 L20.4 16 L16 27.5 Z" fill="#fff" fillOpacity="0.42" />
         </g>
       </g>
-      <circle cx="16" cy="16" r="2.6" fill="var(--pv-ink, #0a1020)" stroke="#fff" strokeWidth="1.6" />
+      <circle cx="16" cy="16" r="2.4" fill="var(--pv-ink, #0a1020)" stroke="#fff" strokeWidth="1.5" />
     </svg>
   );
 }
