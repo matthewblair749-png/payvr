@@ -1,0 +1,302 @@
+@import "tailwindcss";
+
+/* =========================================================================
+   PIVOT design tokens
+   -------------------------------------------------------------------------
+   Color has jobs, and each color does exactly one:
+   - ink (navy-black): text, structure, and the emphasis series in charts
+   - accent (blue): ONLY the primary CTA and the single most important number
+     on a screen. It earns its power through scarcity; don't use it elsewhere.
+   - positive (green): positive performance only
+   - negative (red) / caution (orange): warnings only
+   Contrast on white (WCAG 2.x):
+   - ink #0A1020 = 18.9:1   ink-2 #344054 = 10.4:1   muted #5D6679 = 5.8:1
+   - white on accent #1A4BFF = 6.0:1 (AA at any size)
+   - positive-text #067647 = 5.7:1   negative-text #B42318 = 6.5:1   caution-text #B54708 = 5.4:1
+   - negative #D92D20 (4.8:1) is for marks and icons; small text uses negative-text
+   - chart gray #7D8799 = 3.6:1 (non-text marks need 3:1)
+   ========================================================================= */
+:root {
+  color-scheme: light;
+
+  --pv-ink: #0a1020;
+  --pv-ink-2: #344054;
+  --pv-muted: #5d6679;
+  --pv-faint: #98a2b3;
+  --pv-line: #e6e9ef;
+  --pv-line-strong: #d0d5dd;
+  --pv-canvas: #f5f6f8;
+  --pv-surface: #ffffff;
+  --pv-sunken: #f0f2f5;
+
+  --pv-accent: #1a4bff;
+  --pv-accent-hover: #0f3ae0;
+  --pv-accent-soft: #e8edff;
+
+  --pv-positive: #079455;
+  --pv-positive-text: #067647;
+  --pv-positive-soft: #e7f8ef;
+  --pv-negative: #d92d20;
+  --pv-negative-text: #b42318;
+  --pv-negative-soft: #fdeceb;
+  --pv-caution: #dc6803;
+  --pv-caution-text: #b54708;
+  --pv-caution-soft: #fff4e5;
+
+  /* Charts: monochrome so the accent stays scarce. */
+  --pv-chart-1: #1b2a4a;
+  --pv-chart-2: #7d8799;
+  --pv-chart-grid: #eceff3;
+
+  --pv-shadow-card: 0 1px 2px rgb(10 16 32 / 0.04), 0 1px 1px rgb(10 16 32 / 0.03);
+  --pv-shadow-raise: 0 1px 2px rgb(10 16 32 / 0.05), 0 12px 32px -12px rgb(10 16 32 / 0.18);
+  --pv-shadow-pop: 0 2px 6px rgb(10 16 32 / 0.08), 0 28px 64px -20px rgb(10 16 32 / 0.32);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-pivot: cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+@theme inline {
+  --color-ink: var(--pv-ink);
+  --color-ink-2: var(--pv-ink-2);
+  --color-muted: var(--pv-muted);
+  --color-faint: var(--pv-faint);
+  --color-line: var(--pv-line);
+  --color-line-strong: var(--pv-line-strong);
+  --color-canvas: var(--pv-canvas);
+  --color-surface: var(--pv-surface);
+  --color-sunken: var(--pv-sunken);
+  --color-accent: var(--pv-accent);
+  --color-accent-hover: var(--pv-accent-hover);
+  --color-accent-soft: var(--pv-accent-soft);
+  --color-positive: var(--pv-positive);
+  --color-positive-text: var(--pv-positive-text);
+  --color-positive-soft: var(--pv-positive-soft);
+  --color-negative: var(--pv-negative);
+  --color-negative-text: var(--pv-negative-text);
+  --color-negative-soft: var(--pv-negative-soft);
+  --color-caution: var(--pv-caution);
+  --color-caution-text: var(--pv-caution-text);
+  --color-caution-soft: var(--pv-caution-soft);
+  --color-chart-1: var(--pv-chart-1);
+  --color-chart-2: var(--pv-chart-2);
+  --color-chart-grid: var(--pv-chart-grid);
+
+  /* One family, two weights: 400 (font-normal) and 800 (font-heavy). */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-weight-*: initial;
+  --font-weight-normal: 400;
+  --font-weight-heavy: 800;
+
+  --shadow-card: var(--pv-shadow-card);
+  --shadow-raise: var(--pv-shadow-raise);
+  --shadow-pop: var(--pv-shadow-pop);
+
+  --tracking-tightest: -0.045em;
+  --tracking-tighter: -0.03em;
+  --tracking-tight: -0.015em;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--pv-surface);
+  color: var(--pv-ink);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "cv11", "ss01";
+}
+
+@layer base {
+  /* Two weights only: anything that asks for "bold" gets the heavy weight. */
+  b,
+  strong,
+  th,
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 800;
+  }
+  :focus-visible {
+    outline: 2px solid var(--pv-ink);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  button,
+  [role="button"],
+  summary,
+  label[for] {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: default;
+  }
+}
+
+::selection {
+  background: var(--pv-accent-soft);
+  color: var(--pv-ink);
+}
+
+/* Numbers in columns align; big standalone figures stay proportional. */
+.num-col {
+  font-variant-numeric: tabular-nums;
+}
+
+/* =========================================================================
+   Motion. Pure CSS so it runs before hydration (no LCP delay) and respects
+   prefers-reduced-motion below. The landing page has exactly one
+   orchestrated moment: the hero.
+   ========================================================================= */
+@keyframes pv-needle {
+  0% { transform: rotate(-45deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes pv-rise {
+  0% { opacity: 0; transform: translateY(0.4em); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes pv-fade {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+@keyframes pv-card-in {
+  0% { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes pv-draw {
+  from { stroke-dashoffset: var(--pv-len, 1000); }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes pv-grow-x {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes pv-grow-y {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes pv-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+@keyframes pv-sheet-in {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+@keyframes pv-panel-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.pv-needle {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+}
+.anim-needle { animation: pv-needle 900ms var(--ease-pivot) 150ms both; }
+.anim-rise { animation: pv-rise 700ms var(--ease-out) both; }
+.anim-fade { animation: pv-fade 600ms var(--ease-out) both; }
+.anim-card { animation: pv-card-in 420ms var(--ease-out) both; }
+.anim-draw {
+  stroke-dasharray: var(--pv-len, 1000);
+  animation: pv-draw 1100ms var(--ease-out) both;
+}
+.anim-grow-x { transform-origin: left center; animation: pv-grow-x 800ms var(--ease-out) both; }
+.anim-grow-y { transform-box: fill-box; transform-origin: bottom; animation: pv-grow-y 700ms var(--ease-out) both; }
+.anim-pulse { animation: pv-pulse 1.6s ease-in-out infinite; }
+.anim-sheet-in { animation: pv-sheet-in 260ms var(--ease-out) both; }
+.anim-panel-in { animation: pv-panel-in 280ms var(--ease-out) both; }
+
+/* Staggered children for card grids (cards fade in, once). */
+.stagger > * { animation: pv-card-in 420ms var(--ease-out) both; }
+.stagger > *:nth-child(2) { animation-delay: 40ms; }
+.stagger > *:nth-child(3) { animation-delay: 80ms; }
+.stagger > *:nth-child(4) { animation-delay: 120ms; }
+.stagger > *:nth-child(5) { animation-delay: 160ms; }
+.stagger > *:nth-child(6) { animation-delay: 200ms; }
+.stagger > *:nth-child(n + 7) { animation-delay: 240ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Native slider fallback styling for range inputs (the Radix slider is used in-app). */
+.pv-scroll-x {
+  scrollbar-width: none;
+}
+.pv-scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
+/* FAQ disclosure marker */
+details > summary {
+  list-style: none;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
+details[open] .pv-chevron {
+  transform: rotate(45deg);
+}
+
+/* =========================================================================
+   Print: reports print as clean documents without the app chrome.
+   ========================================================================= */
+@media print {
+  @page {
+    margin: 16mm 14mm;
+  }
+  body {
+    background: #fff !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-plain {
+    box-shadow: none !important;
+    border-color: #d0d5dd !important;
+  }
+  .print-break {
+    break-before: page;
+  }
+  .print-avoid {
+    break-inside: avoid;
+  }
+  * {
+    animation: none !important;
+  }
+}
+
+/* =========================================================================
+   Score counters: a registered integer property animates from 0, and a
+   CSS counter prints it. Runs before hydration; reduced motion shows the
+   final value at once. Screen readers get the value from sibling sr-only text.
+   ========================================================================= */
+@property --pv-n {
+  syntax: "<integer>";
+  initial-value: 0;
+  inherits: false;
+}
+@keyframes pv-count {
+  from { --pv-n: 0; }
+}
+.pv-count {
+  animation: pv-count 1300ms var(--ease-out) 120ms both;
+  counter-reset: pv-n var(--pv-n);
+}
+.pv-count::after {
+  content: counter(pv-n);
+}
