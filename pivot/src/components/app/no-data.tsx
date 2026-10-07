@@ -7,6 +7,7 @@ import { ButtonLink, buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FormMessage } from "@/components/ui/field";
 import { importSampleData } from "@/server/data/actions";
+import { useCompanyId } from "./workspace-context";
 import type { ActionResult } from "@/server/errors";
 
 const COPY: Record<string, { title: string; description: string }> = {
@@ -20,7 +21,8 @@ const COPY: Record<string, { title: string; description: string }> = {
 };
 
 export function NoData({ page, base }: { page: keyof typeof COPY; base: string }) {
-  const [state, action, pending] = useActionState<ActionResult | undefined>(() => importSampleData(), undefined);
+  const companyId = useCompanyId();
+  const [state, action, pending] = useActionState<ActionResult | undefined>(() => importSampleData(companyId), undefined);
   const c = COPY[page];
   return (
     <EmptyState icon={Database} title={c.title} description={c.description}>
@@ -47,7 +49,8 @@ export function NoData({ page, base }: { page: keyof typeof COPY; base: string }
 
 /** Just the "Import sample data" action, for places that already offer an upload. */
 export function ImportSampleButton() {
-  const [state, action, pending] = useActionState<ActionResult | undefined>(() => importSampleData(), undefined);
+  const companyId = useCompanyId();
+  const [state, action, pending] = useActionState<ActionResult | undefined>(() => importSampleData(companyId), undefined);
   return (
     <form action={action} className="flex flex-col items-start gap-2">
       <button type="submit" disabled={pending} className={buttonVariants({ variant: "secondary", size: "sm" })}>

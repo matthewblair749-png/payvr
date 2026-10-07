@@ -85,14 +85,24 @@ export const requireWorkspace = cache(async (path = "/app"): Promise<Extract<Wor
   };
 });
 
-/** For server actions: same, but throws instead of redirecting. */
-export async function workspaceForAction(): Promise<Extract<Workspace, { mode: "app" }>> {
+/**
+ * For server actions: same, but throws instead of redirecting.
+ *
+ * Pass `expectedCompanyId` (the company the page was rendered for) from every
+ * action that changes company-wide state. The active workspace lives on the
+ * user, so switching in one tab changes it for every tab: without this check a
+ * stale tab would save its form into the other company.
+ */
+export async function workspaceForAction(expectedCompanyId?: unknown): Promise<Extract<Workspace, { mode: "app" }>> {
   const user = await currentUser();
   if (!user) throw new UserError("Your session has ended. Log in again.");
   const found = await load(user.id, user.activeCompanyId);
   if (!found) throw new UserError("Create a workspace first.");
   const { m, companies } = found;
   const c = m.company;
+  if (expectedCompanyId !== undefined && expectedCompanyId !== c.id) {
+    throw new UserError(`You switched to ${c.name} in another tab. Reload this page and try again.`);
+  }
   return {
     mode: "app",
     basePath: "/app",

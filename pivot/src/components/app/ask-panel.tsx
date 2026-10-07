@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import { EXAMPLE_QUESTIONS } from "@/lib/engine/ask";
 import { RichText } from "./rich-text";
+import { useCompanyId } from "./workspace-context";
 
 type Msg = { role: "user" | "assistant"; text: string; source?: "claude" | "engine"; error?: boolean };
 
@@ -16,6 +17,7 @@ export function AskPanel({ mode, companyName, seed, onClose }: { mode: "app" | "
   const endRef = useRef<HTMLDivElement>(null);
   const seeded = useRef(false);
   const controller = useRef<AbortController | null>(null);
+  const companyId = useCompanyId();
 
   useEffect(() => endRef.current?.scrollIntoView({ block: "end" }), [messages]);
   // Closing the panel stops the answer, so the server stops generating it too.
@@ -32,7 +34,7 @@ export function AskPanel({ mode, companyName, seed, onClose }: { mode: "app" | "
     const ac = new AbortController();
     controller.current = ac;
     try {
-      const res = await fetch("/api/ask", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ question: q, history, mode }), signal: ac.signal });
+      const res = await fetch("/api/ask", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ question: q, history, mode, ...(mode === "app" ? { companyId } : {}) }), signal: ac.signal });
       if (!res.ok || !res.body) {
         const err = (await res.json().catch(() => null)) as { error?: string } | null;
         throw new Error(err?.error ?? "PIVOT couldn't answer right now. Please try again.");

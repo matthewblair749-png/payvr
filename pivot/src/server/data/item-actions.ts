@@ -14,9 +14,9 @@ const Input = z.object({
 });
 
 /** Set an insight/opportunity/recommendation status. Scoped to the caller's company. */
-export async function setItemStatus(kind: string, key: string, status: string): Promise<ActionResult> {
+export async function setItemStatus(companyId: string, kind: string, key: string, status: string): Promise<ActionResult> {
   try {
-    const ws = await workspaceForAction();
+    const ws = await workspaceForAction(companyId);
     rateLimit(`mutate:${ws.user.id}`, LIMITS.mutate);
     const p = Input.parse({ kind, key, status });
     const where = { companyId_key: { companyId: ws.company.id, key: p.key } };

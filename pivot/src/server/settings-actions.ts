@@ -85,7 +85,7 @@ const CompanySchema = z.object({
 
 export async function updateCompany(_p: SettingsState, form: FormData): Promise<SettingsState> {
   try {
-    const ws = await workspaceForAction();
+    const ws = await workspaceForAction(str(form, "companyId"));
     requireRole(ws, ["OWNER", "ADMIN"], "edit company settings");
     rateLimit(`mutate:${ws.user.id}`, LIMITS.mutate);
     const v = CompanySchema.parse({ name: str(form, "name"), industry: str(form, "industry"), currency: str(form, "currency"), timezone: str(form, "timezone"), marketSharePct: str(form, "marketSharePct") });
@@ -108,7 +108,7 @@ const InviteSchema = z.object({ email, role: z.enum(["ADMIN", "MEMBER"]) });
 
 export async function inviteMember(_p: SettingsState, form: FormData): Promise<SettingsState> {
   try {
-    const ws = await workspaceForAction();
+    const ws = await workspaceForAction(str(form, "companyId"));
     requireRole(ws, ["OWNER", "ADMIN"], "invite people");
     rateLimit(`invite:${ws.company.id}`, { limit: 20, windowMs: 60 * 60_000 });
     const v = InviteSchema.parse({ email: str(form, "email"), role: str(form, "role") });
@@ -174,9 +174,9 @@ export async function removeMember(memberId: string): Promise<SettingsState> {
 
 // ---- AI & notifications ------------------------------------------------------------
 
-export async function updateAiSettings(aiNarratives: boolean): Promise<SettingsState> {
+export async function updateAiSettings(companyId: string, aiNarratives: boolean): Promise<SettingsState> {
   try {
-    const ws = await workspaceForAction();
+    const ws = await workspaceForAction(companyId);
     requireRole(ws, ["OWNER", "ADMIN"], "change AI settings");
     await db.company.update({ where: { id: ws.company.id }, data: { aiNarratives: Boolean(aiNarratives) } });
     revalidatePath("/app", "layout");

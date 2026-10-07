@@ -14,6 +14,7 @@ import type { Baseline, Level, ScenarioKind, ScenarioResult } from "@/lib/engine
 import { int, money, moneyDelta, pct, pctDelta } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { deleteScenario, saveScenario, type SavedScenario } from "@/server/data/scenario-actions";
+import { useCompanyId } from "./workspace-context";
 import { riskTone } from "./labels";
 
 const KINDS = Object.entries(SCENARIOS) as [ScenarioKind, (typeof SCENARIOS)[ScenarioKind]][];
@@ -62,6 +63,7 @@ export function WhatIfStudio({
   canSave: boolean;
   base: string;
 }) {
+  const companyId = useCompanyId();
   const [kind, setKind] = useState<ScenarioKind>(initial.kind);
   const [value, setValue] = useState(initial.value);
   const [saved, setSaved] = useState(initialSaved);
@@ -88,7 +90,7 @@ export function WhatIfStudio({
       return;
     }
     start(async () => {
-      const res = await saveScenario(kind, value);
+      const res = await saveScenario(companyId, kind, value);
       if (res.ok) {
         setSaved((x) => [res.data, ...x]);
         setMsg({ tone: "success", text: "Simulation saved. Select two or more to compare them." });

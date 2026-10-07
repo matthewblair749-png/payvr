@@ -18,7 +18,7 @@ import { workspaceForAction } from "../workspace";
 export async function generateReport(_prev: ActionResult | undefined, form: FormData): Promise<ActionResult> {
   let id: string;
   try {
-    const ws = await workspaceForAction();
+    const ws = await workspaceForAction(form.get("companyId") ?? "");
     requireFeature(ws.entitlements, "reports", "Monthly reports");
     rateLimit(`report:${ws.company.id}`, LIMITS.report);
     const period = z.string().regex(/^\d{4}-\d{2}$/).parse(form.get("period"));

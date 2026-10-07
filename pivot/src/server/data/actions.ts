@@ -13,10 +13,10 @@ import { requireRole, workspaceForAction } from "../workspace";
 const monthDate = (p: string) => new Date(`${p}-01T00:00:00Z`);
 
 /** Load the Northstar sample data into the caller's workspace, so they can try every feature. */
-export async function importSampleData(): Promise<ActionResult> {
+export async function importSampleData(expectedCompanyId: string): Promise<ActionResult> {
   let ok = false;
   try {
-    const ws = await workspaceForAction();
+    const ws = await workspaceForAction(expectedCompanyId);
     requireRole(ws, ["OWNER", "ADMIN"], "import data");
     rateLimit(`upload:${ws.company.id}`, LIMITS.upload);
     const companyId = ws.company.id;

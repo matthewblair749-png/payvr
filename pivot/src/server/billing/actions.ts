@@ -10,10 +10,10 @@ import { requireRole, workspaceForAction } from "../workspace";
 import { getStripe, PRICE_IDS, stripeConfigured } from "./stripe";
 
 /** Start a Stripe Checkout subscription for Pro or Business. */
-export async function startCheckout(plan: string): Promise<ActionResult> {
+export async function startCheckout(companyId: string, plan: string): Promise<ActionResult> {
   let url: string;
   try {
-    const ws = await workspaceForAction();
+    const ws = await workspaceForAction(companyId);
     requireRole(ws, ["OWNER"], "change the plan");
     rateLimit(`billing:${ws.company.id}`, LIMITS.mutate);
     const p = z.enum(["PRO", "BUSINESS"]).parse(plan);
@@ -41,10 +41,10 @@ export async function startCheckout(plan: string): Promise<ActionResult> {
 }
 
 /** Stripe's customer portal: update card, see invoices, cancel. */
-export async function openBillingPortal(): Promise<ActionResult> {
+export async function openBillingPortal(companyId: string): Promise<ActionResult> {
   let url: string;
   try {
-    const ws = await workspaceForAction();
+    const ws = await workspaceForAction(companyId);
     requireRole(ws, ["OWNER"], "manage billing");
     if (!stripeConfigured()) throw new UserError("Payments aren't switched on in this environment yet.");
     const company = await db.company.findUniqueOrThrow({ where: { id: ws.company.id }, select: { stripeCustomerId: true } });

@@ -4,6 +4,7 @@ import { providerFor } from "@/server/ai";
 import { localProvider } from "@/server/ai/local";
 import { getAnalysis } from "@/server/analysis/get";
 import { currentUser } from "@/server/auth/session";
+import { UserError } from "@/server/errors";
 import { RateLimitError, rateLimit, LIMITS } from "@/server/rate-limit";
 import { clientIp, isSameOrigin } from "@/server/request-meta";
 import { demoWorkspace, workspaceForAction, type Workspace } from "@/server/workspace";
@@ -17,6 +18,8 @@ const Body = z.object({
   question: z.string().trim().min(1).max(500),
   history: z.array(z.object({ role: z.enum(["user", "assistant"]), text: z.string().max(2000) })).max(8).default([]),
   mode: z.enum(["app", "demo"]),
+  /** The company the page was rendered for (app mode). */
+  companyId: z.string().max(40).optional(),
 });
 
 const json = (status: number, error: string) => Response.json({ error }, { status, headers: { "cache-control": "no-store" } });
@@ -32,9 +35,9 @@ export async function POST(request: Request) {
 
   let ws: Workspace;
   try {
-    ws = body.mode === "demo" ? await demoWorkspace() : await workspaceForAction();
-  } catch {
-    return json(401, "Your session has ended. Log in again.");
+    ws = body.mode === "demo" ? await demoWorkspace() : await workspaceForAction(body.companyId ?? "");
+  } catch (e) {
+    return e instanceof UserError ? json(e.message.startsWith("You switched") ? 409 : 401, e.message) : json(401, "Your session has ended. Log in again.");
   }
 
   try {

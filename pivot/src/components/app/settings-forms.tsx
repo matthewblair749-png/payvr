@@ -8,6 +8,7 @@ import { Field, FormMessage, Input, Select } from "@/components/ui/field";
 import { Switch } from "@/components/ui/switch";
 import { CURRENCIES, INDUSTRIES } from "@/lib/validation";
 import { openBillingPortal, startCheckout } from "@/server/billing/actions";
+import { CompanyIdField, useCompanyId } from "./workspace-context";
 import type { ActionResult } from "@/server/errors";
 import {
   changePassword,
@@ -81,6 +82,7 @@ export function CompanyForm({
   const [state, action, pending] = useActionState(updateCompany, undefined);
   return (
     <form action={action} className="max-w-xl space-y-4">
+      <CompanyIdField />
       <Messages state={state} />
       <Field id="name" label="Company name" error={state?.fieldErrors?.name}>
         <Input id="name" name="name" defaultValue={company.name} maxLength={80} disabled={readOnly} />
@@ -122,6 +124,7 @@ export function InviteForm({ disabled }: { disabled?: boolean }) {
   const [state, action, pending] = useActionState(inviteMember, undefined);
   return (
     <form action={action} className="space-y-3">
+      <CompanyIdField />
       <Messages state={state} />
       {state?.devLink && (
         <p className="rounded-xl border border-dashed border-line-strong p-3 text-sm text-muted">
@@ -176,6 +179,7 @@ export function ToggleRow({ id, label, description, initial, kind, disabled }: {
   const [on, setOn] = useState(initial);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const companyId = useCompanyId();
   return (
     <div className="flex items-start justify-between gap-6 py-4">
       <div>
@@ -192,7 +196,7 @@ export function ToggleRow({ id, label, description, initial, kind, disabled }: {
         onCheckedChange={(v) => {
           setOn(v);
           start(async () => {
-            const r = kind === "ai" ? await updateAiSettings(v) : await updateNotifications(kind, v);
+            const r = kind === "ai" ? await updateAiSettings(companyId, v) : await updateNotifications(kind, v);
             if (r?.error) {
               setOn(!v);
               setError(r.error);
@@ -205,7 +209,8 @@ export function ToggleRow({ id, label, description, initial, kind, disabled }: {
 }
 
 export function PlanButton({ plan, label, variant }: { plan: "PRO" | "BUSINESS"; label: string; variant: "primary" | "secondary" | "accent" }) {
-  const [state, action, pending] = useActionState<ActionResult | undefined>(() => startCheckout(plan), undefined);
+  const companyId = useCompanyId();
+  const [state, action, pending] = useActionState<ActionResult | undefined>(() => startCheckout(companyId, plan), undefined);
   return (
     <form action={action} className="space-y-2">
       <Button type="submit" variant={variant} className="w-full" disabled={pending}>
@@ -218,7 +223,8 @@ export function PlanButton({ plan, label, variant }: { plan: "PRO" | "BUSINESS";
 }
 
 export function PortalButton() {
-  const [state, action, pending] = useActionState<ActionResult | undefined>(() => openBillingPortal(), undefined);
+  const companyId = useCompanyId();
+  const [state, action, pending] = useActionState<ActionResult | undefined>(() => openBillingPortal(companyId), undefined);
   return (
     <form action={action} className="space-y-2">
       <Button type="submit" variant="secondary" disabled={pending}>

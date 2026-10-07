@@ -5,6 +5,7 @@ import { useActionState, useRef, useState } from "react";
 import { FormMessage } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
 import { uploadDataset, type UploadState } from "@/server/data/upload-actions";
+import { CompanyIdField } from "./workspace-context";
 
 const MAX = 10 * 1024 * 1024;
 
@@ -33,6 +34,7 @@ export function Dropzone({ disabled, disabledReason }: { disabled?: boolean; dis
   const error = local ?? state?.error;
   return (
     <form ref={form} action={action}>
+      <CompanyIdField />
       <label
         htmlFor="csv-file"
         onDragOver={(e) => {

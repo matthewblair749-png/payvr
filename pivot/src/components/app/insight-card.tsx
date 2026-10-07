@@ -39,9 +39,13 @@ export function InsightCard({
           {status !== "OPEN" && <span className="text-xs text-muted">{status === "DONE" ? "Resolved" : "Dismissed"}</span>}
         </div>
         <h2 className="mt-2 text-xl font-heavy tracking-tight text-ink sm:text-[1.375rem]">{insight.title}</h2>
-        <FourAnswers e={insight} className="mt-5" />
+        {insight.locked ? (
+          <LockedInsight insight={insight} base={base} />
+        ) : (
+          <FourAnswers e={insight} className="mt-5" />
+        )}
         <div className="mt-6 flex flex-wrap items-center gap-2">
-          {toOpportunity ? (
+          {insight.locked ? null : toOpportunity ? (
             <ButtonLink href={`${base}/opportunities/${insight.related.opportunity}`} variant="primary" size="sm">
               {insight.actionLabel} <ArrowRight size={15} aria-hidden="true" />
             </ButtonLink>
@@ -51,15 +55,17 @@ export function InsightCard({
               <ChevronDown size={15} className={cn("transition-transform", open && "rotate-180")} aria-hidden="true" />
             </Button>
           )}
-          {toOpportunity && (
+          {toOpportunity && !insight.locked && (
             <Button variant="secondary" size="sm" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls={`${insight.key}-evidence`}>
               See the data
               <ChevronDown size={15} className={cn("transition-transform", open && "rotate-180")} aria-hidden="true" />
             </Button>
           )}
-          <Button variant="ghost" size="sm" onClick={() => askPivot(`Tell me more about this: ${insight.title}`)}>
-            Ask PIVOT
-          </Button>
+          {!insight.locked && (
+            <Button variant="ghost" size="sm" onClick={() => askPivot(`Tell me more about this: ${insight.title}`)}>
+              Ask PIVOT
+            </Button>
+          )}
           {insight.related.recommendation && (
             <Link href={`${base}/recommendations#${insight.related.recommendation}`} className="px-2 text-[13px] text-ink-2 underline decoration-line-strong underline-offset-4 hover:text-ink">
               Recommended move
@@ -70,11 +76,26 @@ export function InsightCard({
           </span>
         </div>
       </div>
-      {open && (
+      {open && !insight.locked && (
         <div id={`${insight.key}-evidence`} className="border-t border-line bg-canvas/60 p-5 sm:p-6">
           {evidence}
         </div>
       )}
     </article>
+  );
+}
+
+/** An insight beyond the plan's limit: the headline, and what upgrading adds. */
+export function LockedInsight({ insight, base, compact = false }: { insight: Insight; base: string; compact?: boolean }) {
+  return (
+    <div className={compact ? "mt-1" : "mt-4 space-y-3"}>
+      <p className="text-[15px] leading-relaxed text-ink-2">{insight.what}</p>
+      <p className={cn("text-sm text-ink-2", !compact && "rounded-xl bg-sunken p-3")}>
+        Why it happened and what to do about it are on Pro.{" "}
+        <Link href={`${base}/settings/billing`} className="font-heavy text-ink underline underline-offset-4">
+          See plans
+        </Link>
+      </p>
+    </div>
   );
 }

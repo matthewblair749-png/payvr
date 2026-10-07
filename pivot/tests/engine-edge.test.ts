@@ -143,3 +143,22 @@ describe("segments", () => {
     expect(dim.reason).toMatch(/^Down/);
   });
 });
+
+describe("plan insight limit", () => {
+  it("keeps the top insights in full and only the headline of the rest", async () => {
+    const { limitInsights } = await import("@/lib/billing/limit-insights");
+    const { northstarData } = await import("@/lib/demo/northstar");
+    const a = analyze(northstarData(new Date("2026-10-06T12:00:00Z")));
+    expect(a.insights.length).toBeGreaterThan(1);
+    const limited = limitInsights(a, 1);
+    expect(limited.insights[0]).toEqual(a.insights[0]);
+    for (const i of limited.insights.slice(1)) {
+      expect(i.locked).toBe(true);
+      expect(i.title).toBeTruthy();
+      expect(i.what).toBeTruthy();
+      expect(i.why + i.soWhat + i.nowWhat).toBe("");
+      expect(i.evidence).toEqual({});
+    }
+    expect(limitInsights(a, null)).toBe(a);
+  });
+});

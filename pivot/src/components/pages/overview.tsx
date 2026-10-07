@@ -1,5 +1,6 @@
 import { ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { LockedInsight } from "@/components/app/insight-card";
 import { LineChart } from "@/components/charts/line-chart";
 import { Sparkline } from "@/components/charts/sparkline";
 import { FourAnswers } from "@/components/app/explain";
@@ -117,11 +118,17 @@ export async function OverviewPage({ ws, notice }: { ws: Workspace; notice?: str
                   <li key={i.key} className="py-4 first:pt-0 last:pb-0">
                     <StatusLabel tone={SEVERITY[i.severity].tone}>{SEVERITY[i.severity].label}</StatusLabel>
                     <p className="mt-1.5 text-[17px] font-heavy tracking-tight text-ink">{i.title}</p>
-                    <p className="mt-1 text-[15px] leading-relaxed text-ink-2">{i.what}</p>
-                    <p className="mt-1.5 text-[15px] leading-relaxed text-ink-2">
-                      <span className="font-heavy text-ink">Now what: </span>
-                      {i.nowWhat}
-                    </p>
+                    {i.locked ? (
+                      <LockedInsight insight={i} base={base} compact />
+                    ) : (
+                      <>
+                        <p className="mt-1 text-[15px] leading-relaxed text-ink-2">{i.what}</p>
+                        <p className="mt-1.5 text-[15px] leading-relaxed text-ink-2">
+                          <span className="font-heavy text-ink">Now what: </span>
+                          {i.nowWhat}
+                        </p>
+                      </>
+                    )}
                     <Link
                       href={i.related.opportunity && i.actionLabel === "Explore opportunity" ? `${base}/opportunities/${i.related.opportunity}` : `${base}/insights#${i.key}`}
                       className="mt-2 inline-flex items-center gap-1 text-sm font-heavy text-ink hover:underline"

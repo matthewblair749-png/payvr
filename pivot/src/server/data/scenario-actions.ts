@@ -24,9 +24,9 @@ export interface SavedScenario {
 const Input = z.object({ kind: z.enum(Object.keys(SCENARIOS) as [ScenarioKind, ...ScenarioKind[]]), value: z.number().finite() });
 
 /** Save a scenario. The result is recomputed here from the company's own data, never taken from the browser. */
-export async function saveScenario(kind: string, value: number): Promise<ActionResult<SavedScenario>> {
+export async function saveScenario(companyId: string, kind: string, value: number): Promise<ActionResult<SavedScenario>> {
   try {
-    const ws = await workspaceForAction();
+    const ws = await workspaceForAction(companyId);
     requireFeature(ws.entitlements, "simulator", "Saving simulations");
     rateLimit(`mutate:${ws.user.id}`, LIMITS.mutate);
     const p = Input.parse({ kind, value });

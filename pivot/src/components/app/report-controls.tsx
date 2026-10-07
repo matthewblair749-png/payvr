@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { FormMessage, Select } from "@/components/ui/field";
 import { monthLabel } from "@/lib/format";
 import { generateReport } from "@/server/data/report-actions";
+import { CompanyIdField } from "./workspace-context";
 import type { ActionResult } from "@/server/errors";
 
 export function GenerateReport({ periods, demo, disabledReason }: { periods: string[]; demo: boolean; disabledReason?: string }) {
@@ -24,6 +25,7 @@ export function GenerateReport({ periods, demo, disabledReason }: { periods: str
       }}
       className="flex flex-col gap-3 sm:flex-row sm:items-end"
     >
+      <CompanyIdField />
       <div className="sm:w-64">
         <label htmlFor="report-period" className="mb-1.5 block text-sm text-ink-2">
           Month

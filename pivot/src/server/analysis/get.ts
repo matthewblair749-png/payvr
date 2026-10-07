@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { limitInsights } from "@/lib/billing/limit-insights";
 import { getDemo } from "@/lib/demo";
 import { analyze } from "@/lib/engine/analyze";
 import type { Analysis, BusinessData } from "@/lib/engine/types";
@@ -24,7 +25,7 @@ export const getAnalysis = cache(async (ws: Workspace): Promise<WorkspaceAnalysi
     return { data, analysis, hasData: true, status: {} };
   }
   const data = await loadBusinessData(ws.company);
-  const analysis = analyze(data);
+  const analysis = limitInsights(analyze(data), ws.entitlements.limits.insights);
   const companyId = ws.company.id;
 
   // Safety net: persist rows if a data change happened without a refresh.

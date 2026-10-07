@@ -128,6 +128,8 @@ export interface Insight extends Explanation {
   evidence: Evidence;
   /** Higher = more important. */
   weight: number;
+  /** Beyond the plan's insight limit: only the headline is included. */
+  locked?: boolean;
 }
 
 export interface ScoreFactors {

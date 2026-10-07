@@ -42,7 +42,7 @@ const safeName = (s: string) => s.replace(/[^\p{L}\p{N} ._()&-]/gu, "").trim().s
 export async function uploadDataset(_prev: UploadState, form: FormData): Promise<UploadState> {
   let id: string;
   try {
-    const ws = await workspaceForAction();
+    const ws = await workspaceForAction(form.get("companyId") ?? "");
     requireRole(ws, ["OWNER", "ADMIN"], "upload data");
     requireFeature(ws.entitlements, "uploads", "Uploading your own data");
     rateLimit(`upload:${ws.company.id}`, LIMITS.upload);
