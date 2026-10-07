@@ -9,9 +9,16 @@ import { money, monthLabel, pct } from "@/lib/format";
  */
 export function buildAIFacts(a: Analysis, data: BusinessData) {
   const cur = a.company.currency;
-  const n = a.revenueChart.series[0]?.values.filter((v) => v !== null).length ?? 0;
-  const revenueHistory = a.revenueChart.periods.slice(0, n).map((p, i) => ({ month: monthLabel(p), revenue: money(a.revenueChart.series[0].values[i] ?? 0, cur) }));
-  const forecast = a.revenueChart.series.find((s) => s.kind === "forecast");
+  // The chart runs actual months, then forecast months. Split by date, not by how many
+  // values are present: a month with no revenue is unknown, not $0.
+  const chart = a.revenueChart;
+  const actualMonths = chart.periods.filter((p) => p <= a.period).length;
+  const actual = chart.series.find((s) => s.kind === "actual");
+  const revenueHistory = chart.periods.slice(0, actualMonths).map((p, i) => {
+    const v = actual?.values[i];
+    return { month: monthLabel(p), revenue: v === null || v === undefined ? null : money(v, cur) };
+  });
+  const forecast = chart.series.find((s) => s.kind === "forecast");
   const i = data.periods.indexOf(a.period);
   return {
     company: a.company.name,
@@ -32,7 +39,7 @@ export function buildAIFacts(a: Analysis, data: BusinessData) {
     opportunities: a.opportunities.map((o) => ({ title: o.title, pivot_score: o.score, impact: o.impact, effort: o.effort, risk: o.risk, confidence: `${o.confidence}%`, estimated_annual_value: money(o.annualImpact, cur), why_found: o.whyFound })),
     recommendations: a.recommendations.map((r) => ({ rank: r.rank, title: r.title, impact: r.impact, difficulty: r.difficulty, risk: r.risk, estimated_annual_value: money(r.annualImpact, cur), reasoning: r.reasoning })),
     revenue_by_month: revenueHistory,
-    revenue_forecast_next_3_months: forecast ? forecast.values.slice(n).filter((v): v is number => v !== null).map((v) => money(v, cur)) : [],
+    revenue_forecast_next_3_months: forecast ? forecast.values.slice(actualMonths).filter((v): v is number => v !== null).map((v) => money(v, cur)) : [],
     products_latest_month: i >= 0 ? Object.entries(data.products).map(([name, p]) => ({ product: name, revenue: p.revenue[i] !== null ? money(p.revenue[i] as number, cur) : null })) : [],
     channels_latest_month:
       i >= 0
@@ -57,28 +64,53 @@ export type AIFacts = ReturnType<typeof buildAIFacts>;
 
 /**
  * Grounding check: every figure in generated text must appear in the facts
- * (within rounding). Small counts like "three months" are allowed.
- * Returns the figures that couldn't be found.
+ * (within rounding), with the same unit and the same direction. Small counts
+ * like "three months" and bare years are allowed. Returns the figures that
+ * couldn't be found.
+ *
+ * Direction comes from a sign (+12.4%, −2.1 pts) or a word just before the
+ * figure ("fell 12.4%"), so "revenue fell 12.4%" fails when the facts say it
+ * rose. "Fell to 91.4%" is a level, not a change, so it has no direction.
  */
 export function ungroundedNumbers(text: string, facts: unknown): string[] {
-  const source = JSON.stringify(facts);
-  const parse = (s: string) => {
-    const m = s.replace(/[,$€£¥₹+−\-]/g, "").match(/^(\d+(?:\.\d+)?)\s*(k|m|b|%|pts?)?$/i);
-    if (!m) return null;
-    const unit = (m[2] ?? "").toLowerCase();
-    const mult = unit === "k" ? 1e3 : unit === "m" ? 1e6 : unit === "b" ? 1e9 : 1;
-    return { v: Number(m[1]) * mult, pct: unit === "%" || unit.startsWith("pt") };
-  };
-  const re = /[$€£¥₹]?\d[\d,]*(?:\.\d+)?\s?(?:[KMBkmb]\b|%|pts?\b)?/g;
-  const known = (source.match(re) ?? []).map(parse).filter((x): x is NonNullable<typeof x> => x !== null);
+  const known = scanNumbers(JSON.stringify(facts));
   const bad: string[] = [];
-  for (const raw of text.match(re) ?? []) {
-    const n = parse(raw.trim());
-    if (!n) continue;
-    if (!n.pct && n.v <= 24 && Number.isInteger(n.v)) continue; // "3 months", "top 3", "#1"
-    if (!n.pct && n.v >= 1990 && n.v <= 2100) continue; // years
-    const ok = known.some((k) => k.pct === n.pct && Math.abs(k.v - n.v) <= Math.max(0.011 * Math.abs(k.v), 0.051));
-    if (!ok) bad.push(raw.trim());
+  for (const n of scanNumbers(text)) {
+    if (!n.unit && !n.money && !n.dir && Number.isInteger(n.v) && n.v <= 24) continue; // "3 months", "top 3", "#1"
+    if (n.bare && n.v >= 1990 && n.v <= 2100) continue; // years, only as bare 4-digit numbers
+    const same = known.filter((k) => k.unit === n.unit && Math.abs(k.v - n.v) <= Math.max(0.011 * k.v, 0.051));
+    // A direction the facts contradict (and never state) is wrong, even if the magnitude appears.
+    const contradicted = n.dir !== 0 && !same.some((k) => k.dir === n.dir) && same.some((k) => k.dir === -n.dir);
+    if (!same.length || contradicted) bad.push(n.raw);
   }
   return bad;
+}
+
+type Figure = { raw: string; v: number; unit: "" | "%" | "pts"; dir: -1 | 0 | 1; money: boolean; bare: boolean };
+
+const FIGURE = /[+\-\u2212]?\s?[$€£¥₹]?\d[\d,]*(?:\.\d+)?\s?(?:[KMBkmb]\b|%|pts?\b)?/g;
+const FALLING = /\b(fell|fall|falls|falling|down|declin\w*|drop\w*|decreas\w*|lower|lost|lose|shrank|shrink\w*)\b[^.\d]{0,24}$/i;
+const RISING = /\b(rose|rise|rises|rising|up|grew|grow\w*|increas\w*|gain\w*|higher|jump\w*|climb\w*)\b[^.\d]{0,24}$/i;
+
+/** Every figure in `s`, as a magnitude with its unit and direction. */
+function scanNumbers(s: string): Figure[] {
+  const out: Figure[] = [];
+  for (const match of s.matchAll(FIGURE)) {
+    const raw = match[0].trim();
+    const m = raw.replace(/\u2212/g, "-").match(/^([+-])?\s?([$€£¥₹])?([\d,]+(?:\.\d+)?)\s?(k|m|b|%|pts?)?$/i);
+    if (!m) continue;
+    const u = (m[4] ?? "").toLowerCase();
+    const mult = u === "k" ? 1e3 : u === "m" ? 1e6 : u === "b" ? 1e9 : 1;
+    const before = s.slice(Math.max(0, match.index - 40), match.index);
+    const worded = /\bto\s*["']?$/i.test(before) ? 0 : FALLING.test(before) ? -1 : RISING.test(before) ? 1 : 0;
+    out.push({
+      raw,
+      v: Number(m[3].replace(/,/g, "")) * mult,
+      unit: u === "%" ? "%" : u.startsWith("pt") ? "pts" : "",
+      dir: m[1] === "-" ? -1 : m[1] === "+" ? 1 : worded,
+      money: !!m[2] || mult > 1,
+      bare: !m[1] && !m[2] && !u && /^\d{4}$/.test(m[3]),
+    });
+  }
+  return out;
 }

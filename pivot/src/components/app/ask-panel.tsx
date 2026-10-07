@@ -15,8 +15,11 @@ export function AskPanel({ mode, companyName, seed, onClose }: { mode: "app" | "
   const [busy, setBusy] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const seeded = useRef(false);
+  const controller = useRef<AbortController | null>(null);
 
   useEffect(() => endRef.current?.scrollIntoView({ block: "end" }), [messages]);
+  // Closing the panel stops the answer, so the server stops generating it too.
+  useEffect(() => () => controller.current?.abort(), []);
 
   async function ask(question: string) {
     const q = question.trim().slice(0, 500);
@@ -25,8 +28,11 @@ export function AskPanel({ mode, companyName, seed, onClose }: { mode: "app" | "
     setBusy(true);
     const history = messages.filter((m) => !m.error).slice(-6).map(({ role, text }) => ({ role, text: text.slice(0, 2000) }));
     setMessages((m) => [...m, { role: "user", text: q }, { role: "assistant", text: "" }]);
+    controller.current?.abort();
+    const ac = new AbortController();
+    controller.current = ac;
     try {
-      const res = await fetch("/api/ask", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ question: q, history, mode }) });
+      const res = await fetch("/api/ask", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ question: q, history, mode }), signal: ac.signal });
       if (!res.ok || !res.body) {
         const err = (await res.json().catch(() => null)) as { error?: string } | null;
         throw new Error(err?.error ?? "PIVOT couldn't answer right now. Please try again.");
@@ -59,12 +65,14 @@ export function AskPanel({ mode, companyName, seed, onClose }: { mode: "app" | "
         }
       }
     } catch (e) {
+      if (ac.signal.aborted) return;
       setMessages((m) => {
         const copy = [...m];
         copy[copy.length - 1] = { role: "assistant", text: e instanceof Error ? e.message : "PIVOT couldn't answer right now.", error: true };
         return copy;
       });
     } finally {
+      if (controller.current === ac) controller.current = null;
       setBusy(false);
     }
   }

@@ -26,7 +26,10 @@ export function aiStatus() {
 
 export type SummaryView = Summary & { source: "ai" | "engine" };
 
-const demoSummaries = new Map<string, Summary>();
+/** Finished demo summaries per period, failures included (null), so a failure doesn't retry on every visit. */
+const demoSummaries = new Map<string, Summary | null>();
+/** Summaries being written right now, so a burst of page views starts one AI call, not one each. */
+const inFlight = new Set<string>();
 
 /**
  * The executive summary for the overview and reports. The engine's template
@@ -40,13 +43,19 @@ export async function getSummary(ws: Workspace, analysis: Analysis, data: Busine
   if (provider.id === "local" || !analysis.kpis.length) return fallback;
 
   if (ws.mode === "demo") {
-    const key = analysis.period;
-    const hit = demoSummaries.get(key);
-    if (hit) return { ...hit, source: "ai" };
+    const key = `demo:${analysis.period}`;
+    if (demoSummaries.has(key)) {
+      const hit = demoSummaries.get(key);
+      return hit ? { ...hit, source: "ai" } : fallback;
+    }
+    if (inFlight.has(key)) return fallback;
+    inFlight.add(key);
     after(async () => {
-      if (demoSummaries.has(key)) return;
-      const s = await provider.summarize(buildAIFacts(analysis, data)).catch(() => null);
-      if (s) demoSummaries.set(key, s);
+      try {
+        demoSummaries.set(key, await provider.summarize(buildAIFacts(analysis, data)).catch(() => null));
+      } finally {
+        inFlight.delete(key);
+      }
     });
     return fallback;
   }
@@ -55,6 +64,9 @@ export async function getSummary(ws: Workspace, analysis: Analysis, data: Busine
   const version = ws.company.dataVersion;
   const stored = await db.analysisSummary.findUnique({ where: { companyId_dataVersion: { companyId, dataVersion: version } } });
   if (stored) return stored.source === "ai" ? { headline: stored.headline, body: stored.body, source: "ai" } : fallback;
+  const key = `${companyId}:${version}`;
+  if (inFlight.has(key)) return fallback;
+  inFlight.add(key);
   after(async () => {
     try {
       const s = await provider.summarize(buildAIFacts(analysis, data));
@@ -73,6 +85,8 @@ export async function getSummary(ws: Workspace, analysis: Analysis, data: Busine
           update: {},
         })
         .catch(() => {});
+    } finally {
+      inFlight.delete(key);
     }
   });
   return fallback;
