@@ -317,7 +317,7 @@ export function WhatIfStudio({
       </section>
 
       <Dialog open={compareOpen} onClose={() => setCompareOpen(false)} title="Compare scenarios" description="Monthly figures, 6 months after each change." className="max-w-3xl">
-        <div className="overflow-x-auto p-6">
+        <div className="relative overflow-x-auto p-6">
           <CompareTable scenarios={compared.map((s) => s.result)} currency={currency} />
         </div>
       </Dialog>

@@ -16,7 +16,7 @@ export function EvidenceView({ evidence, currency }: { evidence: Evidence; curre
       {evidence.table && (
         <div className="min-w-0">
           <p className="mb-3 text-sm font-heavy text-ink">{evidence.table.title}</p>
-          <div className="overflow-x-auto rounded-xl border border-line">
+          <div className="relative overflow-x-auto rounded-xl border border-line">
             <table className="w-full min-w-[22rem] text-left text-sm">
               <thead className="bg-canvas text-muted">
                 <tr>

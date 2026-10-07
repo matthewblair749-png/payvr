@@ -93,7 +93,7 @@ export function ReviewForm({
         <section className="rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6">
           <h2 className="text-[15px] font-heavy text-ink">Preview</h2>
           <p className="mt-1 text-sm text-muted">The first {preview.rows.length} rows of your file.</p>
-          <div className="mt-4 overflow-x-auto rounded-xl border border-line">
+          <div className="relative mt-4 overflow-x-auto rounded-xl border border-line">
             <table className="w-full text-left text-[13px]">
               <thead className="bg-canvas">
                 <tr>

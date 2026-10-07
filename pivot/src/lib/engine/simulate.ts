@@ -15,12 +15,14 @@ import type { Baseline, Industry, Level, ScenarioKind, ScenarioResult, Snapshot 
  * Pure and synchronous, so the browser can rerun it on every slider move.
  */
 
+const signed = (v: number) => (v > 0 ? `+${v}%` : v < 0 ? `−${-v}%` : "0%");
+
 export const SCENARIOS: Record<
   ScenarioKind,
   { label: string; min: number; max: number; step: number; defaultValue: number; leverLabel: string; format: (v: number) => string }
 > = {
-  price: { label: "Change price", min: -30, max: 30, step: 1, defaultValue: -10, leverLabel: "Price change", format: (v) => `${v > 0 ? "+" : ""}${v}%` },
-  marketing: { label: "Change marketing budget", min: -50, max: 100, step: 5, defaultValue: 20, leverLabel: "Budget change", format: (v) => `${v > 0 ? "+" : ""}${v}%` },
+  price: { label: "Change price", min: -30, max: 30, step: 1, defaultValue: -10, leverLabel: "Price change", format: (v) => signed(v) },
+  marketing: { label: "Change marketing budget", min: -50, max: 100, step: 5, defaultValue: 20, leverLabel: "Budget change", format: (v) => signed(v) },
   newProduct: { label: "Launch a new product", min: 1, max: 20, step: 1, defaultValue: 6, leverLabel: "Customers who buy it", format: (v) => `${v}%` },
   newMarket: { label: "Enter a new market", min: 10, max: 100, step: 5, defaultValue: 30, leverLabel: "New market size vs. today's", format: (v) => `${v}%` },
   costs: { label: "Reduce operating costs", min: 0, max: 30, step: 1, defaultValue: 10, leverLabel: "Cost reduction", format: (v) => `${v}%` },

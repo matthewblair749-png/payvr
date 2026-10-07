@@ -114,7 +114,9 @@ function run(ds: { rawCsv: string; columns: unknown }, mapping: Mapping) {
 /** Live preview of what a mapping would import (review screen). */
 export async function previewImport(id: string, mapping: Record<string, string>): Promise<{ ok: true; summary: ImportSummary } | { ok: false; error: string }> {
   try {
-    const { ds } = await loadOwned(id);
+    const { ws, ds } = await loadOwned(id);
+    // Each preview re-parses the stored file: cap how often.
+    rateLimit(`preview:${ws.user.id}`, { limit: 120, windowMs: 60_000 });
     const { summary } = run(ds, MappingSchema.parse(mapping));
     return { ok: true, summary };
   } catch (e) {
