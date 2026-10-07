@@ -44,6 +44,7 @@ Requires Node 20.9+ and Postgres 14+.
 | `NEXT_PUBLIC_APP_URL` | yes | Base URL used in emailed links |
 | `EMAIL_SERVER`, `EMAIL_FROM` | production | SMTP for password resets, invitations and alerts |
 | `ANTHROPIC_API_KEY` | no | Enables Claude-written summaries and Ask PIVOT answers. Server-only. |
+| `TRUSTED_PROXY_HOPS` | no | Proxies in front of the app that append to `x-forwarded-for` (default 1). Used for rate limits |
 | `PIVOT_AI_PROVIDER` | no | `local` forces the built-in engine even when a key is set |
 | `PIVOT_AI_MODEL` | no | Defaults to `claude-opus-5-5` |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_BUSINESS` | no | Payments stay off until these are set |
@@ -142,10 +143,14 @@ webhook are implemented but inactive until the Stripe variables are set.
 - **Auth:** scrypt password hashing; database sessions where only a SHA-256 of the cookie token is
   stored; httpOnly, SameSite=Lax, Secure (in production) cookies; sessions revoked on password
   change and reset; reset and invite tokens stored hashed, single-use and short-lived; login and
-  reset don't reveal whether an account exists.
+  reset don't reveal whether an account exists (reset emails go out after the response); removing
+  someone also cancels their pending invitations.
 - **Rate limits** on signup, login, password reset, uploads, previews, Ask PIVOT and mutations
   (`src/server/rate-limit.ts`). The store is in-memory: use Redis/Upstash when running more than one
-  instance, and make sure your proxy sets `x-forwarded-for`.
+  instance. Client IPs come from the right-hand end of `x-forwarded-for` (the part your own proxies
+  added; the rest is client-controlled): set `TRUSTED_PROXY_HOPS` to the number of proxies in front
+  of the app (default 1). Login limits count only failed attempts, per email + IP, so knowing
+  someone's email isn't enough to lock them out.
 - **Input:** Zod on every action and route; uploads validated by type, size and content; user text is
   only ever rendered as text (model output included: `rich-text.tsx` builds React elements, no HTML).
 - **Headers:** per-request CSP nonce with `strict-dynamic` (`src/proxy.ts`), HSTS, frame-ancestors none,

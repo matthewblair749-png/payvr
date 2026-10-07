@@ -21,19 +21,36 @@ export class RateLimitError extends UserError {
   }
 }
 
-/** Throws RateLimitError if `key` exceeded `limit` hits within `windowMs`. */
-export function rateLimit(key: string, { limit, windowMs }: { limit: number; windowMs: number }) {
+type Policy = { limit: number; windowMs: number };
+
+/** Throws RateLimitError if `key` already has `limit` hits within `windowMs` (records nothing). */
+export function checkLimit(key: string, { limit, windowMs }: Policy) {
   const now = Date.now();
   const hits = (buckets.get(key) ?? []).filter((t) => now - t < windowMs);
-  if (hits.length >= limit) {
-    buckets.set(key, hits);
-    throw new RateLimitError(Math.max(1, Math.ceil((windowMs - (now - hits[0])) / 1000)));
-  }
+  buckets.set(key, hits);
+  if (hits.length >= limit) throw new RateLimitError(Math.max(1, Math.ceil((windowMs - (now - hits[0])) / 1000)));
+}
+
+/** Records one hit for `key`. */
+export function recordHit(key: string, { windowMs }: Policy) {
+  const now = Date.now();
+  const hits = buckets.get(key) ?? [];
   hits.push(now);
   buckets.set(key, hits);
   if (buckets.size > 10_000) {
     for (const [k, v] of buckets) if (!v.length || now - v[v.length - 1] > windowMs) buckets.delete(k);
   }
+}
+
+/** Forgets every hit for `key` (e.g. failed logins after a successful one). */
+export function clearLimit(key: string) {
+  buckets.delete(key);
+}
+
+/** Throws RateLimitError if `key` exceeded `limit` hits within `windowMs`, otherwise records a hit. */
+export function rateLimit(key: string, policy: Policy) {
+  checkLimit(key, policy);
+  recordHit(key, policy);
 }
 
 /** Test hook. */
@@ -43,7 +60,12 @@ export function __resetRateLimits() {
 
 /** All policies in one place, so they're easy to audit. */
 export const LIMITS = {
+  /** Failed logins for one email from one IP. */
   login: { limit: 10, windowMs: 15 * 60_000 },
+  /** Failed logins for one email from anywhere: high enough that a stranger can't easily lock a user out. */
+  loginAccount: { limit: 100, windowMs: 15 * 60_000 },
+  /** Failed logins from one IP, any email. */
+  loginIp: { limit: 30, windowMs: 15 * 60_000 },
   signup: { limit: 5, windowMs: 60 * 60_000 },
   passwordReset: { limit: 5, windowMs: 15 * 60_000 },
   mutate: { limit: 60, windowMs: 60_000 },

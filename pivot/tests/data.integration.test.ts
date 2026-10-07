@@ -115,5 +115,12 @@ describe("auth primitives", () => {
     expect(safeNext("/\\evil.com")).toBe("/app");
     expect(safeNext("https://evil.com")).toBe("/app");
     expect(safeNext(undefined)).toBe("/app");
+    // Browsers strip tabs and newlines, turning these into //evil.com.
+    expect(safeNext("/\t/evil.com")).toBe("/app");
+    expect(safeNext("/\n/evil.com")).toBe("/app");
+    expect(safeNext("/\r\n/evil.com")).toBe("/app");
+    expect(safeNext(" //evil.com")).toBe("/app");
+    expect(safeNext("/%09/evil.com")).toBe("/%09/evil.com");
+    expect(safeNext("/invite/abc?x=1#y")).toBe("/invite/abc?x=1#y");
   });
 });

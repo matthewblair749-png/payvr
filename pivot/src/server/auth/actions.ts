@@ -1,14 +1,15 @@
 "use server";
 
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { safeNext } from "@/lib/safe-next";
 import { companyName, email, fieldErrors, industry, password, personName } from "@/lib/validation";
 import { TRIAL_DAYS } from "@/lib/billing/plans";
 import { db } from "../db";
-import { appUrl, lastDevLink, sendEmail } from "../email";
+import { appUrl, devMailEnabled, lastDevLink, sendEmail } from "../email";
 import { GENERIC_ERROR } from "../errors";
-import { LIMITS, rateLimit, RateLimitError } from "../rate-limit";
+import { checkLimit, clearLimit, LIMITS, rateLimit, RateLimitError, recordHit } from "../rate-limit";
 import { clientIp, userAgent } from "../request-meta";
 import { dummyHash, hashPassword, verifyPassword } from "./password";
 import { createSession, currentUser, destroySession, requireUser } from "./session";
@@ -58,10 +59,16 @@ export async function login(_prev: FormState, form: FormData): Promise<FormState
   const values = { email: str(form, "email") };
   const parsed = LoginSchema.safeParse({ email: values.email, password: str(form, "password") });
   if (!parsed.success) return { fieldErrors: fieldErrors(parsed.error), values };
+  // Only failed attempts count, and a successful login clears this browser's count, so
+  // someone who knows a user's email can't lock them out with a few junk passwords.
+  const ip = await clientIp();
+  const keys = [
+    [`login:${parsed.data.email}:${ip}`, LIMITS.login],
+    [`login:${parsed.data.email}`, LIMITS.loginAccount],
+    [`login:ip:${ip}`, LIMITS.loginIp],
+  ] as const;
   try {
-    const ip = await clientIp();
-    rateLimit(`login:ip:${ip}`, { limit: 30, windowMs: LIMITS.login.windowMs });
-    rateLimit(`login:${parsed.data.email}`, LIMITS.login);
+    for (const [key, policy] of keys) checkLimit(key, policy);
   } catch (e) {
     return limited(e) ?? { error: GENERIC_ERROR };
   }
@@ -69,8 +76,12 @@ export async function login(_prev: FormState, form: FormData): Promise<FormState
   const user = await db.user.findUnique({ where: { email: parsed.data.email }, select: { id: true, passwordHash: true } });
   // Always run a full hash check so response time doesn't reveal whether the email exists.
   const ok = await verifyPassword(parsed.data.password, user?.passwordHash ?? (await dummyHash()));
-  if (!user || !ok) return { error: "Email or password is incorrect.", values };
+  if (!user || !ok) {
+    for (const [key, policy] of keys) recordHit(key, policy);
+    return { error: "Email or password is incorrect.", values };
+  }
 
+  clearLimit(keys[0][0]);
   await createSession(user.id, await userAgent());
   redirect(safeNext(str(form, "next"), "/app"));
 }
@@ -94,20 +105,23 @@ export async function requestPasswordReset(_prev: FormState, form: FormData): Pr
 
   const user = await db.user.findUnique({ where: { email: parsed.data }, select: { id: true, name: true } });
   if (user) {
-    const token = newToken();
-    await db.passwordResetToken.create({ data: { userId: user.id, tokenHash: hashToken(token), expiresAt: new Date(Date.now() + 60 * 60_000) } });
-    try {
+    const to = parsed.data;
+    const issue = async () => {
+      const token = newToken();
+      await db.passwordResetToken.create({ data: { userId: user.id, tokenHash: hashToken(token), expiresAt: new Date(Date.now() + 60 * 60_000) } });
       await sendEmail({
-        to: parsed.data,
+        to,
         subject: "Reset your PIVOT password",
         heading: "Reset your password",
         body: `Hi ${user.name.split(" ")[0]}, use the button below to choose a new password. The link works once and expires in 1 hour.`,
         cta: { label: "Choose a new password", url: appUrl(`/reset-password?token=${token}`) },
       });
-    } catch (e) {
-      console.error("[pivot] reset email failed", e);
-      return { error: "We couldn't send the email right now. Please try again in a few minutes." };
-    }
+    };
+    // Local development shows the link on screen, so it must exist before we answer.
+    // Everywhere else the email goes out after the response, so neither the time it
+    // takes nor a mail-server error reveals that the account exists.
+    if (devMailEnabled()) await issue();
+    else after(() => issue().catch((e) => console.error("[pivot] reset email failed", e)));
   }
   // Same answer either way: no account enumeration.
   return { message: "If there's an account for that email, we've sent a link to reset the password. It expires in 1 hour.", devLink: lastDevLink(parsed.data) };
@@ -185,6 +199,8 @@ export async function acceptInvite(token: string): Promise<FormState> {
       create: { companyId: invite.companyId, userId: user.id, role: invite.role },
     }),
     db.invitation.update({ where: { id: invite.id }, data: { acceptedAt: new Date() } }),
+    // Any duplicate invite ("resend") is used up too, so it can't bring someone back after they're removed.
+    db.invitation.deleteMany({ where: { companyId: invite.companyId, email: invite.email, acceptedAt: null, id: { not: invite.id } } }),
     db.user.update({ where: { id: user.id }, data: { activeCompanyId: invite.companyId } }),
   ]);
   redirect("/app");

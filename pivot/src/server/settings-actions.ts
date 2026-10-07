@@ -157,10 +157,14 @@ export async function removeMember(memberId: string): Promise<SettingsState> {
     const ws = await workspaceForAction();
     requireRole(ws, ["OWNER"], "remove people");
     if (typeof memberId !== "string" || memberId.length > 40) throw new UserError("That person isn't in this workspace.");
-    const m = await db.companyMember.findFirst({ where: { id: memberId, companyId: ws.company.id } });
+    const m = await db.companyMember.findFirst({ where: { id: memberId, companyId: ws.company.id }, include: { user: { select: { email: true } } } });
     if (!m) throw new UserError("That person isn't in this workspace.");
     if (m.userId === ws.user.id) throw new UserError("You can't remove yourself. Transfer ownership first.");
-    await db.companyMember.delete({ where: { id: m.id } });
+    await db.$transaction([
+      db.companyMember.delete({ where: { id: m.id } }),
+      // Otherwise an older, unused invitation would let them straight back in.
+      db.invitation.deleteMany({ where: { companyId: ws.company.id, email: m.user.email, acceptedAt: null } }),
+    ]);
     revalidatePath("/app/settings/team");
     return { ok: true };
   } catch (e) {
