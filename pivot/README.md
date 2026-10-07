@@ -11,9 +11,10 @@ A multi-tenant web SaaS built with Next.js 16 (App Router), Postgres + Prisma 7,
 ## Quick start
 
 ```bash
+git checkout claude/loving-wozniak-4gwyiq   # until the PR is merged, pivot/ only exists on this branch
 cd pivot
-npm install                  # also runs `prisma generate`
 cp .env.example .env         # DATABASE_URL and NEXT_PUBLIC_APP_URL are all you need locally
+npm install                  # also runs `prisma generate`
 docker compose up -d         # Postgres 16 on :5432 (or point DATABASE_URL at your own)
 npm run db:migrate           # create tables
 npm run db:seed              # optional: a ready-made account with sample data
@@ -28,6 +29,17 @@ Without `EMAIL_SERVER`, password-reset and invitation links are printed to the s
 shown on screen. That shortcut is disabled in production.
 
 Requires Node 20.9+ and Postgres 14+.
+
+**If it doesn't start**
+
+| Symptom | Fix |
+| --- | --- |
+| `cd: pivot: No such file or directory` | You're on another branch: `git fetch && git checkout claude/loving-wozniak-4gwyiq` |
+| `docker: command not found` | Install Docker Desktop, or use any Postgres 14+ and set `DATABASE_URL` in `.env` |
+| `Can't reach database server at localhost:5432` | Postgres isn't running (`docker compose up -d`, then wait a few seconds), or `DATABASE_URL` points somewhere else |
+| `port 5432 is already allocated` | Another Postgres is running: stop it, or change the port in `docker-compose.yml` and `DATABASE_URL` |
+| `The datasource.url property is required` | Run `cp .env.example .env` first |
+| Pages load but show no data | Run `npm run db:seed`, or open `/demo`, which needs no database data |
 
 | Script | What it does |
 | --- | --- |
