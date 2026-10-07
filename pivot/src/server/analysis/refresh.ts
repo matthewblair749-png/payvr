@@ -3,6 +3,7 @@ import { fromMetricRows } from "@/lib/data/metrics";
 import { analyze } from "@/lib/engine/analyze";
 import type { Analysis } from "@/lib/engine/types";
 import { Prisma } from "@/generated/prisma/client";
+import { entitlementsFor } from "../billing/entitlements";
 import { db } from "../db";
 import { appUrl, sendEmail } from "../email";
 
@@ -20,7 +21,7 @@ const json = (v: unknown) => JSON.parse(JSON.stringify(v)) as Prisma.InputJsonVa
 export async function refreshAnalysis(companyId: string): Promise<Analysis> {
   const company = await db.company.findUniqueOrThrow({
     where: { id: companyId },
-    select: { name: true, currency: true, industry: true, marketSharePct: true, dataVersion: true },
+    select: { name: true, currency: true, industry: true, marketSharePct: true, dataVersion: true, plan: true, trialEndsAt: true },
   });
   const rows = await db.metric.findMany({
     where: { companyId, dataset: { status: "READY" } },
@@ -79,13 +80,17 @@ export async function refreshAnalysis(companyId: string): Promise<Analysis> {
   // the person who uploaded is looking at it already.
   const fresh = result ? a.insights.filter((i) => i.severity === "ACTION" && !result.wasActive.has(i.key)) : [];
   if (result && fresh.length && !result.firstAnalysis) {
+    const top = fresh[0];
+    // Past the plan's insight limit the app shows only the headline, so the email does too.
+    const limit = entitlementsFor(company).limits.insights;
+    const locked = limit !== null && a.insights.indexOf(top) >= limit;
     const members = await db.companyMember.findMany({ where: { companyId, user: { notifyAlerts: true } }, select: { user: { select: { email: true } } } });
     for (const m of members) {
       sendEmail({
         to: m.user.email,
-        subject: `PIVOT alert: ${fresh[0].title.replace(/\.$/, "")}`,
-        heading: fresh[0].title,
-        body: `${fresh[0].what} ${fresh[0].why}`,
+        subject: `PIVOT alert: ${top.title.replace(/\.$/, "")}`,
+        heading: top.title,
+        body: locked ? `${top.what} Why it happened and what to do about it are on the Pro plan.` : `${top.what} ${top.why}`,
         cta: { label: "See the insight", url: appUrl("/app/insights") },
       }).catch((e) => console.error("[pivot] alert email failed", e));
     }
