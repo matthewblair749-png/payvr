@@ -50,7 +50,7 @@ export function growthRates(s: Series): (number | null)[] {
 
 /** Average monthly growth (compound) over the last `months` months. */
 export function cagr(s: Series | undefined, months: number): number | null {
-  if (!s || s.length <= months) return null;
+  if (!s || months < 1 || s.length <= months) return null;
   const end = s[s.length - 1];
   const start = s[s.length - 1 - months];
   if (!isNum(end) || !isNum(start) || start <= 0 || end <= 0) return null;

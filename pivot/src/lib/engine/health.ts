@@ -45,7 +45,7 @@ export function computeHealth(f: Facts): Health {
       score: Math.round(clamp(logistic(g, -0.012, 0.0295) - churnPenalty)),
       reason:
         churnPenalty > 1
-          ? `Up ${pct(g)} a month, but more customers are leaving.`
+          ? `${g >= 0 ? "Up" : "Down"} ${pct(Math.abs(g))} a month, ${g >= 0 ? "but" : "and"} more customers are leaving.`
           : `${g >= 0 ? "Up" : "Down"} ${pct(Math.abs(g))} a month over the last 3 months.`,
       trend: trendOf(f.customers.change),
     });

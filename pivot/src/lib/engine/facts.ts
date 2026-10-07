@@ -141,7 +141,7 @@ export function computeFacts(data: BusinessData): Facts {
   const arpc = pair(d.arpc, i);
   const prof = pair(d.profit, i);
   const profit = prof
-    ? { ...prof, marginNow: at(d.margin, i), marginPrev: at(d.margin, i - 1), margin6ago: at(d.margin, i - 6), margin12ago: at(d.margin, i - 12) }
+    ? { ...prof, change: prof.prev !== null && prof.prev > 0 ? prof.change : null, marginNow: at(d.margin, i), marginPrev: at(d.margin, i - 1), margin6ago: at(d.margin, i - 6), margin12ago: at(d.margin, i - 12) }
     : null;
 
   const ret = pair(d.retention, i);
@@ -249,7 +249,8 @@ export function computeFacts(data: BusinessData): Facts {
     const others = scored.filter((s) => s !== top);
     const othersCust = sum(others.map((s) => s.customersPrev));
     const othersRate = othersCust ? sum(others.map((s) => s.customersPrev * s.churnRateNow!)) / othersCust : 0;
-    if (top.churnRateNow! - top.churnRatePrev! > 0.005 && othersRate > 0) {
+    // It only drives the drop if it's rising AND clearly worse than everyone else.
+    if (top.churnRateNow! - top.churnRatePrev! > 0.005 && othersRate > 0 && top.churnRateNow! >= othersRate * 1.2) {
       churnDriver = { segment: top, othersRateNow: othersRate, multiple: top.churnRateNow! / othersRate };
     }
   }

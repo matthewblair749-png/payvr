@@ -209,7 +209,7 @@ export function detectOpportunities(f: Facts, b: Baseline | null): Opportunity[]
   }
 
   // 5. A loyal, low-churn segment -> modest price increase there.
-  const loyal = f.segments.filter((s) => s.churnRateNow !== null).sort((a, z) => a.churnRateNow! - z.churnRateNow!)[0];
+  const loyal = f.segments.filter((s) => s.churnRateNow !== null && s !== f.churnDriver?.segment).sort((a, z) => a.churnRateNow! - z.churnRateNow!)[0];
   if (loyal && f.segments.length >= 2 && loyal.churnRateNow! < (1 - (f.retention?.now ?? 0.9)) * 0.7) {
     const gain = R * loyal.share * 0.05 * 0.92 * 12;
     out.push(

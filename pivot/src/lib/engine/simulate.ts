@@ -51,7 +51,11 @@ export const INDUSTRY_LABEL: Record<Industry, string> = {
 };
 
 /** Months of retained customers accumulated after 6 months at retention r. */
-const accumulate = (r: number) => (1 - r ** 6) / (1 - r);
+const accumulate = (r: number) => {
+  const q = clamp(r, 0, 1);
+  // 6 full months when nobody leaves (the closed form divides 0 by 0 there).
+  return q > 1 - 1e-9 ? 6 : (1 - q ** 6) / (1 - q);
+};
 
 export function buildBaseline(f: Facts): Baseline | null {
   if (!f.revenue) return null;
@@ -60,6 +64,7 @@ export function buildBaseline(f: Facts): Baseline | null {
   const industry = f.industry;
 
   let V = f.costs?.cogs ?? null;
+  const knownCosts = V !== null && f.marketing !== null;
   if (V === null) {
     V = R * VARIABLE_COST[industry];
     estimated.push(`Cost of goods estimated at ${Math.round(VARIABLE_COST[industry] * 100)}% of revenue`);
@@ -71,7 +76,13 @@ export function buildBaseline(f: Facts): Baseline | null {
   }
   let O = f.costs?.opex ?? null;
   let P = f.profit?.now ?? null;
-  if (O === null && P !== null) O = R - V - M - P;
+  // Operating costs are what's left of profit after the other costs, but only when
+  // those costs are real. With an estimate in the mix (or profit that was itself
+  // derived without operating costs) the remainder is noise, often negative.
+  if (O === null && P !== null && knownCosts) {
+    const rest = R - V - M - P;
+    if (rest > R * 0.01) O = rest;
+  }
   if (O === null) {
     O = R * 0.3;
     estimated.push("Operating costs estimated at 30% of revenue");
@@ -156,7 +167,7 @@ export function simulate(b: Baseline, kind: ScenarioKind, rawValue: number, curr
     const run = (e: number) => {
       const vol = (1 + p) ** -e;
       const R2 = R * (1 + p) * vol;
-      return { vol, R2, P2: R2 - V * vol - O - M, C2: C * (1 + p) ** (-0.47 * e) };
+      return { vol, R2, P2: P + (R2 - R) - V * (vol - 1), C2: C * (1 + p) ** (-0.47 * e) };
     };
     const mid = run(eps);
     rev = mid.R2;
@@ -178,7 +189,7 @@ export function simulate(b: Baseline, kind: ScenarioKind, rawValue: number, curr
       v === 0
         ? "Nothing changes: this is your current strategy."
         : p < 0
-          ? `Lowering prices ${-v}% would likely bring in ${pct(cust / C - 1)} more customers and ${dR >= 0 ? "add" : "lose"} ${money(Math.abs(dR), currency)} in monthly revenue. ${dP >= 0 ? `Profit rises ${money(dP, currency)} because the extra volume outweighs the lower price.` : `Profit falls ${money(-dP, currency)}: the extra volume doesn't make up for the lower price.`}`
+          ? `Lowering prices ${-v}% would likely ${C ? `bring in ${pct(cust / C - 1)} more customers and ` : ""}${dR >= 0 ? "add" : "lose"} ${money(Math.abs(dR), currency)} in monthly revenue. ${dP >= 0 ? `Profit rises ${money(dP, currency)} because the extra volume outweighs the lower price.` : `Profit falls ${money(-dP, currency)}: the extra volume doesn't make up for the lower price.`}`
           : `Raising prices ${v}% would likely ${dR >= 0 ? "add" : "lose"} ${money(Math.abs(dR), currency)} in monthly revenue${C ? ` and ${pct(Math.abs(cust / C - 1))} of customers` : ""}. ${dP >= 0 ? `Profit rises ${money(dP, currency)}.` : `Profit falls ${money(-dP, currency)}, because demand here is price-sensitive.`}`;
   }
 

@@ -151,8 +151,8 @@ export function detectInsights(f: Facts): Insight[] {
       what: `Customer acquisition cost increased ${pctDelta(cac.change, 0).replace("+", "")}, to ${money(cac.now, cur)} per new customer.`,
       why: `${spendUp !== null && newUp !== null ? `Marketing spend rose ${pctDelta(spendUp, 0).replace("+", "")} while new customers rose ${pctDelta(newUp, 0).replace("+", "")}.` : "Spend grew faster than new customers."}${w && b && w.cacNow && b.cacNow ? ` ${w.spendChange !== null && w.spendChange > 0.25 ? "Much of the extra budget went to " : "The most expensive channel is "}${w.name}, where each customer now costs ${money(w.cacNow, cur)}, ${(w.cacNow / b.cacNow).toFixed(1)}x ${b.name} (${money(b.cacNow, cur)}).` : ""}`,
       soWhat:
-        marginSlip && f.profit && f.revenue
-          ? `Profit grew ${pctDelta(f.profit.change ?? 0)} while revenue grew ${pctDelta(f.revenue.change ?? 0)}: margin slipped from ${pct(f.profit.marginPrev!)} to ${pct(f.profit.marginNow!)}. Rising acquisition costs are eating into growth.`
+        marginSlip && f.profit && f.revenue && f.profit.change !== null && f.profit.change >= 0 && f.revenue.change !== null
+          ? `Profit grew ${pctDelta(f.profit.change)} while revenue grew ${pctDelta(f.revenue.change)}: margin slipped from ${pct(f.profit.marginPrev!)} to ${pct(f.profit.marginNow!)}. Rising acquisition costs are eating into growth.`
           : `Each new customer now takes longer to pay back their acquisition cost.`,
       nowWhat: w && b ? `Shift budget from ${w.name} to ${b.name} before increasing total spend.` : "Find which campaigns got more expensive and pause the worst before adding budget.",
       metric: "marketingSpend",

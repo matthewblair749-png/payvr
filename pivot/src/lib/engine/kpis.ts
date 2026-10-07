@@ -87,17 +87,20 @@ export function computeKpis(f: Facts, health: Health): Kpi[] {
     const costLines: string[] = [];
     if (f.marketing?.change != null && f.revenue?.change != null && f.marketing.change > f.revenue.change + 0.05)
       costLines.push(`marketing spend grew ${pctDelta(f.marketing.change, 0).replace("+", "")} against revenue's ${pctDelta(f.revenue.change).replace("+", "")}`);
+    // A percentage change from a loss is meaningless, so show the money change then.
+    const moved = p.prev !== null ? p.now - p.prev : null;
+    const changeDisplay = p.change !== null ? pctDelta(p.change) : moved !== null ? moneyDelta(moved, cur) : null;
     kpis.push({
       key: "profit",
       label: "Profit",
       value: p.now,
       display: money(p.now, cur),
-      change: p.change,
-      changeDisplay: p.change !== null ? pctDelta(p.change) : null,
-      good: p.change !== null ? p.change >= 0 : null,
+      change: p.change ?? (moved !== null ? moved / Math.max(1, Math.abs(p.prev!)) : null),
+      changeDisplay,
+      good: moved !== null ? moved >= 0 : null,
       spark: spark(f.d.profit, n),
       explain: {
-        what: `${money(p.now, cur)} profit in ${month}${p.change !== null ? `, ${pctDelta(p.change)}` : ""}.${marginLine}`,
+        what: `${p.now < 0 ? `${money(-p.now, cur)} loss` : `${money(p.now, cur)} profit`} in ${month}${changeDisplay ? `, ${changeDisplay}` : ""}${p.change === null && p.prev !== null && p.prev < 0 ? ` from a ${money(-p.prev, cur)} loss` : ""}.${marginLine}`,
         why: costLines.length
           ? `Profit grew more slowly than revenue because ${costLines[0]}.`
           : p.change !== null && f.revenue?.change != null && p.change >= f.revenue.change

@@ -112,10 +112,11 @@ export function derive(data: BusinessData): Derived {
   const givenProfit = get("profit");
   if (givenProfit) d.profit = givenProfit;
   else if (d.revenue && (d.cogs || d.opex)) {
+    const costs = [d.cogs, d.opex, d.marketing].filter((s): s is Series => !!s);
     d.profit = d.revenue.map((r, i) => {
-      if (!isNum(r)) return null;
-      const c = (d.cogs?.[i] ?? 0) + (d.opex?.[i] ?? 0) + (d.marketing?.[i] ?? 0);
-      return r - c;
+      // A gap in a cost series (books not closed yet) means profit is unknown, not cost-free.
+      if (!isNum(r) || costs.some((s) => !isNum(s[i]))) return null;
+      return r - costs.reduce((sum, s) => sum + (s[i] as number), 0);
     });
   }
   if (d.profit && d.revenue) d.margin = zip(d.profit, d.revenue, (p, r) => (r > 0 ? p / r : null));
