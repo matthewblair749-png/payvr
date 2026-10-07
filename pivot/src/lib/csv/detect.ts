@@ -186,21 +186,29 @@ export function detectFormat(rows: string[][], delimiter = ","): DetectedFormat 
         continue;
       }
       if (toMonth(cell) !== null) continue;
-      const v = cell.replace(/[%$€£¥₹\s\u00a0\u202f()-]|USD|EUR|GBP/gi, "");
+      // Only cells that are a number (currency, sign and % aside) count, so free text like "1, 2" can't.
+      const t = cell.replace(/[%$€£¥₹]|USD|EUR|GBP/gi, "").trim().replace(/^[(\u2212-]+|\)$/g, "").trim();
+      const v = /^\d{1,3}([ \u00a0\u202f]\d{3})+(,\d+)?$/.test(t) ? t.replace(/[ \u00a0\u202f]/g, "") : t;
       if (/^\d+,\d{1,2}$/.test(v) || /^\d{4,},\d+$/.test(v) || /^\d{1,3}(\.\d{3})+,\d+$/.test(v) || /^\d{1,3}(\.\d{3}){2,}$/.test(v)) eu++;
-      else if (/^\d+\.\d{1,2}$/.test(v) || /^\d{1,3}(,\d{3})+\.\d+$/.test(v) || /^\d{1,3}(,\d{3}){2,}$/.test(v)) us++;
+      // Includes whole-number thousands ("12,500"): the most common way US files write amounts.
+      else if (/^\d+\.\d{1,2}$/.test(v) || /^\d{1,3}(,\d{3})+(\.\d+)?$/.test(v)) us++;
     }
   }
   const firstOver12 = pairs.some(([a]) => a > 12);
   const secondOver12 = pairs.some(([, b]) => b > 12);
-  // Monthly files dated on the 1st (01/09/2025, 01/10/2025...): the part that never changes is the day.
-  const sameFirst = new Set(pairs.map(([a]) => a)).size === 1 && new Set(pairs.map(([, b]) => b)).size > 1;
-  const sameSecond = new Set(pairs.map(([, b]) => b)).size === 1 && new Set(pairs.map(([a]) => a)).size > 1;
-  const dayFirst = firstOver12 || (!secondOver12 && sameFirst);
+  // Every part 12 or under: guess from the part that never changes. A constant 1 is the day of
+  // a monthly file (01/09/2025, 01/10/2025...); any other constant is the month of a run of days
+  // (10/01, 10/02... or 05/10, 06/10...). The review screen asks either way.
+  const firsts = new Set(pairs.map(([a]) => a));
+  const seconds = new Set(pairs.map(([, b]) => b));
+  const sameFirst = firsts.size === 1 && seconds.size > 1;
+  const sameSecond = seconds.size === 1 && firsts.size > 1;
+  const unclear = pairs.length > 0 && !firstOver12 && !secondOver12;
+  const dayFirst = firstOver12 || (unclear && ((sameFirst && firsts.has(1)) || (sameSecond && !seconds.has(1))));
   return {
     dayFirst,
     decimalComma: eu > us || (delimiter === ";" && us === 0),
-    dateOrderUnclear: pairs.length > 0 && !firstOver12 && !secondOver12 && !sameFirst && !sameSecond,
+    dateOrderUnclear: unclear,
     decimalCommaPossible: eu > 0 || delimiter === ";",
   };
 }

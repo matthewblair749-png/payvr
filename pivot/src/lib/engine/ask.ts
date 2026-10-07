@@ -1,5 +1,5 @@
 import { int, money, monthLabel, pct, pctDelta } from "../format";
-import type { Analysis } from "./types";
+import type { Analysis, Insight } from "./types";
 
 /**
  * Ask PIVOT, built-in answerer. Matches the question to a topic and answers
@@ -35,6 +35,10 @@ const UNAVAILABLE: [RegExp, string][] = [
 
 const has = (q: string, re: RegExp) => re.test(q);
 
+/** An insight's "why", or for one beyond the plan's insight limit (blanked on the server), a pointer to Pro instead of nothing. */
+const whyOf = (i: Insight) => (i.locked ? "Why it happened and what to do about it are on Pro." : i.why);
+const nowWhatOf = (i: Insight) => (i.locked ? "" : ` ${i.nowWhat}`);
+
 export function answerLocally(question: string, a: Analysis): LocalAnswer {
   const q = question.toLowerCase().trim();
   const cur = a.company.currency;
@@ -62,7 +66,7 @@ export function answerLocally(question: string, a: Analysis): LocalAnswer {
     const bad = a.insights.filter((i) => i.severity !== "OPPORTUNITY").slice(0, 3);
     if (!bad.length) return { answer: `Nothing in your data looks like it's hurting growth right now. Revenue in ${month}: ${kpi("revenue")?.display ?? "n/a"}.`, sources: ["Insights"] };
     return {
-      answer: [`${bad.length === 1 ? "One thing stands out" : `${bad.length} things stand out`}:`, ...bad.map((i, k) => `${k + 1}. **${i.title.replace(/\.$/, "")}.** ${i.what} ${i.why}`)].join("\n"),
+      answer: [`${bad.length === 1 ? "One thing stands out" : `${bad.length} things stand out`}:`, ...bad.map((i, k) => `${k + 1}. **${i.title.replace(/\.$/, "")}.** ${i.what} ${whyOf(i)}`)].join("\n"),
       sources: ["Insights"],
     };
   }
@@ -71,7 +75,7 @@ export function answerLocally(question: string, a: Analysis): LocalAnswer {
     if (!a.coverage.hasProducts) return { answer: "Your data doesn't break revenue down by product, so I can't compare products. Add a product column to your upload to unlock this.", sources: [] };
     const ins = a.insights.find((i) => i.key === "product-momentum");
     const chart = a.opportunities.find((o) => o.key === "expand-product");
-    const lines = [ins ? `**${ins.title.replace(/\.$/, "")}.** ${ins.what} ${ins.why}` : null, chart ? `It's also your top opportunity (PIVOT Score ${chart.score}): ${chart.title.toLowerCase()}.` : null].filter(Boolean);
+    const lines = [ins ? `**${ins.title.replace(/\.$/, "")}.** ${ins.what} ${whyOf(ins)}` : null, chart ? `It's also your top opportunity (PIVOT Score ${chart.score}): ${chart.title.toLowerCase()}.` : null].filter(Boolean);
     return { answer: lines.length ? lines.join("\n") : "Your products are growing roughly in line with each other; none stands out this month.", sources: ["Products", "Opportunities"] };
   }
 
@@ -101,7 +105,7 @@ export function answerLocally(question: string, a: Analysis): LocalAnswer {
 
   if (has(q, /\bmarketing|cac|acquisition|channel|ads?\b|ad spend|campaign/)) {
     const ins = a.insights.find((i) => i.key === "cac-rising");
-    if (ins) return { answer: `**${ins.title.replace(/\.$/, "")}.** ${ins.what} ${ins.why} ${ins.nowWhat}`, sources: ["Marketing"] };
+    if (ins) return { answer: `**${ins.title.replace(/\.$/, "")}.** ${ins.what} ${whyOf(ins)}${nowWhatOf(ins)}`, sources: ["Marketing"] };
     const dim = a.health.dimensions.find((d) => d.key === "marketing");
     if (dim) return { answer: `Marketing scores ${dim.score}/100. ${dim.reason}`, sources: ["Business Health"] };
     return { answer: "Your data doesn't include marketing spend and new customers, so I can't analyze acquisition costs.", sources: [] };
@@ -131,7 +135,7 @@ export function answerLocally(question: string, a: Analysis): LocalAnswer {
   if (has(q, /\bsegment/)) {
     if (!a.coverage.hasSegments) return { answer: "Your data doesn't include customer segments. Add a segment column to see who's buying and who's leaving.", sources: [] };
     const ins = a.insights.find((i) => i.key === "retention-decline");
-    return { answer: ins ? ins.why : "Your segments are behaving similarly this month; none stands out.", sources: ["Segments"] };
+    return { answer: ins ? (ins.locked ? `${ins.what} ${whyOf(ins)}` : ins.why) : "Your segments are behaving similarly this month; none stands out.", sources: ["Segments"] };
   }
 
   if (has(q, /\bcustomer/)) {

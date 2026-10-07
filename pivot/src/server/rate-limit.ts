@@ -42,6 +42,11 @@ export function recordHit(key: string, { windowMs }: Policy) {
   }
 }
 
+/** Takes back the most recent hit for `key` (an attempt that turned out fine). */
+export function releaseHit(key: string) {
+  buckets.get(key)?.pop();
+}
+
 /** Forgets every hit for `key` (e.g. failed logins after a successful one). */
 export function clearLimit(key: string) {
   buckets.delete(key);

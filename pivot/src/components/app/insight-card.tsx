@@ -66,7 +66,7 @@ export function InsightCard({
               Ask PIVOT
             </Button>
           )}
-          {insight.related.recommendation && (
+          {insight.related.recommendation && !insight.locked && (
             <Link href={`${base}/recommendations#${insight.related.recommendation}`} className="px-2 text-[13px] text-ink-2 underline decoration-line-strong underline-offset-4 hover:text-ink">
               Recommended move
             </Link>

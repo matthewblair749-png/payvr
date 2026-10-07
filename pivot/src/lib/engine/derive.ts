@@ -112,11 +112,13 @@ export function derive(data: BusinessData): Derived {
   const givenProfit = get("profit");
   if (givenProfit) d.profit = givenProfit;
   else if (d.revenue && (d.cogs || d.opex)) {
-    const costs = [d.cogs, d.opex, d.marketing].filter((s): s is Series => !!s);
+    const books = [d.cogs, d.opex].filter((s): s is Series => !!s);
     d.profit = d.revenue.map((r, i) => {
-      // A gap in a cost series (books not closed yet) means profit is unknown, not cost-free.
-      if (!isNum(r) || costs.some((s) => !isNum(s[i]))) return null;
-      return r - costs.reduce((sum, s) => sum + (s[i] as number), 0);
+      // A gap in COGS or operating costs (books not closed yet) means profit is unknown, not
+      // cost-free. Marketing often comes from a separate, shorter channel file, so it's
+      // subtracted where present.
+      if (!isNum(r) || books.some((s) => !isNum(s[i]))) return null;
+      return r - books.reduce((sum, s) => sum + (s[i] as number), 0) - (d.marketing?.[i] ?? 0);
     });
   }
   if (d.profit && d.revenue) d.margin = zip(d.profit, d.revenue, (p, r) => (r > 0 ? p / r : null));

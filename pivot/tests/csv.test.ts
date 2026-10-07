@@ -193,3 +193,29 @@ describe("real-world file formats", () => {
     expect(f.summary.months).toEqual(["2026-01", "2026-02"]);
   });
 });
+
+describe("format guesses that must not misfire", () => {
+  const fmt = (csv: string) => {
+    const p = parseCsv(csv);
+    return detectColumns(p.header, p.rows, p.delimiter).format;
+  };
+
+  it("reads US whole-number thousands as thousands, even next to free text or in a semicolon file", () => {
+    const p = parseCsv('month,revenue,customers,notes\n2026-01,"12,500","1,200","1, 2"\n2026-02,"13,100","1,260",ok\n');
+    const d = detectColumns(p.header, p.rows, p.delimiter);
+    expect(d.format.decimalComma).toBe(false);
+    const rev = aggregate(p, mapOf(d.columns), d.format).rows.find((r) => r.key === "revenue" && r.period === "2026-01")!;
+    expect(rev.value).toBe(12500);
+    expect(fmt("month;revenue;customers\n2026-01;12,500;1,200\n2026-02;13,100;1,260\n").decimalComma).toBe(false);
+  });
+
+  it("reads a US month-to-date daily file as one month, and asks", () => {
+    const f = fmt("date,revenue\n10/01/2026,1\n10/02/2026,2\n10/03/2026,3\n10/05/2026,4\n10/09/2026,5\n");
+    expect(f.dayFirst).toBe(false);
+    expect(f.dateOrderUnclear).toBe(true);
+    // ...and a European run of days in one month.
+    expect(fmt("date,revenue\n05/10/2026,1\n06/10/2026,2\n07/10/2026,3\n").dayFirst).toBe(true);
+    // US monthly files dated on the 1st stay month-first.
+    expect(fmt("date,revenue\n09/01/2025,1\n10/01/2025,2\n11/01/2025,3\n").dayFirst).toBe(false);
+  });
+});

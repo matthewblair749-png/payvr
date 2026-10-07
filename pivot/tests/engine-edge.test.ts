@@ -162,3 +162,20 @@ describe("plan insight limit", () => {
     expect(limitInsights(a, null)).toBe(a);
   });
 });
+
+describe("Ask PIVOT with locked insights", () => {
+  it("never answers with a blank, and points to Pro instead of the locked explanation", async () => {
+    const { limitInsights } = await import("@/lib/billing/limit-insights");
+    const { northstarData } = await import("@/lib/demo/northstar");
+    const { answerLocally } = await import("@/lib/engine/ask");
+    const a = analyze(northstarData(new Date("2026-10-06T12:00:00Z")));
+    const locked = limitInsights(a, 0);
+    for (const q of ["Which segments are doing worst?", "What is hurting our growth?", "How is marketing doing?", "Which product is performing best?"]) {
+      const { answer } = answerLocally(q, locked);
+      expect(answer.trim().length).toBeGreaterThan(20);
+      expect(answer).not.toMatch(/undefined|null/);
+      for (const i of a.insights) expect(answer).not.toContain(i.why);
+    }
+    expect(answerLocally("Which segments are doing worst?", locked).answer).toMatch(/on Pro/);
+  });
+});

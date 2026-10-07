@@ -6,6 +6,8 @@ import { getStripe, planForPrice, stripeConfigured } from "@/server/billing/stri
  * Stripe webhooks: keep each company's plan in sync with its subscription.
  * Signature-verified; idempotent (every handler sets state, never increments).
  */
+const LIVE = new Set(["active", "trialing", "past_due"]);
+
 export async function POST(request: Request) {
   if (!stripeConfigured()) return new Response("Billing is not configured", { status: 404 });
   const sig = request.headers.get("stripe-signature");
@@ -22,14 +24,23 @@ export async function POST(request: Request) {
       const s = event.data.object;
       const companyId = s.metadata?.companyId ?? s.client_reference_id;
       const plan = s.metadata?.plan === "BUSINESS" ? "BUSINESS" : "PRO";
-      if (companyId && s.mode === "subscription") {
-        const subscriptionId = typeof s.subscription === "string" ? s.subscription : (s.subscription?.id ?? null);
-        // Safety net: never leave an older subscription billing alongside the new one.
-        const previous = await db.company.findUnique({ where: { id: companyId }, select: { stripeSubscriptionId: true } });
-        if (previous?.stripeSubscriptionId && previous.stripeSubscriptionId !== subscriptionId) {
-          await getStripe()
-            .subscriptions.cancel(previous.stripeSubscriptionId, { prorate: true })
-            .catch((e) => console.error("[pivot] couldn't cancel the previous subscription", previous.stripeSubscriptionId, e));
+      const subscriptionId = typeof s.subscription === "string" ? s.subscription : (s.subscription?.id ?? null);
+      if (companyId && s.mode === "subscription" && subscriptionId) {
+        const stripe = getStripe();
+        // Stripe may deliver events late, twice or replayed: only act for a subscription that's
+        // still live and newer than the one stored.
+        const incoming = await stripe.subscriptions.retrieve(subscriptionId);
+        if (!LIVE.has(incoming.status)) return new Response("ok");
+        const stored = (await db.company.findUnique({ where: { id: companyId }, select: { stripeSubscriptionId: true } }))?.stripeSubscriptionId;
+        if (stored && stored !== subscriptionId) {
+          const previous = await stripe.subscriptions.retrieve(stored).catch(() => null);
+          if (previous && LIVE.has(previous.status)) {
+            if (previous.created > incoming.created) return new Response("ok");
+            // Safety net: never leave an older subscription billing alongside the new one.
+            await stripe.subscriptions
+              .cancel(previous.id, { prorate: true })
+              .catch((e) => console.error("[pivot] couldn't cancel the previous subscription", previous.id, e));
+          }
         }
         await db.company.updateMany({
           where: { id: companyId },

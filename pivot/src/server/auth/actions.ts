@@ -10,7 +10,7 @@ import { entitlementsFor } from "../billing/entitlements";
 import { db } from "../db";
 import { appUrl, devMailEnabled, lastDevLink, sendEmail } from "../email";
 import { GENERIC_ERROR } from "../errors";
-import { checkLimit, clearLimit, LIMITS, rateLimit, RateLimitError, recordHit } from "../rate-limit";
+import { checkLimit, clearLimit, LIMITS, rateLimit, RateLimitError, recordHit, releaseHit } from "../rate-limit";
 import { clientIp, userAgent } from "../request-meta";
 import { dummyHash, hashPassword, verifyPassword } from "./password";
 import { createSession, currentUser, destroySession, requireUser } from "./session";
@@ -73,16 +73,17 @@ export async function login(_prev: FormState, form: FormData): Promise<FormState
   } catch (e) {
     return limited(e) ?? { error: GENERIC_ERROR };
   }
+  // Count the attempt now, before the slow password check: otherwise many requests sent at
+  // once would all pass the check above. A successful login takes it back below.
+  for (const [key, policy] of keys) recordHit(key, policy);
 
   const user = await db.user.findUnique({ where: { email: parsed.data.email }, select: { id: true, passwordHash: true } });
   // Always run a full hash check so response time doesn't reveal whether the email exists.
   const ok = await verifyPassword(parsed.data.password, user?.passwordHash ?? (await dummyHash()));
-  if (!user || !ok) {
-    for (const [key, policy] of keys) recordHit(key, policy);
-    return { error: "Email or password is incorrect.", values };
-  }
+  if (!user || !ok) return { error: "Email or password is incorrect.", values };
 
   clearLimit(keys[0][0]);
+  for (const [key] of keys.slice(1)) releaseHit(key);
   await createSession(user.id, await userAgent());
   redirect(safeNext(str(form, "next"), "/app"));
 }

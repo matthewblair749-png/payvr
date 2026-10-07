@@ -20,8 +20,19 @@ export function AskPanel({ mode, companyName, seed, onClose }: { mode: "app" | "
   const companyId = useCompanyId();
 
   useEffect(() => endRef.current?.scrollIntoView({ block: "end" }), [messages]);
-  // Closing the panel stops the answer, so the server stops generating it too.
-  useEffect(() => () => controller.current?.abort(), []);
+  // Closing the panel stops the answer, so the server stops generating it too. The abort waits a
+  // tick: React's development StrictMode unmounts and remounts once on open, and that mustn't
+  // cancel the question the panel was opened with.
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      setTimeout(() => {
+        if (!mounted.current) controller.current?.abort();
+      }, 0);
+    };
+  }, []);
 
   async function ask(question: string) {
     const q = question.trim().slice(0, 500);
