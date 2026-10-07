@@ -122,7 +122,8 @@ generated after the response is sent (`after()`) and cached per data version.
 
 Upload → validate (CSV only, 10 MB, UTF-8 or Windows-1252, row/column/cell limits) → parse → detect
 columns (dates in many formats, money, percentages, header synonyms like "Net Sales" or "Ad spend")
-→ **review screen** where every mapping can be changed with a live preview → import → re-analyze.
+and the file's format (day-first dates, decimal commas in European files) → **review screen** where
+every mapping and the format can be changed with a live preview → import → re-analyze.
 
 Two file shapes are understood: period totals (one row per day/week/month, optionally split by one
 product, channel or segment column) and order-level files (one row per order with a customer ID).

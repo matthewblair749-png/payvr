@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { aggregate, type ImportSummary, type Mapping } from "@/lib/csv/aggregate";
-import { detectColumns, TARGETS, type DetectedColumn, type Target } from "@/lib/csv/detect";
+import { detectColumns, TARGETS, type CsvFormat, type DatasetMeta, type Target } from "@/lib/csv/detect";
 import { CSV_LIMITS, CsvError, parseCsv } from "@/lib/csv/parse";
 import { Prisma } from "@/generated/prisma/client";
 import { refreshAnalysis } from "../analysis/refresh";
@@ -60,7 +60,7 @@ export async function uploadDataset(_prev: UploadState, form: FormData): Promise
 
     const text = decode(await file.arrayBuffer());
     const parsed = parseCsv(text, ws.entitlements.limits.rowsPerFile);
-    const { columns, dayFirst } = detectColumns(parsed.header, parsed.rows);
+    const { columns, format } = detectColumns(parsed.header, parsed.rows, parsed.delimiter);
     const mapping: Mapping = Object.fromEntries(columns.map((c) => [c.name, c.target]));
 
     const source = await db.dataSource.upsert({
@@ -78,7 +78,7 @@ export async function uploadDataset(_prev: UploadState, form: FormData): Promise
         fileName,
         fileSize: file.size,
         rowCount: parsed.rows.length,
-        columns: { dayFirst, columns } as unknown as Prisma.InputJsonValue,
+        columns: { format, columns } satisfies DatasetMeta as unknown as Prisma.InputJsonValue,
         mapping,
         preview: { header: parsed.header, rows: parsed.rows.slice(0, 20) },
         rawCsv: text,
@@ -104,20 +104,26 @@ async function loadOwned(id: string) {
   return { ws, ds };
 }
 
-function run(ds: { rawCsv: string; columns: unknown }, mapping: Mapping) {
-  const meta = ds.columns as { dayFirst: boolean; columns: DetectedColumn[] };
+const FormatSchema = z.object({ dayFirst: z.boolean(), decimalComma: z.boolean() }).optional();
+
+/** The chosen format, else the one saved with the dataset (older uploads only saved `dayFirst`). */
+function formatOf(meta: DatasetMeta, chosen?: CsvFormat): CsvFormat {
+  return chosen ?? { dayFirst: meta.format?.dayFirst ?? meta.dayFirst ?? false, decimalComma: meta.format?.decimalComma ?? false };
+}
+
+function run(ds: { rawCsv: string; columns: unknown }, mapping: Mapping, chosen?: CsvFormat) {
   const parsed = parseCsv(ds.rawCsv);
   for (const k of Object.keys(mapping)) if (!parsed.header.includes(k)) throw new UserError("The column mapping doesn't match this file.");
-  return aggregate(parsed, mapping, meta.dayFirst);
+  return aggregate(parsed, mapping, formatOf(ds.columns as unknown as DatasetMeta, chosen));
 }
 
 /** Live preview of what a mapping would import (review screen). */
-export async function previewImport(id: string, mapping: Record<string, string>): Promise<{ ok: true; summary: ImportSummary } | { ok: false; error: string }> {
+export async function previewImport(id: string, mapping: Record<string, string>, format?: CsvFormat): Promise<{ ok: true; summary: ImportSummary } | { ok: false; error: string }> {
   try {
     const { ws, ds } = await loadOwned(id);
     // Each preview re-parses the stored file: cap how often.
     rateLimit(`preview:${ws.user.id}`, { limit: 120, windowMs: 60_000 });
-    const { summary } = run(ds, MappingSchema.parse(mapping));
+    const { summary } = run(ds, MappingSchema.parse(mapping), FormatSchema.parse(format));
     return { ok: true, summary };
   } catch (e) {
     return { ok: false, error: friendly(e) };
@@ -125,12 +131,14 @@ export async function previewImport(id: string, mapping: Record<string, string>)
 }
 
 /** Step 2: import with the confirmed mapping, then re-run the analysis. */
-export async function confirmImport(id: string, mapping: Record<string, string>): Promise<{ error: string } | undefined> {
+export async function confirmImport(id: string, mapping: Record<string, string>, format?: CsvFormat): Promise<{ error: string } | undefined> {
   try {
     const { ws, ds } = await loadOwned(id);
     rateLimit(`mutate:${ws.user.id}`, LIMITS.mutate);
     const m = MappingSchema.parse(mapping);
-    const { rows, summary } = run(ds, m);
+    const meta = ds.columns as unknown as DatasetMeta;
+    const fmt = formatOf(meta, FormatSchema.parse(format));
+    const { rows, summary } = run(ds, m, fmt);
     await db.$transaction(
       async (tx) => {
         // Your own data replaces the sample data, so the two never mix.
@@ -141,7 +149,12 @@ export async function confirmImport(id: string, mapping: Record<string, string>)
         });
         await tx.uploadedDataset.update({
           where: { id: ds.id },
-          data: { mapping: m, status: "READY", periodStart: monthDate(summary.months[0]), periodEnd: monthDate(summary.months[summary.months.length - 1]) },
+          data: {
+            mapping: m,
+            // Remember the format the user confirmed, so re-mapping later reads the file the same way.
+            columns: { ...meta, format: { ...meta.format, ...fmt } } as unknown as Prisma.InputJsonValue,
+            status: "READY",
+            periodStart: monthDate(summary.months[0]), periodEnd: monthDate(summary.months[summary.months.length - 1]) },
         });
         await tx.dataSource.update({ where: { id: ds.dataSourceId }, data: { lastSyncedAt: new Date() } });
         await tx.company.update({ where: { id: ws.company.id }, data: { dataVersion: { increment: 1 } } });

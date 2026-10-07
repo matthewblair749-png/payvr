@@ -73,48 +73,70 @@ const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "
 const pad = (n: number) => String(n).padStart(2, "0");
 const ok = (y: number, m: number) => y >= 1990 && y <= 2100 && m >= 1 && m <= 12;
 
-/** Parse a date-like value to "YYYY-MM". `dayFirst` resolves 03/04/2026 ambiguity. */
-export function toMonth(raw: string, dayFirst = false): string | null {
+type DateParts = { y: number; m: number; d: number };
+const monthIndex = (name: string) => MONTHS.indexOf(name.slice(0, 3).toLowerCase()) + 1;
+const parts = (y: number, m: number, d = 0): DateParts | null => (ok(y, m) ? { y, m, d } : null);
+
+function parseDate(raw: string, dayFirst: boolean): DateParts | null {
   const v = raw.trim();
   if (!v) return null;
+  // 2026-09, 2026-09-30, 2026/9, 2026-09-30T10:00
   let m = v.match(/^(\d{4})[-/.](\d{1,2})(?:[-/.](\d{1,2}))?(?:[T\s].*)?$/);
-  if (m) return ok(+m[1], +m[2]) ? `${m[1]}-${pad(+m[2])}` : null;
+  if (m) return parts(+m[1], +m[2], m[3] ? +m[3] : 0);
+  // 09/30/2026 or 30/09/2026
   m = v.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})(?:\s.*)?$/);
   if (m) {
     const y = +m[3] < 100 ? 2000 + +m[3] : +m[3];
     const a = +m[1];
     const b = +m[2];
-    const month = dayFirst ? b : a > 12 ? b : a;
-    return ok(y, month) ? `${y}-${pad(month)}` : null;
+    return dayFirst || a > 12 ? parts(y, b, a) : parts(y, a, b);
   }
+  // 09/2026
+  m = v.match(/^(\d{1,2})[-/.](\d{4})$/);
+  if (m) return parts(+m[2], +m[1]);
+  // Sep 2026, September 2026
   m = v.match(/^([A-Za-z]{3,9})\.?[\s,-]+(\d{4})$/);
-  if (m) {
-    const k = MONTHS.indexOf(m[1].slice(0, 3).toLowerCase());
-    return k >= 0 && ok(+m[2], k + 1) ? `${m[2]}-${pad(k + 1)}` : null;
-  }
+  if (m) return monthIndex(m[1]) ? parts(+m[2], monthIndex(m[1])) : null;
+  // Sep-26, Sep '26 (Excel's default month format)
+  m = v.match(/^([A-Za-z]{3,9})\.?(?:-|\s?['’])(\d{2})$/);
+  if (m) return monthIndex(m[1]) ? parts(2000 + +m[2], monthIndex(m[1])) : null;
+  // 2026 Sep
   m = v.match(/^(\d{4})[\s-]+([A-Za-z]{3,9})$/);
-  if (m) {
-    const k = MONTHS.indexOf(m[2].slice(0, 3).toLowerCase());
-    return k >= 0 && ok(+m[1], k + 1) ? `${m[1]}-${pad(k + 1)}` : null;
-  }
-  m = v.match(/^\d{1,2}[\s-]([A-Za-z]{3,9})[\s-](\d{4})$/);
-  if (m) {
-    const k = MONTHS.indexOf(m[1].slice(0, 3).toLowerCase());
-    return k >= 0 && ok(+m[2], k + 1) ? `${m[2]}-${pad(k + 1)}` : null;
-  }
+  if (m) return monthIndex(m[2]) ? parts(+m[1], monthIndex(m[2])) : null;
+  // 30 Sep 2026
+  m = v.match(/^(\d{1,2})[\s-]([A-Za-z]{3,9})[\s-](\d{4})$/);
+  if (m) return monthIndex(m[2]) ? parts(+m[3], monthIndex(m[2]), +m[1]) : null;
+  // 202609
+  m = v.match(/^(\d{4})(\d{2})$/);
+  if (m) return parts(+m[1], +m[2]);
   // Excel serial dates (days since 1899-12-30).
   if (/^\d{5}(\.\d+)?$/.test(v)) {
     const n = Number(v);
     if (n > 32_000 && n < 73_000) {
       const d = new Date(Date.UTC(1899, 11, 30) + Math.floor(n) * 86_400_000);
-      return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}`;
+      return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, d: d.getUTCDate() };
     }
   }
   return null;
 }
 
-/** "$1,234.50" -> 1234.5, "(200)" -> -200, "12.5%" -> 12.5 (percent flag set). */
-export function toNumber(raw: string): { value: number; percent: boolean } | null {
+/** Parse a date-like value to "YYYY-MM". `dayFirst` resolves 03/04/2026 ambiguity. */
+export function toMonth(raw: string, dayFirst = false): string | null {
+  const p = parseDate(raw, dayFirst);
+  return p ? `${p.y}-${pad(p.m)}` : null;
+}
+
+/** A sortable number for a date-like value (YYYYMMDD; day 0 for month-only values), or -1. */
+export function dateOrder(raw: string, dayFirst = false): number {
+  const p = parseDate(raw, dayFirst);
+  return p ? p.y * 10_000 + p.m * 100 + p.d : -1;
+}
+
+/**
+ * "$1,234.50" -> 1234.5, "(200)" -> -200, "12.5%" -> 12.5 (percent flag set).
+ * With `decimalComma` (European files): "1.234,56" -> 1234.56, "0,8" -> 0.8.
+ */
+export function toNumber(raw: string, decimalComma = false): { value: number; percent: boolean } | null {
   let v = raw.trim();
   if (!v || v === "-" || /^(n\/?a|null|none|—)$/i.test(v)) return null;
   let neg = false;
@@ -123,17 +145,64 @@ export function toNumber(raw: string): { value: number; percent: boolean } | nul
     v = v.slice(1, -1);
   }
   const percent = v.endsWith("%");
-  v = v.replace(/[%$€£¥₹\s]|USD|EUR|GBP/gi, "");
+  v = v.replace(/[%$€£¥₹\s\u00a0\u202f]|USD|EUR|GBP/gi, "");
   if (/^-/.test(v)) {
     neg = !neg;
     v = v.slice(1);
   }
+  if (decimalComma) v = v.replace(/\./g, "").replace(",", ".");
   // 1.234,56 (European) -> 1234.56; 1,234.56 -> 1234.56
-  if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(v)) v = v.replace(/\./g, "").replace(",", ".");
+  else if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(v)) v = v.replace(/\./g, "").replace(",", ".");
   else v = v.replace(/,/g, "");
   if (!/^\d*\.?\d+(e[+-]?\d+)?$/i.test(v)) return null;
   const n = Number(v);
   return Number.isFinite(n) ? { value: neg ? -n : n, percent } : null;
+}
+
+/** How a file writes dates and numbers. Guessed on upload, changeable on the review screen. */
+export interface CsvFormat {
+  dayFirst: boolean;
+  decimalComma: boolean;
+}
+
+export interface DetectedFormat extends CsvFormat {
+  /** Dates like 03/04/2026 where nothing in the file says which part is the day. */
+  dateOrderUnclear: boolean;
+  /** Numbers that could use a decimal comma (or a semicolon-delimited file). */
+  decimalCommaPossible: boolean;
+}
+
+/** Guess date order and decimal mark for the whole file, from its values. */
+export function detectFormat(rows: string[][], delimiter = ","): DetectedFormat {
+  const pairs: [number, number][] = [];
+  let eu = 0;
+  let us = 0;
+  for (const r of rows) {
+    for (const c of r) {
+      const cell = c.trim();
+      const dm = cell.match(/^(\d{1,2})[/.-](\d{1,2})[/.-]\d{2,4}/);
+      if (dm) {
+        pairs.push([+dm[1], +dm[2]]);
+        continue;
+      }
+      if (toMonth(cell) !== null) continue;
+      const v = cell.replace(/[%$€£¥₹\s\u00a0\u202f()-]|USD|EUR|GBP/gi, "");
+      if (/^\d+,\d{1,2}$/.test(v) || /^\d{4,},\d+$/.test(v) || /^\d{1,3}(\.\d{3})+,\d+$/.test(v) || /^\d{1,3}(\.\d{3}){2,}$/.test(v)) eu++;
+      else if (/^\d+\.\d{1,2}$/.test(v) || /^\d{1,3}(,\d{3})+\.\d+$/.test(v) || /^\d{1,3}(,\d{3}){2,}$/.test(v)) us++;
+    }
+  }
+  const firstOver12 = pairs.some(([a]) => a > 12);
+  const secondOver12 = pairs.some(([, b]) => b > 12);
+  // Monthly files dated on the 1st (01/09/2025, 01/10/2025...): the part that never changes is the day.
+  const sameFirst = new Set(pairs.map(([a]) => a)).size === 1 && new Set(pairs.map(([, b]) => b)).size > 1;
+  const sameSecond = new Set(pairs.map(([, b]) => b)).size === 1 && new Set(pairs.map(([a]) => a)).size > 1;
+  const dayFirst = firstOver12 || (!secondOver12 && sameFirst);
+  return {
+    dayFirst,
+    decimalComma: eu > us || (delimiter === ";" && us === 0),
+    dateOrderUnclear: pairs.length > 0 && !firstOver12 && !secondOver12 && !sameFirst && !sameSecond,
+    decimalCommaPossible: eu > 0 || delimiter === ";",
+  };
 }
 
 export interface DetectedColumn {
@@ -144,11 +213,18 @@ export interface DetectedColumn {
   distinct: number;
 }
 
+/** What's saved with an upload (`UploadedDataset.columns`). Older uploads have `dayFirst` instead of `format`. */
+export interface DatasetMeta {
+  columns: DetectedColumn[];
+  format?: Partial<DetectedFormat>;
+  dayFirst?: boolean;
+}
+
 /** Detect each column's type and the metric it most likely maps to. */
-export function detectColumns(header: string[], rows: string[][]): { columns: DetectedColumn[]; dayFirst: boolean } {
+export function detectColumns(header: string[], rows: string[][], delimiter = ","): { columns: DetectedColumn[]; format: DetectedFormat } {
   const sample = rows.slice(0, 2000);
-  // Day-first dates if any "a/b/yyyy" value has a > 12.
-  const dayFirst = sample.some((r) => r.some((c) => /^\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}/.test(c) && Number(c.split(/[/.-]/)[0]) > 12));
+  const format = detectFormat(sample, delimiter);
+  const { dayFirst, decimalComma } = format;
   const columns = header.map((name, k) => {
     const vals = sample.map((r) => r[k]).filter((x) => x !== "" && x !== undefined);
     const distinct = new Set(vals).size;
@@ -156,7 +232,7 @@ export function detectColumns(header: string[], rows: string[][]): { columns: De
     if (!vals.length) type = "empty";
     else {
       const dates = vals.filter((x) => toMonth(x, dayFirst) !== null).length / vals.length;
-      const nums = vals.map(toNumber);
+      const nums = vals.map((x) => toNumber(x, decimalComma));
       const numeric = nums.filter(Boolean).length / vals.length;
       const pcts = nums.filter((x) => x?.percent).length / vals.length;
       const hinted = targetFromHeader(name);
@@ -192,5 +268,5 @@ export function detectColumns(header: string[], rows: string[][]): { columns: De
     if (used.has(c.target)) c.target = "ignore";
     else used.add(c.target);
   }
-  return { columns, dayFirst };
+  return { columns, format };
 }

@@ -3,9 +3,9 @@
 import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { FormMessage, Select } from "@/components/ui/field";
+import { FormMessage, Label, Select } from "@/components/ui/field";
 import type { ImportSummary } from "@/lib/csv/aggregate";
-import { TARGETS, type DetectedColumn, type Target } from "@/lib/csv/detect";
+import { TARGETS, type CsvFormat, type DetectedColumn, type DetectedFormat, type Target } from "@/lib/csv/detect";
 import { monthLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { confirmImport, deleteDataset, previewImport } from "@/server/data/upload-actions";
@@ -17,6 +17,7 @@ export function ReviewForm({
   columns,
   preview,
   initial,
+  detectedFormat,
   ready,
   replacesSample,
 }: {
@@ -24,10 +25,15 @@ export function ReviewForm({
   columns: DetectedColumn[];
   preview: { header: string[]; rows: string[][] };
   initial: Record<string, Target>;
+  detectedFormat: DetectedFormat;
   ready: boolean;
   replacesSample: boolean;
 }) {
   const [mapping, setMapping] = useState(initial);
+  const [format, setFormat] = useState<CsvFormat>({ dayFirst: detectedFormat.dayFirst, decimalComma: detectedFormat.decimalComma });
+  // Only ask about formats when the file could be read more than one way.
+  const askDates = detectedFormat.dateOrderUnclear || detectedFormat.dayFirst;
+  const askDecimals = detectedFormat.decimalCommaPossible;
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [checking, startCheck] = useTransition();
@@ -37,7 +43,7 @@ export function ReviewForm({
     const t = setTimeout(
       () =>
         startCheck(async () => {
-          const res = await previewImport(id, mapping);
+          const res = await previewImport(id, mapping, format);
           if (res.ok) {
             setSummary(res.summary);
             setError(null);
@@ -49,7 +55,7 @@ export function ReviewForm({
       250,
     );
     return () => clearTimeout(t);
-  }, [id, mapping]);
+  }, [id, mapping, format]);
 
   const mapped = columns.filter((c) => mapping[c.name] !== "ignore");
   return (
@@ -89,6 +95,33 @@ export function ReviewForm({
             ))}
           </ul>
         </section>
+
+        {(askDates || askDecimals) && (
+          <section className="rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6">
+            <h2 className="text-[15px] font-heavy text-ink">Dates and numbers</h2>
+            <p className="mt-1 text-sm text-muted">Check how your file writes dates and decimals. The summary updates as you change these.</p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              {askDates && (
+                <div>
+                  <Label htmlFor="fmt-dates">Dates are written</Label>
+                  <Select id="fmt-dates" value={format.dayFirst ? "day" : "month"} onChange={(e) => setFormat((f) => ({ ...f, dayFirst: e.target.value === "day" }))} className="h-10 text-sm">
+                    <option value="month">Month first (09/30/2026)</option>
+                    <option value="day">Day first (30/09/2026)</option>
+                  </Select>
+                </div>
+              )}
+              {askDecimals && (
+                <div>
+                  <Label htmlFor="fmt-decimals">Decimals use</Label>
+                  <Select id="fmt-decimals" value={format.decimalComma ? "comma" : "point"} onChange={(e) => setFormat((f) => ({ ...f, decimalComma: e.target.value === "comma" }))} className="h-10 text-sm">
+                    <option value="point">A point (1,234.56)</option>
+                    <option value="comma">A comma (1.234,56)</option>
+                  </Select>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         <section className="rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6">
           <h2 className="text-[15px] font-heavy text-ink">Preview</h2>
@@ -175,7 +208,7 @@ export function ReviewForm({
               disabled={!summary || saving || checking}
               onClick={() =>
                 startSave(async () => {
-                  const res = await confirmImport(id, mapping);
+                  const res = await confirmImport(id, mapping, format);
                   if (res?.error) setError(res.error);
                 })
               }
