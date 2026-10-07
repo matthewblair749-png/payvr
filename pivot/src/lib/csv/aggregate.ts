@@ -1,4 +1,4 @@
-import type { MetricRow } from "../data/metrics";
+import { DERIVED, type MetricRow } from "../data/metrics";
 import { CsvError, type ParsedCsv } from "./parse";
 import { toMonth, toNumber, TARGETS, type Target } from "./detect";
 
@@ -155,8 +155,12 @@ export function aggregate(parsed: ParsedCsv, mapping: Mapping, dayFirst: boolean
   for (const [month, t] of totals) {
     for (const [target, { sum, n }] of t) {
       const v = RATES.has(target) ? sum / n : sum;
-      if (target === "churnRate") rows.push({ period: month, key: "retention", dimension: "", value: 1 - v });
-      else rows.push({ period: month, key: target, dimension: "", value: v });
+      // A total summed from a breakdown (e.g. revenue across the products in
+      // this file) is "derived": it fills gaps but never overrides a real
+      // company total from another dataset.
+      const dimension = dim && DIM_KEYS[dim.k].includes(target) ? DERIVED : "";
+      if (target === "churnRate") rows.push({ period: month, key: "retention", dimension, value: 1 - v });
+      else rows.push({ period: month, key: target, dimension, value: v });
     }
   }
   if (dim && dimValues.size > 40) warnings.push(`The ${dim.k} column has ${dimValues.size} different values. Breakdowns read best with fewer than 20.`);
@@ -175,7 +179,7 @@ function finish(
   if (!months.length) throw new CsvError("We couldn't read any dates in the date column. Use a format like 2026-09 or 2026-09-30.");
   if (months.length < 2) warnings.unshift("Only one month of data: PIVOT needs at least two to show changes, and six or more for trends.");
   if (skipped) warnings.push(`${skipped.toLocaleString("en-US")} row${skipped === 1 ? " was" : "s were"} skipped because the date or values couldn't be read.`);
-  const metrics = [...new Set(rows.filter((r) => r.dimension === "").map((r) => r.key))].map((k) => (k in TARGETS ? TARGETS[k as Target] : k));
+  const metrics = [...new Set(rows.filter((r) => r.dimension === "" || r.dimension === DERIVED).map((r) => r.key))].map((k) => (k in TARGETS ? TARGETS[k as Target] : k));
   return {
     rows,
     summary: { shape, months, metrics, breakdowns: dim ? { kind: dim.k, values: dim.i } : null, warnings, skippedRows: skipped },

@@ -2,7 +2,7 @@ import { money, pct, pctDelta } from "../format";
 import type { Facts } from "./facts";
 import { impactFactor, impactLevel, levelOf, pivotScore, revenueFactor, scoreLabel } from "./score";
 import { clamp, isNum, roughly } from "./series";
-import type { Baseline, ChartSeries, Opportunity, ScoreFactors } from "./types";
+import type { Baseline, Opportunity, ScoreFactors } from "./types";
 
 /**
  * Opportunity detection. Each detector looks for a specific pattern in the

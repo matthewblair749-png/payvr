@@ -3,7 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import type { BetaMessageParam } from "@anthropic-ai/sdk/resources/beta/messages/messages";
 import { z } from "zod";
-import { ungroundedNumbers, type AIFacts } from "./facts";
+import { ungroundedNumbers } from "./facts";
 import type { AIProvider } from "./provider";
 
 /**

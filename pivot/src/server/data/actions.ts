@@ -20,8 +20,9 @@ export async function importSampleData(): Promise<ActionResult> {
     requireRole(ws, ["OWNER", "ADMIN"], "import data");
     rateLimit(`upload:${ws.company.id}`, LIMITS.upload);
     const companyId = ws.company.id;
-    const existing = await db.uploadedDataset.findFirst({ where: { companyId, dataSource: { kind: "SAMPLE" }, status: "READY" }, select: { id: true } });
-    if (existing) throw new UserError("Sample data is already in this workspace.");
+    const existing = await db.uploadedDataset.findFirst({ where: { companyId, status: "READY" }, select: { dataSource: { select: { kind: true } } } });
+    if (existing?.dataSource.kind === "SAMPLE") throw new UserError("Sample data is already in this workspace.");
+    if (existing) throw new UserError("This workspace already has your own data, and sample data would mix with it. Explore the demo instead.");
 
     const data = northstarData();
     const rows = toMetricRows(data);

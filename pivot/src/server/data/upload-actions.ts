@@ -131,6 +131,8 @@ export async function confirmImport(id: string, mapping: Record<string, string>)
     const { rows, summary } = run(ds, m);
     await db.$transaction(
       async (tx) => {
+        // Your own data replaces the sample data, so the two never mix.
+        await tx.uploadedDataset.deleteMany({ where: { companyId: ws.company.id, dataSource: { kind: "SAMPLE" } } });
         await tx.metric.deleteMany({ where: { datasetId: ds.id } });
         await tx.metric.createMany({
           data: rows.map((r) => ({ companyId: ws.company.id, datasetId: ds.id, period: monthDate(r.period), key: r.key, dimension: r.dimension, value: r.value })),

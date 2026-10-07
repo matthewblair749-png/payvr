@@ -7,6 +7,9 @@ import { METRIC_KEYS, type BusinessData, type MetricKey, type Series } from "../
  * One row per (month, metric, dimension). Dimension "" is a company total;
  * "product:X", "channel:X" and "segment:X" hold breakdowns.
  */
+/** Dimension marker for a company total summed from a breakdown file. */
+export const DERIVED = "*";
+
 export interface MetricRow {
   period: string; // YYYY-MM
   key: string;
@@ -60,7 +63,8 @@ export function monthRange(first: string, last: string): string[] {
 
 /**
  * Rows (oldest dataset first) -> BusinessData. When two datasets cover the
- * same month and metric, the newer one wins.
+ * same month and metric, the newer one wins. Derived totals (summed from a
+ * breakdown) only fill months that have no real total.
  */
 export function fromMetricRows(rows: MetricRow[], company: BusinessData["company"]): BusinessData {
   const empty: BusinessData = { company, periods: [], metrics: {}, products: {}, channels: {}, segments: {} };
@@ -73,9 +77,14 @@ export function fromMetricRows(rows: MetricRow[], company: BusinessData["company
   const blank = (): Series => periods.map(() => null);
   const data: BusinessData = { ...empty, periods };
 
+  const derived: MetricRow[] = [];
   for (const r of rows) {
     const i = idx.get(r.period);
     if (i === undefined || !Number.isFinite(r.value)) continue;
+    if (r.dimension === DERIVED) {
+      derived.push(r);
+      continue;
+    }
     if (r.dimension === "") {
       if (!(METRIC_KEYS as readonly string[]).includes(r.key)) continue;
       const k = r.key as MetricKey;
@@ -99,6 +108,12 @@ export function fromMetricRows(rows: MetricRow[], company: BusinessData["company
       if (r.key === "customers") s.customers[i] = r.value;
       else if (r.key === "churnedCustomers") (s.churned ??= blank())[i] = r.value;
     }
+  }
+  for (const r of derived) {
+    if (!(METRIC_KEYS as readonly string[]).includes(r.key)) continue;
+    const s = (data.metrics[r.key as MetricKey] ??= blank());
+    const i = idx.get(r.period)!;
+    if (s[i] === null) s[i] = r.value;
   }
   return data;
 }

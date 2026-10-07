@@ -135,5 +135,17 @@ export function buildRecommendations(f: Facts, insights: Insight[], opps: Opport
 
   return drafts
     .sort((a, b) => priority(b) - priority(a))
-    .map(({ confidence: _c, ...d }, i) => ({ ...d, rank: i + 1 }));
+    .map((d, i): Recommendation => ({
+      key: d.key,
+      rank: i + 1,
+      title: d.title,
+      impact: d.impact,
+      difficulty: d.difficulty,
+      risk: d.risk,
+      reasoning: d.reasoning,
+      annualImpact: d.annualImpact,
+      steps: d.steps,
+      links: d.links,
+      sources: d.sources,
+    }));
 }

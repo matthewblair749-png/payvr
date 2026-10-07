@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 export function EvidenceView({ evidence, currency }: { evidence: Evidence; currency: string }) {
   if (!evidence.chart && !evidence.table) return <p className="text-sm text-muted">No breakdown available for this one.</p>;
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className={cn("grid gap-6", evidence.chart && evidence.table && "lg:grid-cols-2")}>
       {evidence.chart && (
         <div className="min-w-0">
           <p className="mb-3 text-sm font-heavy text-ink">{evidence.chart.title}</p>

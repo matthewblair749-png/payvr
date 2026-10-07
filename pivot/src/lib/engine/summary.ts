@@ -25,7 +25,10 @@ export function templateSummary(f: Facts, a: Pick<Analysis, "insights" | "recomm
         ? "acquisition costs are climbing"
         : issue.key === "revenue-decline"
           ? "the trend needs a closer look"
-          : issue.title.replace(/\.$/, "").toLowerCase()
+          : (() => {
+              const t = issue.title.replace(/\.$/, "");
+              return t.charAt(0).toLowerCase() + t.slice(1);
+            })()
     : null;
 
   const headline =

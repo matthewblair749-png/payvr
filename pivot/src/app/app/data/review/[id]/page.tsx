@@ -17,6 +17,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
   const ds = id.length <= 40 ? await db.uploadedDataset.findFirst({ where: { id, companyId: ws.company.id, dataSource: { kind: "CSV_UPLOAD" } } }) : null;
   if (!ds) notFound();
   const meta = ds.columns as unknown as { columns: DetectedColumn[] };
+  const sample = await db.uploadedDataset.count({ where: { companyId: ws.company.id, dataSource: { kind: "SAMPLE" } } });
   return (
     <>
       <Link href="/app/data" className="mb-4 inline-flex items-center gap-1.5 text-sm text-ink-2 hover:text-ink">
@@ -29,6 +30,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
         preview={ds.preview as { header: string[]; rows: string[][] }}
         initial={(ds.mapping ?? {}) as Record<string, Target>}
         ready={ds.status === "READY"}
+        replacesSample={sample > 0}
       />
     </>
   );

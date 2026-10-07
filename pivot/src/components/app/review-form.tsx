@@ -12,7 +12,21 @@ import { confirmImport, deleteDataset, previewImport } from "@/server/data/uploa
 
 const TYPE_LABEL: Record<DetectedColumn["type"], string> = { date: "Dates", number: "Numbers", percent: "Percentages", category: "Categories", id: "IDs", text: "Text", empty: "Empty" };
 
-export function ReviewForm({ id, columns, preview, initial, ready }: { id: string; columns: DetectedColumn[]; preview: { header: string[]; rows: string[][] }; initial: Record<string, Target>; ready: boolean }) {
+export function ReviewForm({
+  id,
+  columns,
+  preview,
+  initial,
+  ready,
+  replacesSample,
+}: {
+  id: string;
+  columns: DetectedColumn[];
+  preview: { header: string[]; rows: string[][] };
+  initial: Record<string, Target>;
+  ready: boolean;
+  replacesSample: boolean;
+}) {
   const [mapping, setMapping] = useState(initial);
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -154,6 +168,7 @@ export function ReviewForm({ id, columns, preview, initial, ready }: { id: strin
             </p>
           ))}
           {error && <FormMessage tone="error">{error}</FormMessage>}
+          {replacesSample && <FormMessage tone="info">Importing replaces the sample data in this workspace with your own.</FormMessage>}
           <div className="flex flex-col gap-2 pt-1">
             <Button
               variant="accent"

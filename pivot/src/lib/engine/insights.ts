@@ -330,5 +330,5 @@ export function detectChanges(f: Facts): Change[] {
   return out
     .sort((a, b) => b.size - a.size)
     .slice(0, 3)
-    .map(({ size: _size, ...c }) => c);
+    .map((c): Change => ({ key: c.key, title: c.title, detail: c.detail, direction: c.direction, good: c.good }));
 }

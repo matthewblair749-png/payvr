@@ -30,7 +30,7 @@ export async function AppShell({ ws, children }: { ws: Workspace; children: Reac
   };
 
   return (
-    <div className="min-h-dvh bg-canvas">
+    <div className="pv-app min-h-dvh bg-canvas">
       <Sidebar info={info} />
       <div className="lg:pl-64">
         {ws.mode === "demo" && (

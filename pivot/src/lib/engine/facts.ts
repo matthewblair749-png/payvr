@@ -170,7 +170,7 @@ export function computeFacts(data: BusinessData): Facts {
 
   // Products
   const revTotal = rev?.now ?? 0;
-  const products: ProductFact[] = Object.entries(data.products)
+  const allProducts: ProductFact[] = Object.entries(data.products)
     .map(([name, p]) => {
       const now = at(p.revenue, i);
       if (now === null) return null;
@@ -195,6 +195,10 @@ export function computeFacts(data: BusinessData): Facts {
     })
     .filter((p): p is ProductFact => p !== null)
     .sort((a, b) => b.revenueNow - a.revenueNow);
+  // A breakdown that adds up to more than the company total came from
+  // inconsistent files: leave it out rather than report impossible shares.
+  const productSum = sum(allProducts.map((p) => p.revenueNow));
+  const products = rev && productSum > rev.now * 1.05 ? [] : allProducts;
 
   // A product "moves" when demand grew 15%+ in ~60 days and it matters (5%+ of revenue).
   const movers = products.filter((p) => p.demand60 !== null && p.demand60 >= 0.15 && p.shareNow >= 0.05);

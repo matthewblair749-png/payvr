@@ -107,3 +107,17 @@ describe("detectColumns + aggregate", () => {
     expect(fromCsv.kpis.map((k) => k.display)).toEqual(direct.kpis.filter((k) => k.key !== "score").map((k) => k.display).concat(fromCsv.kpis.at(-1)!.display));
   });
 });
+
+describe("combining datasets", () => {
+  it("never lets a breakdown file's summed total override a real total", () => {
+    const totals = parseCsv("month,revenue,customers\n2026-08,1000,50\n2026-09,1200,55\n");
+    const byProduct = parseCsv("month,product,revenue\n2026-08,Mugs,300\n2026-09,Mugs,350\n2026-10,Mugs,400\n");
+    const a = detectColumns(totals.header, totals.rows);
+    const b = detectColumns(byProduct.header, byProduct.rows);
+    const rows = [...aggregate(totals, mapOf(a.columns), a.dayFirst).rows, ...aggregate(byProduct, mapOf(b.columns), b.dayFirst).rows];
+    const data = fromMetricRows(rows, { name: "T", currency: "USD" });
+    // Real totals win where they exist; the product sum only fills October.
+    expect(data.metrics.revenue).toEqual([1000, 1200, 400]);
+    expect(data.products.Mugs.revenue).toEqual([300, 350, 400]);
+  });
+});
