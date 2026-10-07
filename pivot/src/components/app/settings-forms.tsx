@@ -81,6 +81,11 @@ export function CompanyForm({
 }) {
   const [state, action, pending] = useActionState(updateCompany, undefined);
   const v = state?.values;
+  // React ignores a changed defaultValue on a <select>, so each one is keyed by its default: a
+  // rejected save remounts it on what the user picked instead of the stored value.
+  const industry = v?.industry ?? company.industry;
+  const currency = v?.currency ?? company.currency;
+  const timezone = v?.timezone ?? company.timezone;
   return (
     <form action={action} className="max-w-xl space-y-4">
       <CompanyIdField />
@@ -90,7 +95,7 @@ export function CompanyForm({
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field id="industry" label="Industry" error={state?.fieldErrors?.industry}>
-          <Select id="industry" name="industry" defaultValue={v?.industry ?? company.industry} disabled={readOnly}>
+          <Select key={industry} id="industry" name="industry" defaultValue={industry} disabled={readOnly}>
             {INDUSTRIES.map((i) => (
               <option key={i.id} value={i.id}>
                 {i.label}
@@ -99,7 +104,7 @@ export function CompanyForm({
           </Select>
         </Field>
         <Field id="currency" label="Currency" error={state?.fieldErrors?.currency}>
-          <Select id="currency" name="currency" defaultValue={v?.currency ?? company.currency} disabled={readOnly}>
+          <Select key={currency} id="currency" name="currency" defaultValue={currency} disabled={readOnly}>
             {CURRENCIES.map((c) => (
               <option key={c}>{c}</option>
             ))}
@@ -107,7 +112,7 @@ export function CompanyForm({
         </Field>
       </div>
       <Field id="timezone" label="Time zone" error={state?.fieldErrors?.timezone}>
-        <Select id="timezone" name="timezone" defaultValue={v?.timezone ?? company.timezone} disabled={readOnly}>
+        <Select key={timezone} id="timezone" name="timezone" defaultValue={timezone} disabled={readOnly}>
           {timezones.map((t) => (
             <option key={t}>{t}</option>
           ))}
@@ -140,7 +145,7 @@ export function InviteForm({ disabled }: { disabled?: boolean }) {
         </div>
         <div className="sm:w-40">
           <Field id="invite-role" label="Role">
-            <Select id="invite-role" name="role" defaultValue={state?.values?.role ?? "MEMBER"} disabled={disabled}>
+            <Select key={state?.values?.role ?? "MEMBER"} id="invite-role" name="role" defaultValue={state?.values?.role ?? "MEMBER"} disabled={disabled}>
               <option value="MEMBER">Member</option>
               <option value="ADMIN">Admin</option>
             </Select>

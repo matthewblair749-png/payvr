@@ -26,8 +26,9 @@ export function aiStatus() {
 
 export type SummaryView = Summary & { source: "ai" | "engine" };
 
-/** Finished demo summaries per period, failures included (null), so a failure doesn't retry on every visit. */
-const demoSummaries = new Map<string, Summary | null>();
+/** Finished demo summaries per period. A failure (null) is kept for a while too, so the public demo can't start an AI call on every visit, but is retried later. */
+const demoSummaries = new Map<string, { value: Summary | null; at: number }>();
+const DEMO_RETRY_MS = 10 * 60_000;
 /** Summaries being written right now, so a burst of page views starts one AI call, not one each. */
 const inFlight = new Set<string>();
 
@@ -44,15 +45,14 @@ export async function getSummary(ws: Workspace, analysis: Analysis, data: Busine
 
   if (ws.mode === "demo") {
     const key = `demo:${analysis.period}`;
-    if (demoSummaries.has(key)) {
-      const hit = demoSummaries.get(key);
-      return hit ? { ...hit, source: "ai" } : fallback;
-    }
+    const hit = demoSummaries.get(key);
+    if (hit?.value) return { ...hit.value, source: "ai" };
+    if (hit && Date.now() - hit.at < DEMO_RETRY_MS) return fallback;
     if (inFlight.has(key)) return fallback;
     inFlight.add(key);
     after(async () => {
       try {
-        demoSummaries.set(key, await provider.summarize(buildAIFacts(analysis, data)).catch(() => null));
+        demoSummaries.set(key, { value: await provider.summarize(buildAIFacts(analysis, data)).catch(() => null), at: Date.now() });
       } finally {
         inFlight.delete(key);
       }

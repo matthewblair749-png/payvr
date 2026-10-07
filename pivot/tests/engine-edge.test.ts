@@ -179,3 +179,21 @@ describe("Ask PIVOT with locked insights", () => {
     expect(answerLocally("Which segments are doing worst?", locked).answer).toMatch(/on Pro/);
   });
 });
+
+describe("cost gaps and the What-If baseline", () => {
+  const p = months(4);
+  it("reads a blank between real costs as none that month, and a blank at the end as unknown", () => {
+    const blankInside = analyze(data(p, { revenue: [100, 110, 120, 130], cogs: [40, 44, 48, 52], opex: [30, 30, 30, 30], marketingSpend: [5, null, 5, 5] }));
+    expect(blankInside.kpis.find((k) => k.key === "profit")?.value).toBe(130 - 52 - 30 - 5);
+    const stopsEarly = analyze(data(p, { revenue: [100, 110, 120, 130], cogs: [40, 44, 48, 52], opex: [30, 30, 30, 30], marketingSpend: [5, 5, 5, null] }));
+    expect(stopsEarly.kpis.find((k) => k.key === "profit")).toBeUndefined();
+  });
+
+  it("keeps derived profit consistent with estimated operating costs", () => {
+    const a = analyze(data(p, { revenue: [100, 110, 120, 130], cogs: [40, 44, 48, 52], marketingSpend: [10, 10, 10, 10] }));
+    const b = a.baseline!;
+    expect(b.profit + b.variableCosts + b.opex + b.marketing).toBeCloseTo(b.revenue);
+    expect(b.estimated.join(" ")).toMatch(/lower than on your dashboard/);
+    expect(simulate(b, "costs", 10).deltas.profit).toBeCloseTo(b.opex * 0.1);
+  });
+});

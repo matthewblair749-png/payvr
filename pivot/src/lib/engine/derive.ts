@@ -24,6 +24,8 @@ export interface Derived {
   visitors?: Series;
   conversion?: Series;
   profit?: Series;
+  /** True when profit comes from a profit column, not revenue minus the costs in the data. */
+  profitFromData?: boolean;
   margin?: Series;
   cac?: Series;
   aov?: Series;
@@ -110,15 +112,25 @@ export function derive(data: BusinessData): Derived {
 
   // Profit: given > revenue minus known costs (needs COGS or operating costs).
   const givenProfit = get("profit");
-  if (givenProfit) d.profit = givenProfit;
+  if (givenProfit) {
+    d.profit = givenProfit;
+    d.profitFromData = true;
+  }
   else if (d.revenue && (d.cogs || d.opex)) {
-    const books = [d.cogs, d.opex].filter((s): s is Series => !!s);
+    const costs = [d.cogs, d.opex, d.marketing].filter((s): s is Series => !!s);
+    // A blank between real values is a month with no such cost. A blank before a series starts or
+    // after it ends (books not closed yet, a cost file that stops earlier) means profit is
+    // unknown, not cost-free.
+    const span = costs.map((s) => [s.findIndex(isNum), s.findLastIndex(isNum)]);
     d.profit = d.revenue.map((r, i) => {
-      // A gap in COGS or operating costs (books not closed yet) means profit is unknown, not
-      // cost-free. Marketing often comes from a separate, shorter channel file, so it's
-      // subtracted where present.
-      if (!isNum(r) || books.some((s) => !isNum(s[i]))) return null;
-      return r - books.reduce((sum, s) => sum + (s[i] as number), 0) - (d.marketing?.[i] ?? 0);
+      if (!isNum(r)) return null;
+      let total = 0;
+      for (const [k, s] of costs.entries()) {
+        const v = s[i];
+        if (isNum(v)) total += v;
+        else if (i < span[k][0] || i > span[k][1]) return null;
+      }
+      return r - total;
     });
   }
   if (d.profit && d.revenue) d.margin = zip(d.profit, d.revenue, (p, r) => (r > 0 ? p / r : null));

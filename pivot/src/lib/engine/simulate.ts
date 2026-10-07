@@ -76,16 +76,24 @@ export function buildBaseline(f: Facts): Baseline | null {
   }
   let O = f.costs?.opex ?? null;
   let P = f.profit?.now ?? null;
-  // Operating costs are what's left of profit after the other costs, but only when
-  // those costs are real. With an estimate in the mix (or profit that was itself
-  // derived without operating costs) the remainder is noise, often negative.
-  if (O === null && P !== null && knownCosts) {
+  // Profit PIVOT derived itself is revenue minus only the costs in the data.
+  const derivedProfit = P !== null && !f.d.profitFromData;
+  // With a real profit figure, operating costs are what's left after the other costs, but only
+  // when those costs are real too: with an estimate in the mix the remainder is noise.
+  if (O === null && P !== null && knownCosts && !derivedProfit) {
     const rest = R - V - M - P;
     if (rest > R * 0.01) O = rest;
   }
   if (O === null) {
     O = R * 0.3;
     estimated.push("Operating costs estimated at 30% of revenue");
+  }
+  if (derivedProfit) {
+    // Recompute it from the same inputs the model uses, so estimated costs are taken off too
+    // (otherwise a cost cut could "save" costs that were never subtracted).
+    const model = R - V - O - M;
+    if (Math.abs(model - P!) > 0.5) estimated.push("Profit here takes off the estimated costs above, so it's lower than on your dashboard");
+    P = model;
   }
   if (P === null) {
     P = R - V - O - M;

@@ -59,3 +59,15 @@ describe("AI facts", () => {
     expect(f.revenue_forecast_next_3_months).not.toContain("$2.84M");
   });
 });
+
+describe("AI grounding: contrast sentences", () => {
+  it("reads the direction from the figure's own clause", () => {
+    for (const ok of [
+      "Despite falling retention, revenue grew 12.4% to $2.84M.",
+      "Retention is down, but revenue grew 12.4%.",
+      "Despite lower margins, profit rose 6.2% to $684K.",
+      "With retention down, profit grew 6.2%.",
+    ]) expect(ungroundedNumbers(ok, facts)).toEqual([]);
+    expect(ungroundedNumbers("Retention is up, but revenue fell 12.4%.", facts)).toEqual(["12.4%"]);
+  });
+});

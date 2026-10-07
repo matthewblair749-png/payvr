@@ -89,8 +89,20 @@ export function ungroundedNumbers(text: string, facts: unknown): string[] {
 type Figure = { raw: string; v: number; unit: "" | "%" | "pts"; dir: -1 | 0 | 1; money: boolean; bare: boolean };
 
 const FIGURE = /[+\-\u2212]?\s?[$€£¥₹]?\d[\d,]*(?:\.\d+)?\s?(?:[KMBkmb]\b|%|pts?\b)?/g;
-const FALLING = /\b(fell|fall|falls|falling|down|declin\w*|drop\w*|decreas\w*|lower|lost|lose|shrank|shrink\w*)\b[^.\d]{0,24}$/i;
-const RISING = /\b(rose|rise|rises|rising|up|grew|grow\w*|increas\w*|gain\w*|higher|jump\w*|climb\w*)\b[^.\d]{0,24}$/i;
+const FALLING = /^(fell|fall|falls|falling|down|declin\w*|drop\w*|decreas\w*|lower\w*|lost|lose|shrank|shrink\w*|slip\w*|dip\w*|narrow\w*|eas\w*|soften\w*|worsen\w*)$/i;
+const RISING = /^(rose|rise|rises|rising|up|grew|grow\w*|increas\w*|gain\w*|higher|jump\w*|climb\w*|improv\w*|widen\w*)$/i;
+
+/** The direction a figure is described with: the nearest direction word in its own clause ("Despite falling retention, revenue grew 12.4%" is +). */
+function directionBefore(before: string): -1 | 0 | 1 {
+  const clause = before.split(/[,;:.!?()]|\b(?:but|while|whereas|although|despite|and)\b/i).pop() ?? "";
+  if (/\bto\s*["']?$/i.test(clause)) return 0; // "fell to 91.4%" is a level, not a change
+  const words = clause.match(/[a-z]+/gi) ?? [];
+  for (let j = words.length - 1; j >= 0; j--) {
+    if (FALLING.test(words[j])) return -1;
+    if (RISING.test(words[j])) return 1;
+  }
+  return 0;
+}
 
 /** Every figure in `s`, as a magnitude with its unit and direction. */
 function scanNumbers(s: string): Figure[] {
@@ -101,8 +113,7 @@ function scanNumbers(s: string): Figure[] {
     if (!m) continue;
     const u = (m[4] ?? "").toLowerCase();
     const mult = u === "k" ? 1e3 : u === "m" ? 1e6 : u === "b" ? 1e9 : 1;
-    const before = s.slice(Math.max(0, match.index - 40), match.index);
-    const worded = /\bto\s*["']?$/i.test(before) ? 0 : FALLING.test(before) ? -1 : RISING.test(before) ? 1 : 0;
+    const worded = directionBefore(s.slice(Math.max(0, match.index - 40), match.index));
     out.push({
       raw,
       v: Number(m[3].replace(/,/g, "")) * mult,

@@ -229,7 +229,7 @@ export function detectOpportunities(f: Facts, b: Baseline | null): Opportunity[]
   }
 
   // 6. Margin slipping -> operating efficiency.
-  if (f.profit && f.profit.marginNow !== null && f.profit.margin6ago !== null && f.profit.marginNow < f.profit.margin6ago - 0.005 && b.opex > 0) {
+  if (f.profit && f.profit.marginNow !== null && f.profit.margin6ago !== null && f.profit.marginNow < f.profit.margin6ago - 0.005 && b.opex > 0 && !b.estimated.some((e) => e.startsWith("Operating costs estimated"))) {
     const savings = b.opex * 0.05 * 12;
     out.push(
       make({
