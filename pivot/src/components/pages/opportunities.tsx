@@ -38,7 +38,7 @@ export async function OpportunitiesPage({ ws }: { ws: Workspace }) {
       {list.length ? (
         <div className="grid gap-4 xl:grid-cols-2">
           {list.map((o) => (
-            <OpportunityCard key={o.key} o={o} base={ws.basePath} currency={a.company.currency} dimmed={(status[o.key] ?? "OPEN") !== "OPEN"} />
+            <OpportunityCard key={o.key} o={o} base={ws.basePath} currency={a.company.currency} dimmed={(status[o.key] ?? "OPEN") !== "OPEN"} heading="h2" />
           ))}
         </div>
       ) : (

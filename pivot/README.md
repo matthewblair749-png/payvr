@@ -134,13 +134,17 @@ data replaces the sample data so the two never mix. A downloadable example lives
 
 `src/lib/billing/plans.ts` defines Free, Pro ($99), Business ($499) and Enterprise, and their limits.
 New workspaces get a 14-day Pro trial. Limits are enforced on the server
-(`src/server/billing/entitlements.ts`). Stripe Checkout, the customer portal and a signature-verified
+(`src/server/billing/entitlements.ts`); on Free, insights beyond the first three are trimmed to their
+headline before they leave the server (`src/lib/billing/limit-insights.ts`). Changing plans with a
+live subscription updates that subscription rather than opening a second one. Stripe Checkout, the customer portal and a signature-verified
 webhook are implemented but inactive until the Stripe variables are set.
 
 ## Security
 
 - **Tenancy:** every query takes the company from a verified membership, never from the browser.
-  Integration tests check that one company can't read or change another's data.
+  Integration tests check that one company can't read or change another's data. Company-wide
+  actions also send the company the page was rendered for, and the server refuses them if the user
+  switched workspaces in another tab since.
 - **Auth:** scrypt password hashing; database sessions where only a SHA-256 of the cookie token is
   stored; httpOnly, SameSite=Lax, Secure (in production) cookies; sessions revoked on password
   change and reset; reset and invite tokens stored hashed, single-use and short-lived; login and

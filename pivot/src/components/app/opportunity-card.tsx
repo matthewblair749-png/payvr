@@ -11,7 +11,22 @@ export function simulateHref(base: string, o: Opportunity) {
   return o.simulate ? `${base}/what-if?kind=${o.simulate.kind}&value=${o.simulate.value}&from=${o.key}` : `${base}/what-if`;
 }
 
-export function OpportunityCard({ o, base, currency, compact = false, dimmed = false }: { o: Opportunity; base: string; currency: string; compact?: boolean; dimmed?: boolean }) {
+export function OpportunityCard({
+  o,
+  base,
+  currency,
+  compact = false,
+  dimmed = false,
+  heading: Heading = "h3",
+}: {
+  o: Opportunity;
+  base: string;
+  currency: string;
+  compact?: boolean;
+  dimmed?: boolean;
+  /** h2 when the card sits right under the page title, h3 inside a section. */
+  heading?: "h2" | "h3";
+}) {
   return (
     <article className={cn("anim-card flex flex-col rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6", dimmed && "opacity-70")}>
       <div className="flex items-start gap-4">
@@ -20,7 +35,7 @@ export function OpportunityCard({ o, base, currency, compact = false, dimmed = f
           <p className="text-xs text-muted">
             PIVOT Score · <span className="text-ink">{o.scoreLabel}</span>
           </p>
-          <h3 className="mt-1 text-[17px] font-heavy leading-snug tracking-tight text-ink sm:text-lg">{o.title}</h3>
+          <Heading className="mt-1 text-[17px] font-heavy leading-snug tracking-tight text-ink sm:text-lg">{o.title}</Heading>
         </div>
       </div>
       <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
