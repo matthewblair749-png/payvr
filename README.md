@@ -1,5 +1,7 @@
 # lumen
 
+> **Also in this repository:** [PIVOT](pivot/README.md), an AI business decision platform, is a separate Next.js app in `pivot/`.
+
 **The checkout that learns.** Stripe-grade payments for solo creators and small brands, with a
 drag-and-drop checkout studio and a built-in research assistant.
 

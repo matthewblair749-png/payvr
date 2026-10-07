@@ -1,0 +1,18 @@
+# Local Postgres for PIVOT.  `docker compose up -d`
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: pivot
+      POSTGRES_PASSWORD: pivot
+      POSTGRES_DB: pivot
+    ports:
+      - "5432:5432"
+    volumes:
+      - pivot-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pivot"]
+      interval: 2s
+      retries: 20
+volumes:
+  pivot-db:

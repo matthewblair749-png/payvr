@@ -1,0 +1,341 @@
+// PIVOT data model.
+//
+// Tenancy: every business row carries `companyId`. All reads and writes go
+// through the data-access layer in src/server/data/*, which takes the company
+// from a verified membership (never from the client), so one company's data
+// can't be reached from another company's session.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  name            String
+  /// scrypt$N$r$p$salt$hash (see src/server/auth/password.ts)
+  passwordHash    String
+  /// The workspace opened after sign-in. Always re-checked against memberships.
+  activeCompanyId String?
+  notifyDigest    Boolean  @default(true)
+  notifyAlerts    Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  sessions    Session[]
+  memberships CompanyMember[]
+  resetTokens PasswordResetToken[]
+  datasets    UploadedDataset[]
+  scenarios   Scenario[]
+  reports     Report[]
+  invitations Invitation[]
+}
+
+/// Server-side sessions. `id` is the SHA-256 of the cookie token, so a
+/// database leak doesn't leak usable sessions.
+model Session {
+  id         String   @id
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  lastUsedAt DateTime @default(now())
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  /// SHA-256 of the emailed token.
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Companies (workspaces)
+// ---------------------------------------------------------------------------
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum Plan {
+  FREE
+  PRO
+  BUSINESS
+  ENTERPRISE
+}
+
+model Company {
+  id                   String    @id @default(cuid())
+  name                 String
+  industry             String?
+  currency             String    @default("USD")
+  timezone             String    @default("UTC")
+  /// Estimated share of the addressable market (0-100). Enables market-share estimates in What If?
+  marketSharePct       Float?
+  /// AI settings: let the AI provider write narratives from computed facts.
+  aiNarratives         Boolean   @default(true)
+  plan                 Plan      @default(FREE)
+  trialEndsAt          DateTime?
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  subscriptionStatus   String?
+  /// Bumped every time data changes; analysis rows carry the version they came from.
+  dataVersion          Int       @default(0)
+  analyzedVersion      Int       @default(0)
+  analyzedAt           DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  members         CompanyMember[]
+  invitations     Invitation[]
+  dataSources     DataSource[]
+  datasets        UploadedDataset[]
+  metrics         Metric[]
+  insights        Insight[]
+  opportunities   Opportunity[]
+  scenarios       Scenario[]
+  recommendations Recommendation[]
+  reports         Report[]
+  summaries       AnalysisSummary[]
+}
+
+model CompanyMember {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @default(MEMBER)
+  createdAt DateTime @default(now())
+
+  @@unique([companyId, userId])
+  @@index([userId])
+}
+
+model Invitation {
+  id          String    @id @default(cuid())
+  companyId   String
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  email       String
+  role        Role      @default(MEMBER)
+  /// SHA-256 of the token in the invite link.
+  tokenHash   String    @unique
+  invitedById String
+  invitedBy   User      @relation(fields: [invitedById], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([companyId])
+}
+
+// ---------------------------------------------------------------------------
+// Data
+// ---------------------------------------------------------------------------
+
+enum DataSourceKind {
+  CSV_UPLOAD
+  SAMPLE
+}
+
+enum DatasetStatus {
+  PENDING_REVIEW
+  READY
+  FAILED
+}
+
+model DataSource {
+  id           String            @id @default(cuid())
+  companyId    String
+  company      Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  kind         DataSourceKind
+  name         String
+  lastSyncedAt DateTime?
+  createdAt    DateTime          @default(now())
+  datasets     UploadedDataset[]
+
+  @@unique([companyId, kind])
+}
+
+model UploadedDataset {
+  id           String        @id @default(cuid())
+  companyId    String
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  dataSourceId String
+  dataSource   DataSource    @relation(fields: [dataSourceId], references: [id], onDelete: Cascade)
+  createdById  String?
+  createdBy    User?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  name         String
+  fileName     String
+  fileSize     Int
+  rowCount     Int
+  /// Detected columns: [{ name, type, sample, metric }]
+  columns      Json
+  /// The confirmed column -> metric mapping.
+  mapping      Json?
+  /// First rows, for the review screen.
+  preview      Json
+  /// The original file, kept so the mapping can be changed without re-uploading.
+  /// Deleted along with the dataset.
+  rawCsv       String
+  status       DatasetStatus @default(PENDING_REVIEW)
+  periodStart  DateTime?     @db.Date
+  periodEnd    DateTime?     @db.Date
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  metrics      Metric[]
+
+  @@index([companyId, status])
+}
+
+/// One number for one month. `dimension` is "" for company totals, or
+/// "product:Product B", "channel:Paid social", "segment:Price-sensitive".
+model Metric {
+  id        String          @id @default(cuid())
+  companyId String
+  company   Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  datasetId String
+  dataset   UploadedDataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  period    DateTime        @db.Date
+  key       String
+  dimension String          @default("")
+  value     Float
+
+  @@unique([datasetId, period, key, dimension])
+  @@index([companyId, period])
+}
+
+// ---------------------------------------------------------------------------
+// Analysis output (written by src/server/analysis/refresh.ts)
+// ---------------------------------------------------------------------------
+
+enum ItemStatus {
+  OPEN
+  DONE
+  DISMISSED
+}
+
+enum Severity {
+  ACTION
+  OPPORTUNITY
+  WATCH
+}
+
+model Insight {
+  id          String     @id @default(cuid())
+  companyId   String
+  company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  /// Stable key from the engine ("retention-decline"), so status survives re-analysis.
+  key         String
+  severity    Severity
+  rank        Int
+  /// The engine's full insight (what / why / so what / now what, evidence).
+  content     Json
+  status      ItemStatus @default(OPEN)
+  /// False once the latest analysis no longer produces this insight.
+  active      Boolean    @default(true)
+  dataVersion Int
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([companyId, key])
+  @@index([companyId, active])
+}
+
+model Opportunity {
+  id          String     @id @default(cuid())
+  companyId   String
+  company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  key         String
+  score       Int
+  content     Json
+  status      ItemStatus @default(OPEN)
+  active      Boolean    @default(true)
+  dataVersion Int
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([companyId, key])
+  @@index([companyId, active])
+}
+
+model Recommendation {
+  id          String     @id @default(cuid())
+  companyId   String
+  company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  key         String
+  rank        Int
+  content     Json
+  status      ItemStatus @default(OPEN)
+  active      Boolean    @default(true)
+  dataVersion Int
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([companyId, key])
+  @@index([companyId, active])
+}
+
+/// The written executive summary for one data version (AI or template).
+model AnalysisSummary {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  dataVersion Int
+  source      String
+  headline    String
+  body        String
+  createdAt   DateTime @default(now())
+
+  @@unique([companyId, dataVersion])
+}
+
+model Scenario {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  name        String
+  kind        String
+  inputs      Json
+  results     Json
+  createdAt   DateTime @default(now())
+
+  @@index([companyId, createdAt])
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  title       String
+  /// YYYY-MM
+  period      String
+  content     Json
+  createdAt   DateTime @default(now())
+
+  @@index([companyId, createdAt])
+}
