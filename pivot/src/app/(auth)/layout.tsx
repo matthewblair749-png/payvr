@@ -10,13 +10,15 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
       <div className="flex flex-col px-4 py-6 sm:px-8">
-        <Link href="/" aria-label="PIVOT home" className="self-start rounded-lg">
-          <Logo size={30} />
-        </Link>
+        <header>
+          <Link href="/" aria-label="PIVOT home" className="inline-block rounded-lg">
+            <Logo size={30} />
+          </Link>
+        </header>
         <main id="main" className="mx-auto flex w-full max-w-[400px] flex-1 flex-col justify-center py-10">
           {children}
         </main>
-        <p className="text-center text-xs text-muted lg:text-left">© {new Date().getFullYear()} PIVOT</p>
+        <footer className="text-center text-xs text-muted lg:text-left">© {new Date().getFullYear()} PIVOT</footer>
       </div>
       <aside className="hidden bg-ink p-10 text-white lg:flex lg:flex-col lg:justify-between" aria-label="What PIVOT does">
         <p className="text-[12px] font-heavy uppercase tracking-[0.1em] text-white/60">Live from the Northstar Commerce demo</p>

@@ -36,7 +36,7 @@ export async function AppShell({ ws, children }: { ws: Workspace; children: Reac
         <Sidebar info={info} />
         <div className="lg:pl-64">
           {ws.mode === "demo" && (
-            <div className="no-print border-b border-ink bg-ink text-white">
+            <aside aria-label="Demo" className="no-print border-b border-ink bg-ink text-white">
               <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-2.5 text-sm sm:px-6 lg:px-10">
                 <p>
                   <span className="font-heavy">Demo:</span> you&apos;re exploring Northstar Commerce, a sample company.
@@ -45,7 +45,7 @@ export async function AppShell({ ws, children }: { ws: Workspace; children: Reac
                   {ws.user ? "Go to my workspace" : "Try it on your data"} <ArrowRight size={14} aria-hidden="true" />
                 </Link>
               </div>
-            </div>
+            </aside>
           )}
           <header className="no-print sticky top-0 z-20 border-b border-line bg-canvas/85 backdrop-blur-md">
             <div className="mx-auto flex h-16 max-w-[1200px] items-center gap-3 px-4 sm:px-6 lg:px-10">

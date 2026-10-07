@@ -39,7 +39,7 @@ export function TrustBar() {
       <p className="text-center text-sm text-muted">Decisions made with PIVOT at</p>
       <ul className="mt-6 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3 lg:grid-cols-6">
         {TRUST_LOGOS.map((name, i) => (
-          <li key={name} className="flex items-center justify-center gap-2 text-chart-2">
+          <li key={name} className="flex items-center justify-center gap-2 text-muted">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               {GLYPHS[i % GLYPHS.length]}
             </svg>

@@ -6,7 +6,7 @@ import { PasswordInput } from "@/components/auth/password-input";
 import { Button } from "@/components/ui/button";
 import { Field, FormMessage, Input, Select } from "@/components/ui/field";
 import { Switch } from "@/components/ui/switch";
-import { CURRENCIES, INDUSTRIES } from "@/lib/validation";
+import { CURRENCIES, INDUSTRIES } from "@/lib/options";
 import { openBillingPortal, startCheckout } from "@/server/billing/actions";
 import { CompanyIdField, useCompanyId } from "./workspace-context";
 import type { ActionResult } from "@/server/errors";

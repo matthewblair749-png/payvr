@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { Field, FormMessage, Input, Select } from "@/components/ui/field";
-import { INDUSTRIES } from "@/lib/validation";
+import { INDUSTRIES } from "@/lib/options";
 import { createCompany, login, requestPasswordReset, resetPassword, signup, type FormState } from "@/server/auth/actions";
 import { PasswordInput } from "./password-input";
 import { SubmitButton } from "./submit";

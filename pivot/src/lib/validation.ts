@@ -20,17 +20,8 @@ export const password = z
 export const personName = z.string().trim().min(2, { error: "Enter your name." }).max(80, { error: "Keep it under 80 characters." });
 export const companyName = z.string().trim().min(2, { error: "Enter your company name." }).max(80, { error: "Keep it under 80 characters." });
 
-export const INDUSTRIES = [
-  { id: "ecommerce", label: "E-commerce / direct-to-consumer" },
-  { id: "retail", label: "Retail" },
-  { id: "saas", label: "Software / SaaS" },
-  { id: "services", label: "Services / agency" },
-  { id: "marketplace", label: "Marketplace" },
-  { id: "other", label: "Something else" },
-] as const;
+export { CURRENCIES, INDUSTRIES } from "./options";
 export const industry = z.enum(["ecommerce", "retail", "saas", "services", "marketplace", "other"]);
-
-export const CURRENCIES = ["USD", "EUR", "GBP", "CAD", "AUD"] as const;
 
 /** Flatten zod issues to { field: firstMessage }. */
 export function fieldErrors(error: z.ZodError): Record<string, string> {

@@ -93,7 +93,7 @@ export async function DataPage({ ws }: { ws: Workspace }) {
         <CardHeader title="Datasets" description="Each upload is checked, previewed and mapped before it's analyzed." />
         <CardBody>
           {datasets.length ? (
-            <div className="relative -mx-5 overflow-x-auto sm:-mx-6">
+            <div className="relative -mx-5 overflow-x-auto sm:-mx-6" tabIndex={0} role="region" aria-label="Datasets">
               <table className="w-full min-w-[40rem] text-left text-sm">
                 <thead className="text-muted">
                   <tr className="border-b border-line">
