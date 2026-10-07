@@ -6,6 +6,7 @@ import { z } from "zod";
 import { safeNext } from "@/lib/safe-next";
 import { companyName, email, fieldErrors, industry, password, personName } from "@/lib/validation";
 import { TRIAL_DAYS } from "@/lib/billing/plans";
+import { entitlementsFor } from "../billing/entitlements";
 import { db } from "../db";
 import { appUrl, devMailEnabled, lastDevLink, sendEmail } from "../email";
 import { GENERIC_ERROR } from "../errors";
@@ -192,6 +193,16 @@ export async function acceptInvite(token: string): Promise<FormState> {
   const invite = await db.invitation.findUnique({ where: { tokenHash: hashToken(token) } });
   if (!invite || invite.acceptedAt || invite.expiresAt < new Date()) return { error: "This invitation has expired or was already used. Ask for a new one." };
   if (invite.email !== user.email) return { error: `This invitation was sent to ${invite.email}. Log in with that email to accept it.` };
+  // The plan may have changed since the invitation was sent.
+  const company = await db.company.findUniqueOrThrow({ where: { id: invite.companyId }, select: { plan: true, trialEndsAt: true } });
+  const seats = entitlementsFor(company).limits.members;
+  if (seats !== null) {
+    const [members, isMember] = await Promise.all([
+      db.companyMember.count({ where: { companyId: invite.companyId } }),
+      db.companyMember.count({ where: { companyId: invite.companyId, userId: user.id } }),
+    ]);
+    if (!isMember && members >= seats) return { error: "This workspace has no free seats on its current plan. Ask the owner to upgrade, then try the link again." };
+  }
   await db.$transaction([
     db.companyMember.upsert({
       where: { companyId_userId: { companyId: invite.companyId, userId: user.id } },

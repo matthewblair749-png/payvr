@@ -161,9 +161,15 @@ export function Sidebar({ info }: { info: ShellInfo }) {
   );
 }
 
-/** Phones and tablets: the sidebar becomes a menu sheet. */
+/**
+ * Phones and tablets: the sidebar becomes a menu sheet. It's a native modal
+ * <dialog>, so it renders in the top layer (the blurred sticky header would
+ * otherwise clip a fixed overlay to its own 64px), and the browser traps
+ * focus, closes on Escape and returns focus to the menu button.
+ */
 export function MobileNav({ info }: { info: ShellInfo }) {
   const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDialogElement>(null);
   const pathname = usePathname();
   const [lastPath, setLastPath] = useState(pathname);
   if (pathname !== lastPath) {
@@ -171,26 +177,38 @@ export function MobileNav({ info }: { info: ShellInfo }) {
     setOpen(false);
   }
   useEffect(() => {
+    const d = ref.current;
+    if (!d) return;
+    if (open && !d.open) d.showModal();
+    if (!open && d.open) d.close();
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
+    // The sheet is hidden at desktop widths: close it there so the page isn't left inert.
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    const onWide = () => desktop.matches && setOpen(false);
+    desktop.addEventListener("change", onWide);
     return () => {
-      document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
+      desktop.removeEventListener("change", onWide);
     };
   }, [open]);
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" aria-expanded={open} className="grid size-10 place-items-center rounded-xl text-ink hover:bg-sunken lg:hidden">
+      <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" aria-expanded={open} aria-controls="mobile-menu" className="grid size-10 place-items-center rounded-xl text-ink hover:bg-sunken lg:hidden">
         <Menu size={22} aria-hidden="true" />
       </button>
-      {open && (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
-          <button type="button" className="anim-fade absolute inset-0 bg-ink/30" aria-label="Close menu" onClick={() => setOpen(false)} />
-          <div className="anim-sheet-in absolute inset-y-0 left-0 flex w-[86%] max-w-80 flex-col bg-surface shadow-pop">
-            <div className="flex h-16 items-center justify-between px-4">
+      <dialog
+        id="mobile-menu"
+        ref={ref}
+        aria-label="Menu"
+        onClose={() => setOpen(false)}
+        onClick={(e) => e.target === ref.current && setOpen(false)}
+        className="anim-sheet-in fixed inset-y-0 left-0 right-auto m-0 h-dvh max-h-dvh w-[86%] max-w-80 bg-surface p-0 text-ink shadow-pop backdrop:bg-ink/30 lg:hidden"
+      >
+        {open && (
+          <div className="flex h-full flex-col">
+            <div className="flex h-16 shrink-0 items-center justify-between px-4">
               <Logo size={28} />
               <button type="button" onClick={() => setOpen(false)} aria-label="Close menu" className="grid size-10 place-items-center rounded-xl text-ink hover:bg-sunken">
                 <X size={22} aria-hidden="true" />
@@ -199,15 +217,15 @@ export function MobileNav({ info }: { info: ShellInfo }) {
             <div className="px-3">
               <WorkspaceName info={info} />
             </div>
-            <nav aria-label="Main" className="mt-4 flex-1 overflow-y-auto px-3">
+            <nav aria-label="Main" className="mt-4 min-h-0 flex-1 overflow-y-auto px-3">
               <NavList info={info} onNavigate={() => setOpen(false)} />
             </nav>
             <div className="border-t border-line p-3">
               <Account info={info} />
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </dialog>
     </>
   );
 }

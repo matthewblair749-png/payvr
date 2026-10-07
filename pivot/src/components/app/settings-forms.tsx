@@ -44,7 +44,7 @@ export function ProfileForm({ name, email, readOnly }: { name: string; email: st
     <form action={action} className="max-w-md space-y-4">
       <Messages state={state} />
       <Field id="name" label="Full name" error={state?.fieldErrors?.name}>
-        <Input id="name" name="name" defaultValue={name} maxLength={80} disabled={readOnly} />
+        <Input id="name" name="name" defaultValue={state?.values?.name ?? name} maxLength={80} disabled={readOnly} />
       </Field>
       <Field id="email" label="Email" hint="Contact support to change the email you sign in with.">
         <Input id="email" value={email} disabled readOnly />
@@ -80,16 +80,17 @@ export function CompanyForm({
   readOnly: boolean;
 }) {
   const [state, action, pending] = useActionState(updateCompany, undefined);
+  const v = state?.values;
   return (
     <form action={action} className="max-w-xl space-y-4">
       <CompanyIdField />
       <Messages state={state} />
       <Field id="name" label="Company name" error={state?.fieldErrors?.name}>
-        <Input id="name" name="name" defaultValue={company.name} maxLength={80} disabled={readOnly} />
+        <Input id="name" name="name" defaultValue={v?.name ?? company.name} maxLength={80} disabled={readOnly} />
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field id="industry" label="Industry" error={state?.fieldErrors?.industry}>
-          <Select id="industry" name="industry" defaultValue={company.industry} disabled={readOnly}>
+          <Select id="industry" name="industry" defaultValue={v?.industry ?? company.industry} disabled={readOnly}>
             {INDUSTRIES.map((i) => (
               <option key={i.id} value={i.id}>
                 {i.label}
@@ -98,7 +99,7 @@ export function CompanyForm({
           </Select>
         </Field>
         <Field id="currency" label="Currency" error={state?.fieldErrors?.currency}>
-          <Select id="currency" name="currency" defaultValue={company.currency} disabled={readOnly}>
+          <Select id="currency" name="currency" defaultValue={v?.currency ?? company.currency} disabled={readOnly}>
             {CURRENCIES.map((c) => (
               <option key={c}>{c}</option>
             ))}
@@ -106,14 +107,14 @@ export function CompanyForm({
         </Field>
       </div>
       <Field id="timezone" label="Time zone" error={state?.fieldErrors?.timezone}>
-        <Select id="timezone" name="timezone" defaultValue={company.timezone} disabled={readOnly}>
+        <Select id="timezone" name="timezone" defaultValue={v?.timezone ?? company.timezone} disabled={readOnly}>
           {timezones.map((t) => (
             <option key={t}>{t}</option>
           ))}
         </Select>
       </Field>
       <Field id="marketSharePct" label="Estimated market share (%)" error={state?.fieldErrors?.marketSharePct} hint="Optional. Lets What If? estimate market share changes.">
-        <Input id="marketSharePct" name="marketSharePct" inputMode="decimal" defaultValue={company.marketSharePct ?? ""} placeholder="e.g. 12.5" disabled={readOnly} />
+        <Input id="marketSharePct" name="marketSharePct" inputMode="decimal" defaultValue={v?.marketSharePct ?? company.marketSharePct ?? ""} placeholder="e.g. 12.5" disabled={readOnly} />
       </Field>
       {!readOnly && <Save pending={pending} />}
     </form>
@@ -134,12 +135,12 @@ export function InviteForm({ disabled }: { disabled?: boolean }) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="flex-1">
           <Field id="invite-email" label="Email" error={state?.fieldErrors?.email}>
-            <Input id="invite-email" name="email" type="email" placeholder="teammate@company.com" maxLength={254} disabled={disabled} />
+            <Input id="invite-email" name="email" type="email" placeholder="teammate@company.com" maxLength={254} defaultValue={state?.values?.email ?? ""} disabled={disabled} />
           </Field>
         </div>
         <div className="sm:w-40">
           <Field id="invite-role" label="Role">
-            <Select id="invite-role" name="role" defaultValue="MEMBER" disabled={disabled}>
+            <Select id="invite-role" name="role" defaultValue={state?.values?.role ?? "MEMBER"} disabled={disabled}>
               <option value="MEMBER">Member</option>
               <option value="ADMIN">Admin</option>
             </Select>

@@ -105,7 +105,9 @@ function Profile({ ws }: { ws: Workspace }) {
 }
 
 function CompanySettings({ ws, readOnly }: { ws: Workspace; readOnly: boolean }) {
-  const timezones = Intl.supportedValuesOf("timeZone");
+  // Intl's list leaves out "UTC" (every company's default) and could miss a stored value:
+  // without them the picker shows, and then saves, a zone nobody chose.
+  const timezones = [...new Set(["UTC", ws.company.timezone, ...Intl.supportedValuesOf("timeZone")])];
   return (
     <Card>
       <CardHeader title="Company" description={readOnly && ws.mode === "app" ? "Only owners and admins can change these." : "Used across your analysis and simulations."} />
@@ -151,7 +153,7 @@ async function Team({ ws }: { ws: Workspace }) {
   return (
     <>
       <Card>
-        <CardHeader title="Members" description={limit === null ? "Unlimited seats on your plan." : `${members.length} of ${limit} seat${limit === 1 ? "" : "s"} used.`} />
+        <CardHeader title="Members" description={limit === null ? "Unlimited seats on your plan." : `${members.length + invites.length} of ${limit} seat${limit === 1 ? "" : "s"} used${invites.length ? ` (including ${invites.length} pending invitation${invites.length === 1 ? "" : "s"})` : ""}.`} />
         <CardBody>
           <ul className="divide-y divide-line">
             {members.map((m) => (
@@ -294,14 +296,17 @@ async function Notifications({ ws }: { ws: Workspace }) {
   );
 }
 
-function Billing({ ws, checkout }: { ws: Workspace; checkout?: string }) {
+async function Billing({ ws, checkout }: { ws: Workspace; checkout?: string }) {
   const e = ws.entitlements;
   const current = PLANS.find((p) => p.id === e.plan)!;
   const live = stripeConfigured();
+  const stripe = ws.mode === "app" ? await db.company.findUnique({ where: { id: ws.company.id }, select: { stripeCustomerId: true } }) : null;
+  const rank = (id: string) => PLANS.findIndex((p) => p.id === id);
   return (
     <>
       {checkout === "success" && <FormMessage tone="success">Thanks! Your subscription is active. It can take a few seconds to show here.</FormMessage>}
       {checkout === "cancelled" && <FormMessage tone="info">Checkout was cancelled. Your plan hasn&apos;t changed.</FormMessage>}
+      {checkout === "changed" && <FormMessage tone="success">Your plan is changing. Stripe prorates the difference; the new plan shows here within a few seconds.</FormMessage>}
       <Card>
         <CardHeader title="Your plan" />
         <CardBody>
@@ -311,7 +316,7 @@ function Billing({ ws, checkout }: { ws: Workspace; checkout?: string }) {
           </p>
           <p className="mt-1 text-[15px] text-ink-2">{e.trialActive ? "You have every Pro feature until your trial ends. Then you'll move to Free unless you upgrade." : current.tagline}</p>
           {!live && ws.mode === "app" && <p className="mt-3 text-sm text-muted">Online payments aren&apos;t switched on in this environment yet, so upgrades are disabled.</p>}
-          {ws.mode === "app" && e.plan !== "FREE" && live && (
+          {ws.mode === "app" && stripe?.stripeCustomerId && live && (
             <div className="mt-4">
               <PortalButton />
             </div>
@@ -348,7 +353,7 @@ function Billing({ ws, checkout }: { ws: Workspace; checkout?: string }) {
                     Talk to sales
                   </ButtonLink>
                 ) : p.id === "FREE" || isCurrent ? null : ws.role === "OWNER" ? (
-                  <PlanButton plan={p.id} label={`Upgrade to ${p.name}`} variant={p.id === "PRO" ? "primary" : "secondary"} />
+                  <PlanButton plan={p.id} label={`${rank(p.id) > rank(e.plan) ? "Upgrade" : "Switch"} to ${p.name}`} variant={p.id === "PRO" ? "primary" : "secondary"} />
                 ) : (
                   <p className="text-xs text-muted">Only the workspace owner can change plans.</p>
                 )}

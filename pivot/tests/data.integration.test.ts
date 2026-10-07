@@ -87,6 +87,19 @@ describe("tenant isolation", () => {
     expect(row?.active).toBe(true);
   });
 
+  it("serializes concurrent refreshes and never rolls the analysis back", async () => {
+    await db.company.update({ where: { id: a.id }, data: { dataVersion: { increment: 1 } } });
+    const runs = await Promise.all([refreshAnalysis(a.id), refreshAnalysis(a.id), refreshAnalysis(a.id)]);
+    expect(runs.every((r) => r.insights.length > 0)).toBe(true);
+    const c = await db.company.findUniqueOrThrow({ where: { id: a.id }, select: { dataVersion: true, analyzedVersion: true } });
+    expect(c.analyzedVersion).toBe(c.dataVersion);
+    // A run for data older than what's persisted changes nothing.
+    await db.company.update({ where: { id: a.id }, data: { analyzedVersion: c.dataVersion + 5 } });
+    await refreshAnalysis(a.id);
+    expect((await db.company.findUniqueOrThrow({ where: { id: a.id }, select: { analyzedVersion: true } })).analyzedVersion).toBe(c.dataVersion + 5);
+    await db.company.update({ where: { id: a.id }, data: { analyzedVersion: c.dataVersion } });
+  });
+
   it("deletes a company's data with the company", async () => {
     const count = await db.metric.count({ where: { companyId: a.id } });
     expect(count).toBeGreaterThan(500);

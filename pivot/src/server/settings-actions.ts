@@ -14,7 +14,17 @@ import { LIMITS, rateLimit, RateLimitError } from "./rate-limit";
 import { userAgent } from "./request-meta";
 import { requireRole, workspaceForAction } from "./workspace";
 
-export type SettingsState = { ok?: boolean; message?: string; error?: string; fieldErrors?: Record<string, string>; devLink?: string | null } | undefined;
+export type SettingsState =
+  | {
+      ok?: boolean;
+      message?: string;
+      error?: string;
+      fieldErrors?: Record<string, string>;
+      devLink?: string | null;
+      /** What was submitted, echoed back on failure: React resets the form after every submit, so the fields re-seed from this. */
+      values?: Record<string, string>;
+    }
+  | undefined;
 
 const str = (f: FormData, k: string) => {
   const v = f.get(k);
@@ -31,6 +41,7 @@ function fail(e: unknown): SettingsState {
 // ---- Profile -----------------------------------------------------------------
 
 export async function updateProfile(_p: SettingsState, form: FormData): Promise<SettingsState> {
+  const values = { name: str(form, "name") };
   try {
     const user = await currentUser();
     if (!user) throw new UserError("Your session has ended. Log in again.");
@@ -40,7 +51,7 @@ export async function updateProfile(_p: SettingsState, form: FormData): Promise<
     revalidatePath("/app", "layout");
     return { ok: true, message: "Profile saved." };
   } catch (e) {
-    return fail(e);
+    return { ...fail(e), values };
   }
 }
 
@@ -84,11 +95,12 @@ const CompanySchema = z.object({
 });
 
 export async function updateCompany(_p: SettingsState, form: FormData): Promise<SettingsState> {
+  const values = { name: str(form, "name"), industry: str(form, "industry"), currency: str(form, "currency"), timezone: str(form, "timezone"), marketSharePct: str(form, "marketSharePct") };
   try {
     const ws = await workspaceForAction(str(form, "companyId"));
     requireRole(ws, ["OWNER", "ADMIN"], "edit company settings");
     rateLimit(`mutate:${ws.user.id}`, LIMITS.mutate);
-    const v = CompanySchema.parse({ name: str(form, "name"), industry: str(form, "industry"), currency: str(form, "currency"), timezone: str(form, "timezone"), marketSharePct: str(form, "marketSharePct") });
+    const v = CompanySchema.parse(values);
     const affectsAnalysis = v.industry !== ws.company.industry || v.marketSharePct !== ws.company.marketSharePct || v.currency !== ws.company.currency || v.name !== ws.company.name;
     await db.company.update({
       where: { id: ws.company.id },
@@ -98,7 +110,7 @@ export async function updateCompany(_p: SettingsState, form: FormData): Promise<
     revalidatePath("/app", "layout");
     return { ok: true, message: "Company settings saved." };
   } catch (e) {
-    return fail(e);
+    return { ...fail(e), values };
   }
 }
 
@@ -107,6 +119,7 @@ export async function updateCompany(_p: SettingsState, form: FormData): Promise<
 const InviteSchema = z.object({ email, role: z.enum(["ADMIN", "MEMBER"]) });
 
 export async function inviteMember(_p: SettingsState, form: FormData): Promise<SettingsState> {
+  const values = { email: str(form, "email"), role: str(form, "role") };
   try {
     const ws = await workspaceForAction(str(form, "companyId"));
     requireRole(ws, ["OWNER", "ADMIN"], "invite people");
@@ -135,7 +148,7 @@ export async function inviteMember(_p: SettingsState, form: FormData): Promise<S
     revalidatePath("/app/settings/team");
     return { ok: true, message: `Invitation sent to ${v.email}.`, devLink: lastDevLink(v.email) };
   } catch (e) {
-    return fail(e);
+    return { ...fail(e), values };
   }
 }
 

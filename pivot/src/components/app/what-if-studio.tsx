@@ -13,6 +13,7 @@ import { PRESETS, SCENARIOS, scenarioQuestion, simulate } from "@/lib/engine/sim
 import type { Baseline, Level, ScenarioKind, ScenarioResult } from "@/lib/engine/types";
 import { int, money, moneyDelta, pct, pctDelta } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useSettled } from "@/lib/use-settled";
 import { deleteScenario, saveScenario, type SavedScenario } from "@/server/data/scenario-actions";
 import { useCompanyId } from "./workspace-context";
 import { riskTone } from "./labels";
@@ -74,6 +75,8 @@ export function WhatIfStudio({
   const [pending, start] = useTransition();
   const cfg = SCENARIOS[kind];
   const r = useMemo(() => simulate(baseline, kind, value, currency), [baseline, kind, value, currency]);
+  // Screen readers hear the result once the slider settles, not every tile on every step.
+  const announcement = useSettled(r.summary);
 
   function pick(k: ScenarioKind, v: number) {
     setKind(k);
@@ -191,7 +194,10 @@ export function WhatIfStudio({
           )}
         </section>
 
-        <section className="space-y-4 xl:col-span-3" aria-label="Results" aria-live="polite">
+        <section className="space-y-4 xl:col-span-3" aria-label="Results">
+          <p className="sr-only" aria-live="polite" aria-atomic="true">
+            {announcement}
+          </p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <Tile label="Revenue" value={moneyDelta(r.deltas.revenue, currency)} accent sub={`${money(r.projected.revenue, currency)} a month`} />
             <Tile label="Customers" value={custKnown ? pctDelta(r.deltas.customersPct) : "–"} sub={custKnown ? `${int(r.projected.customers)} customers` : "Not in your data"} />
@@ -330,15 +336,18 @@ export function WhatIfStudio({
 function CompareTable({ scenarios, currency }: { scenarios: ScenarioResult[]; currency: string }) {
   if (!scenarios.length) return <p className="text-sm text-muted">Select scenarios to compare.</p>;
   const base = scenarios[0].baseline;
+  // Saved scenarios keep the data they were run on, so each change is measured
+  // against its own starting point, not the first column's.
+  const sameBase = scenarios.every((r) => Math.abs(r.baseline.revenue - base.revenue) < 0.5 && Math.abs(r.baseline.profit - base.profit) < 0.5);
   const cols = [{ label: "Current strategy", s: base, r: null as ScenarioResult | null }, ...scenarios.map((r) => ({ label: shortLabel(r.kind, r.value), s: r.projected, r }))];
-  const bestProfit = Math.max(...scenarios.map((r) => r.projected.profit));
+  const bestGain = Math.max(...scenarios.map((r) => r.deltas.profit));
   const row = (label: string, f: (c: (typeof cols)[number]) => React.ReactNode) => (
     <tr className="border-t border-line">
       <th scope="row" className="py-3 pr-4 text-left font-normal text-muted">
         {label}
       </th>
-      {cols.map((c) => (
-        <td key={c.label} className="num-col px-3 py-3 text-right text-ink">
+      {cols.map((c, i) => (
+        <td key={i} className="num-col px-3 py-3 text-right text-ink">
           {f(c)}
         </td>
       ))}
@@ -346,12 +355,13 @@ function CompareTable({ scenarios, currency }: { scenarios: ScenarioResult[]; cu
   );
   const lvl = (l: Level) => <Badge tone={riskTone(l)}>{l}</Badge>;
   return (
+    <>
     <table className="w-full min-w-[34rem] text-sm">
       <thead>
         <tr>
           <th className="pb-3" />
-          {cols.map((c) => (
-            <th key={c.label} scope="col" className="px-3 pb-3 text-right text-[13px] text-ink">
+          {cols.map((c, i) => (
+            <th key={i} scope="col" className="px-3 pb-3 text-right text-[13px] text-ink">
               {c.label}
             </th>
           ))}
@@ -360,9 +370,9 @@ function CompareTable({ scenarios, currency }: { scenarios: ScenarioResult[]; cu
       <tbody>
         {row("Revenue", (c) => money(c.s.revenue, currency))}
         {row("Profit", (c) => (
-          <span className={cn(c.r && c.s.profit === bestProfit && "font-heavy")}>
+          <span className={cn(c.r && c.r.deltas.profit === bestGain && "font-heavy")}>
             {money(c.s.profit, currency)}
-            {c.r && <Delta className="ml-2" label={moneyDelta(c.s.profit - base.profit, currency)} direction={c.s.profit >= base.profit ? "up" : "down"} good={c.s.profit >= base.profit} />}
+            {c.r && <Delta className="ml-2" label={moneyDelta(c.r.deltas.profit, currency)} direction={c.r.deltas.profit >= 0 ? "up" : "down"} good={c.r.deltas.profit >= 0} />}
           </span>
         ))}
         {row("Customers", (c) => (c.s.customers ? int(c.s.customers) : "–"))}
@@ -372,5 +382,11 @@ function CompareTable({ scenarios, currency }: { scenarios: ScenarioResult[]; cu
         {row("Confidence", (c) => (c.r ? `${c.r.confidence}%` : "–"))}
       </tbody>
     </table>
+    {!sameBase && (
+      <p className="mt-4 text-[13px] text-muted">
+        Some of these were saved before your data changed. Each change is measured against the figures it was run on; &ldquo;Current strategy&rdquo; shows the first one&apos;s.
+      </p>
+    )}
+    </>
   );
 }

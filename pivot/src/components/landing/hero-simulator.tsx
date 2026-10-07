@@ -7,6 +7,7 @@ import { Delta, directionOf } from "@/components/ui/delta";
 import { money, moneyDelta, pctDelta } from "@/lib/format";
 import { scenarioQuestion, simulate } from "@/lib/engine/simulate";
 import type { Baseline } from "@/lib/engine/types";
+import { useSettled } from "@/lib/use-settled";
 import { useTween } from "@/lib/use-tween";
 
 const MIN = -20;
@@ -22,6 +23,10 @@ export function HeroSimulator({ baseline, company, currency }: { baseline: Basel
   const s = simulate(baseline, "price", price, currency);
   const revenue = useTween(s.projected.revenue);
   const dRevenue = useTween(s.deltas.revenue);
+  // One announcement with the final numbers once the slider stops, not every animation frame.
+  const announcement = useSettled(
+    `${money(s.projected.revenue, currency)} projected monthly revenue, ${moneyDelta(s.deltas.revenue, currency)}. Profit ${moneyDelta(s.deltas.profit, currency)}. Risk ${s.risk.toLowerCase()}.`,
+  );
 
   const pos = ((price - MIN) / (MAX - MIN)) * 100;
   const zero = ((0 - MIN) / (MAX - MIN)) * 100;
@@ -62,7 +67,10 @@ export function HeroSimulator({ baseline, company, currency }: { baseline: Basel
         <span>+20%</span>
       </div>
 
-      <div className="mt-6 border-t border-line pt-5" aria-live="polite">
+      <p className="sr-only" aria-live="polite" aria-atomic="true">
+        {announcement}
+      </p>
+      <div className="mt-6 border-t border-line pt-5">
         <p className="text-sm text-muted">Projected monthly revenue</p>
         <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span className="text-[2.75rem] font-heavy leading-none tracking-tighter text-accent sm:text-5xl">{money(revenue, currency)}</span>

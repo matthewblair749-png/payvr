@@ -23,12 +23,20 @@ export async function POST(request: Request) {
       const companyId = s.metadata?.companyId ?? s.client_reference_id;
       const plan = s.metadata?.plan === "BUSINESS" ? "BUSINESS" : "PRO";
       if (companyId && s.mode === "subscription") {
+        const subscriptionId = typeof s.subscription === "string" ? s.subscription : (s.subscription?.id ?? null);
+        // Safety net: never leave an older subscription billing alongside the new one.
+        const previous = await db.company.findUnique({ where: { id: companyId }, select: { stripeSubscriptionId: true } });
+        if (previous?.stripeSubscriptionId && previous.stripeSubscriptionId !== subscriptionId) {
+          await getStripe()
+            .subscriptions.cancel(previous.stripeSubscriptionId, { prorate: true })
+            .catch((e) => console.error("[pivot] couldn't cancel the previous subscription", previous.stripeSubscriptionId, e));
+        }
         await db.company.updateMany({
           where: { id: companyId },
           data: {
             plan,
             stripeCustomerId: typeof s.customer === "string" ? s.customer : (s.customer?.id ?? null),
-            stripeSubscriptionId: typeof s.subscription === "string" ? s.subscription : (s.subscription?.id ?? null),
+            stripeSubscriptionId: subscriptionId,
             subscriptionStatus: "active",
             trialEndsAt: null,
           },
