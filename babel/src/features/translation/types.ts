@@ -29,6 +29,7 @@ export type TranslateResponse =
 export type TranslateErrorCode =
   | "invalid_input"
   | "rate_limited"
+  | "limit_reached"
   | "not_in_preview"
   | "provider_error";
 

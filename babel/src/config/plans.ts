@@ -2,8 +2,9 @@
  * Every plan, price and limit in one place. Change a number here and the
  * pricing page (and, from Phase 2, server-side enforcement) follows.
  *
- * PRICES ARE PLACEHOLDERS until you set final ones. Stripe Price IDs get
- * added here in Phase 2.
+ * PRICES ARE PLACEHOLDERS until you set final ones. The amounts shown here
+ * are for display; what Stripe charges comes from the Stripe Price each plan
+ * points at through its lookup key (see stripeLookupKey below).
  */
 
 export type PlanId = "free" | "plus" | "pro" | "teams";
@@ -49,6 +50,32 @@ export const ANNUAL_MONTHS_CHARGED = 10;
 
 /** Days a subscription keeps working after a failed payment (Phase 2). */
 export const PAYMENT_GRACE_PERIOD_DAYS = 7;
+
+/** Teams seat range accepted at checkout. */
+export const TEAM_SEATS = { min: 1, max: 500, default: 3 } as const;
+
+export type PaidPlanId = Exclude<PlanId, "free">;
+export const PAID_PLAN_IDS: PaidPlanId[] = ["plus", "pro", "teams"];
+
+/**
+ * Each Stripe Price is found by its lookup key, e.g. "babel_plus_monthly".
+ * Set the same key on the Price in the Stripe dashboard. Changing a price
+ * then means creating a new Price and moving the key; no code change.
+ */
+export function stripeLookupKey(plan: PaidPlanId, interval: BillingInterval): string {
+  return `babel_${plan}_${interval}`;
+}
+
+/** Reverse of stripeLookupKey. Returns null for keys that aren't ours. */
+export function parseLookupKey(key: string | null | undefined): { plan: PaidPlanId; interval: BillingInterval } | null {
+  const match = /^babel_(plus|pro|teams)_(monthly|annual)$/.exec(key ?? "");
+  if (!match) return null;
+  return { plan: match[1] as PaidPlanId, interval: match[2] as BillingInterval };
+}
+
+export function isPlanId(value: string): value is PlanId {
+  return value === "free" || (PAID_PLAN_IDS as string[]).includes(value);
+}
 
 export const PLANS: Plan[] = [
   {

@@ -30,7 +30,9 @@ const SECTIONS = [
   {
     title: "Your account",
     body: [
-      "If you sign up, we keep your email address, your plan and how much of it you've used this month. Payments go through Stripe. Your card details go straight to them and never touch our servers.",
+      "If you sign up, we keep your email address, your plan, and counts of how much of your allowance you've used. Those counts are numbers only, never what you translated.",
+      "If you sign in with Google, Google shares your name, email address and profile picture with us. We use them to show who's signed in, nothing else.",
+      "Payments go through Stripe. Your card details go straight to them and never touch our servers.",
     ],
   },
   {

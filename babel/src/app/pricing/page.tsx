@@ -9,12 +9,13 @@ export const metadata: Metadata = {
   description: "Start free. Upgrade when you need more. Cancel anytime.",
 };
 
-export default function PricingPage() {
+export default async function PricingPage(props: PageProps<"/pricing">) {
+  const { checkout } = await props.searchParams;
   return (
     <>
       <SiteHeader />
       <main id="main">
-        <PricingPlans />
+        <PricingPlans notice={typeof checkout === "string" ? checkout : undefined} />
         <PricingFaq />
       </main>
       <SiteFooter />

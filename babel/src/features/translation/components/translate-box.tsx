@@ -16,7 +16,7 @@ type Shown = Pick<TranslationResult, "text" | "from" | "to" | "provider"> & { id
 type Status =
   | { kind: "ready" }
   | { kind: "loading" }
-  | { kind: "note"; message: string; tone: "info" | "error" };
+  | { kind: "note"; message: string; tone: "info" | "error"; upgrade?: boolean };
 
 const INITIAL: Shown = {
   id: 0,
@@ -30,10 +30,18 @@ const looksLikeLink = (text: string) => /^https?:\/\/\S+$/i.test(text.trim());
 
 /**
  * The hero demo: type or paste, pick a language chip, watch it translate.
- * Starts pre-filled so there's never an empty box. Phrasebook sentences are
- * answered instantly on the client; anything else goes to /api/translate.
+ * Starts pre-filled so there's never an empty box. On the public demo,
+ * phrasebook sentences are answered instantly on the client; anything else
+ * (and everything when countUsage is set) goes to /api/translate.
  */
-export function TranslateBox() {
+export function TranslateBox({
+  countUsage = false,
+  onTranslated,
+}: {
+  countUsage?: boolean;
+  /** Called after each successful server translation. */
+  onTranslated?: () => void;
+} = {}) {
   const [text, setText] = useState(DEFAULT_PHRASE.source);
   const [target, setTarget] = useState<LanguageCode>("es");
   const [shown, setShown] = useState<Shown>(INITIAL);
@@ -59,8 +67,9 @@ export function TranslateBox() {
       return;
     }
 
-    // Hand-checked phrases need no network round trip.
-    const local = lookupPhrase(input, to);
+    // Hand-checked phrases need no network round trip on the public demo.
+    // Signed in, everything goes through the server so it counts as usage.
+    const local = countUsage ? null : lookupPhrase(input, to);
     if (local) {
       setShown({ id: nextId.current++, text: local.text, from: local.from, to, provider: "preview" });
       setStatus({ kind: "ready" });
@@ -81,14 +90,20 @@ export function TranslateBox() {
       if (data.ok) {
         setShown({ id: nextId.current++, ...data.result });
         setStatus({ kind: "ready" });
+        onTranslated?.();
       } else {
-        setStatus({ kind: "note", tone: data.code === "not_in_preview" ? "info" : "error", message: data.message });
+        setStatus({
+          kind: "note",
+          tone: data.code === "not_in_preview" || data.code === "limit_reached" ? "info" : "error",
+          message: data.message,
+          upgrade: data.code === "limit_reached",
+        });
       }
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
       setStatus({ kind: "note", tone: "error", message: "I couldn't reach the translator. Check your connection and try again?" });
     }
-  }, []);
+  }, [countUsage, onTranslated]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -224,9 +239,14 @@ export function TranslateBox() {
 
           <div aria-live="polite" aria-labelledby={ids.result} className="mt-2 min-h-[4.5rem]">
             {status.kind === "note" ? (
-              <p className={clsx("rounded-[var(--radius)] px-4 py-3 font-semibold", status.tone === "error" ? "bg-coral-tint" : "bg-cream")}>
-                {status.message}
-              </p>
+              <div className={clsx("rounded-[var(--radius)] px-4 py-3 font-semibold", status.tone === "error" ? "bg-coral-tint" : "bg-cream")}>
+                <p>{status.message}</p>
+                {status.upgrade && (
+                  <a href="/pricing" className="mt-2 inline-flex min-h-11 items-center font-bold text-coral-text underline underline-offset-4">
+                    See plans
+                  </a>
+                )}
+              </div>
             ) : (
               <p
                 key={shown.id}

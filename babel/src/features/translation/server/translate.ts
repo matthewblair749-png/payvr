@@ -3,6 +3,8 @@ import type { LanguageCode, SourceLanguage } from "../languages";
 import type { TranslateOptions, TranslationResult } from "../types";
 import { cacheKey, MemoryTranslationCache, type TranslationCache } from "./cache";
 import type { TranslationProvider } from "./provider";
+import { db } from "@/server/db";
+import { PrismaTranslationCache } from "./prisma-cache";
 import { createProviderFromEnv } from "./providers";
 
 export type TranslateFn = (
@@ -38,7 +40,7 @@ export function createTranslator({ provider, cache }: { provider: TranslationPro
 
     const work = (async (): Promise<TranslationResult> => {
       const result = await provider.translate({ text, from, to, formality });
-      if (!options.noCache) await cache.set(key, result);
+      if (!options.noCache) await cache.set(key, { text: result.text, from: result.from }, provider.id);
       return { ...result, to, provider: provider.id, cached: false };
     })();
 
@@ -53,8 +55,14 @@ export function createTranslator({ provider, cache }: { provider: TranslationPro
 
 let defaultTranslator: TranslateFn | null = null;
 
-/** The app-wide translator, configured from environment variables. */
+/**
+ * The app-wide translator, configured from environment variables. Caches in
+ * Postgres when DATABASE_URL is set, in memory otherwise.
+ */
 export function translate(...args: Parameters<TranslateFn>): ReturnType<TranslateFn> {
-  defaultTranslator ??= createTranslator({ provider: createProviderFromEnv(), cache: new MemoryTranslationCache() });
+  defaultTranslator ??= createTranslator({
+    provider: createProviderFromEnv(),
+    cache: process.env.DATABASE_URL ? new PrismaTranslationCache(db) : new MemoryTranslationCache(),
+  });
   return defaultTranslator(...args);
 }

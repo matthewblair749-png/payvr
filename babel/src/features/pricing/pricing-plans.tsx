@@ -3,9 +3,10 @@
 import clsx from "clsx";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
-import { ButtonLink } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import {
   ANNUAL_MONTHS_CHARGED,
+  TEAM_SEATS,
   annualTotal,
   effectiveMonthlyPrice,
   PLANS,
@@ -13,7 +14,7 @@ import {
   type BillingInterval,
   type Plan,
 } from "@/config/plans";
-import { CHECKOUT_ENABLED, SIGNUP_HREF } from "@/config/site";
+import { SIGNUP_HREF } from "@/config/site";
 import { Mascot } from "@/features/brand/mascot";
 import { describePlan, formatPrice } from "./format";
 
@@ -54,7 +55,6 @@ function PlanCard({ plan, interval }: { plan: Plan; interval: BillingInterval })
   const price = effectiveMonthlyPrice(plan, interval);
   const free = plan.monthlyPrice === 0;
   const dark = plan.highlighted;
-  const cta = free || !CHECKOUT_ENABLED ? "Try it free" : `Choose ${plan.name}`;
 
   return (
     <article
@@ -84,9 +84,35 @@ function PlanCard({ plan, interval }: { plan: Plan; interval: BillingInterval })
         </p>
       </div>
 
-      <ButtonLink href={SIGNUP_HREF} variant={dark ? "primary" : free ? "outline" : "ink"} className="mt-6 w-full">
-        {cta}
-      </ButtonLink>
+      {free ? (
+        <ButtonLink href={SIGNUP_HREF} variant="outline" className="mt-6 w-full">
+          Try it free
+        </ButtonLink>
+      ) : (
+        // A plain form post: works without JavaScript, and the server decides
+        // whether to send you to sign-up, Checkout or the billing portal.
+        <form action="/api/billing/checkout" method="post" className="mt-6 grid gap-3">
+          <input type="hidden" name="plan" value={plan.id} />
+          <input type="hidden" name="interval" value={interval} />
+          {plan.perSeat && (
+            <label className="flex items-center justify-between gap-3 font-semibold">
+              <span>People on your team</span>
+              <input
+                type="number"
+                name="seats"
+                min={TEAM_SEATS.min}
+                max={TEAM_SEATS.max}
+                defaultValue={TEAM_SEATS.default}
+                required
+                className="min-h-11 w-24 rounded-[var(--radius-sm)] border-2 border-line-strong bg-cream px-3 text-right font-bold tabular-nums text-ink hover:border-ink focus-visible:border-ink"
+              />
+            </label>
+          )}
+          <Button type="submit" variant={dark ? "primary" : "ink"} className="w-full">
+            Choose {plan.name}
+          </Button>
+        </form>
+      )}
 
       <ul className="mt-6 space-y-2">
         {describePlan(plan).map((line) => (
@@ -106,7 +132,15 @@ function PlanCard({ plan, interval }: { plan: Plan; interval: BillingInterval })
  * Billing toggle, mascot and plan cards share one piece of state: the
  * mascot cheers when you switch to annual.
  */
-export function PricingPlans() {
+const NOTICES: Record<string, { tone: "info" | "error"; text: string }> = {
+  cancelled: { tone: "info", text: "No problem, nothing was charged. Your plan hasn't changed." },
+  unavailable: { tone: "error", text: "Upgrades aren't switched on yet. Please check back soon." },
+  invalid: { tone: "error", text: "Something about that choice didn't add up. Pick a plan and try again?" },
+  error: { tone: "error", text: "We couldn't reach our payment partner just now. Nothing was charged. Please try again in a minute." },
+};
+
+export function PricingPlans({ notice }: { notice?: string }) {
+  const message = notice ? NOTICES[notice] : undefined;
   const [interval, setBillingInterval] = useState<BillingInterval>("monthly");
   const annual = interval === "annual";
 
@@ -144,6 +178,14 @@ export function PricingPlans() {
           <Mascot mood={annual ? "happy" : "idle"} label={annual ? "The Babel mascot, cheering" : "The Babel mascot, waving"} />
         </div>
       </div>
+
+      {message && (
+        <p role="status" className="wrap mt-8 font-semibold">
+          <span className={clsx("block rounded-[var(--radius)] px-4 py-3", message.tone === "error" ? "bg-coral-tint" : "bg-paper")}>
+            {message.text}
+          </span>
+        </p>
+      )}
 
       <section aria-label="Plans" className="wrap mt-12 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
         {PLANS.map((plan) => (

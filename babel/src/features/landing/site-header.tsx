@@ -9,16 +9,23 @@ export function SiteHeader() {
       <Link href="/" className="press -mx-2 inline-flex min-h-11 items-center rounded-lg px-2" aria-label="babel, home">
         <Logo />
       </Link>
-      <nav aria-label="Main" className="flex items-center gap-2 sm:gap-4">
+      <nav aria-label="Main" className="flex items-center gap-1 sm:gap-3">
         <Link
           href="/pricing"
           className="press inline-flex min-h-11 items-center rounded-full px-3 font-bold text-ink underline-offset-4 hover:underline active:scale-[0.97]"
         >
           Pricing
         </Link>
-        <ButtonLink href={SIGNUP_HREF} className="px-4 sm:px-5">
-          Try it free
-        </ButtonLink>
+        <Link
+          href="/signin"
+          className="press inline-flex min-h-11 items-center rounded-full px-3 font-bold text-ink underline-offset-4 hover:underline active:scale-[0.97]"
+        >
+          Sign in
+        </Link>
+        {/* The hero has its own button on phones; keep the header roomy there. */}
+        <span className="hidden sm:block">
+          <ButtonLink href={SIGNUP_HREF}>Try it free</ButtonLink>
+        </span>
       </nav>
     </header>
   );

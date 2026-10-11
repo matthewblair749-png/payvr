@@ -17,12 +17,13 @@ export interface CachedTranslation {
 
 /**
  * Where finished translations live so the same text is never translated twice.
- * Phase 1 ships the in-memory store below; Phase 2 adds a Postgres-backed one
- * (TranslationCache model) behind this same interface.
+ * The app uses the Postgres store (prisma-cache.ts); the in-memory one below
+ * backs tests and local runs without a database.
  */
 export interface TranslationCache {
   get(key: string): Promise<CachedTranslation | null>;
-  set(key: string, value: CachedTranslation): Promise<void>;
+  /** `provider` records which engine produced it, so entries can be pruned per engine. */
+  set(key: string, value: CachedTranslation, provider: string): Promise<void>;
 }
 
 /**
