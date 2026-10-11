@@ -4,8 +4,8 @@ const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  // Microphone stays off until Phase 3 adds voice input to rooms.
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+  // Microphone only for this site: voice input in rooms.
+  { key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=()" },
 ];
 
 const nextConfig: NextConfig = {

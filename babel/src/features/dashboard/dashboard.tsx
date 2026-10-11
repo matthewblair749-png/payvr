@@ -2,6 +2,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { annualTotal, effectiveMonthlyPrice, type BillingInterval } from "@/config/plans";
 import type { Entitlement } from "@/features/billing/entitlements";
 import { formatPrice } from "@/features/pricing/format";
+import { RoomsPanel } from "@/features/rooms/components/rooms-panel";
 import { DashboardTranslate } from "./dashboard-translate";
 import type { UsageSummary } from "@/features/usage/server";
 import { BillingButton } from "./billing-button";
@@ -10,6 +11,8 @@ import { UsageMeter } from "./usage-meter";
 
 export interface DashboardProps {
   name: string | null;
+  email: string;
+  rooms: { id: string; name: string; expiresAt: Date; people: number }[];
   usage: UsageSummary;
   subscription: { interval: string; seats: number } | null;
   hasBillingAccount: boolean;
@@ -60,7 +63,7 @@ function Notice({ notice, entitlement }: { notice?: string; entitlement: Entitle
   );
 }
 
-function PlanPanel({ usage, subscription, hasBillingAccount }: Omit<DashboardProps, "name" | "notice">) {
+function PlanPanel({ usage, subscription, hasBillingAccount }: Pick<DashboardProps, "usage" | "subscription" | "hasBillingAccount">) {
   const { entitlement } = usage;
   const { access, subscribedPlan } = entitlement;
   const interval: BillingInterval = subscription?.interval === "annual" ? "annual" : "monthly";
@@ -110,7 +113,7 @@ function PlanPanel({ usage, subscription, hasBillingAccount }: Omit<DashboardPro
   );
 }
 
-export function Dashboard({ name, usage, subscription, hasBillingAccount, notice }: DashboardProps) {
+export function Dashboard({ name, email, rooms, usage, subscription, hasBillingAccount, notice }: DashboardProps) {
   const { translations, liveMinutes, entitlement } = usage;
   const firstName = name?.split(" ")[0];
   return (
@@ -145,6 +148,14 @@ export function Dashboard({ name, usage, subscription, hasBillingAccount, notice
           />
         </div>
       </section>
+
+      <RoomsPanel
+        rooms={rooms}
+        defaultName={firstName ?? email.split("@")[0]}
+        roomSize={entitlement.plan.limits.roomSize}
+        minutesLeft={Math.max(0, liveMinutes.limit - liveMinutes.used)}
+        notice={notice?.startsWith("rooms=") ? notice.slice("rooms=".length) : undefined}
+      />
 
       <section aria-labelledby="translate-title" className="wrap mt-12 max-w-3xl">
         <h2 id="translate-title" className="text-3xl">

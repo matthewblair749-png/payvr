@@ -1,8 +1,9 @@
 // babel data model.
 //
-// Privacy: no table here stores what people write in rooms. The translation
-// cache stores finished translations keyed by a hash, never linked to a user.
-// UsageEvent stores counts only, never text.
+// Privacy: room messages (and their translations) live only as long as the
+// room; deleting a room cascades to all of them. The translation cache stores
+// finished translations keyed by a hash, never linked to a user. UsageEvent
+// stores counts only, never text.
 
 generator client {
   provider = "prisma-client"
@@ -29,6 +30,7 @@ model User {
   sessions         Session[]
   subscription     Subscription?
   usageEvents      UsageEvent[]
+  rooms            Room[]
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 }
@@ -145,4 +147,118 @@ model UsageEvent {
   createdAt DateTime @default(now())
 
   @@index([userId, kind, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Rooms
+// ---------------------------------------------------------------------------
+
+/// A shared conversation. Everything below cascades from it, so closing or
+/// expiring a room deletes its messages, translations, blocks and bans.
+model Room {
+  id           String            @id
+  ownerId      String
+  owner        User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name         String
+  createdAt    DateTime          @default(now())
+  expiresAt    DateTime
+  /// Set when the owner closes the room or the month's live minutes run out
+  /// for good; a closed room is deleted by the cleanup job.
+  closedAt     DateTime?
+  participants RoomParticipant[]
+  messages     RoomMessage[]
+  blocks       RoomBlock[]
+  bans         RoomBan[]
+
+  @@index([ownerId])
+  @@index([expiresAt])
+}
+
+model RoomParticipant {
+  id          String    @id @default(cuid())
+  roomId      String
+  room        Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  /// Set for the owner (signed in). Guests have no account.
+  userId      String?
+  displayName String
+  /// LanguageCode this person reads and writes in.
+  language    String
+  /// "owner" or "guest".
+  role        String
+  /// SHA-256 of the secret the browser presents to connect. The secret itself is never stored.
+  tokenHash   String
+  /// Salted hash of the IP they joined from, used to ban removed guests. Never the raw IP.
+  ipHash      String?
+  joinedAt    DateTime  @default(now())
+  lastSeenAt  DateTime  @default(now())
+  removedAt   DateTime?
+
+  @@index([roomId])
+}
+
+model RoomMessage {
+  id            String                   @id @default(cuid())
+  roomId        String
+  room          Room                     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  participantId String
+  /// Name at the time of sending, so history reads right after someone leaves.
+  senderName    String
+  text          String
+  lang          String
+  /// Random id from the sender's browser. Makes resending after a reconnect safe.
+  clientId      String
+  createdAt     DateTime                 @default(now())
+  translations  RoomMessageTranslation[]
+
+  @@unique([roomId, clientId])
+  @@index([roomId, createdAt])
+}
+
+/// Room-scoped translations. Deliberately separate from TranslationCache so
+/// private messages disappear with the room.
+model RoomMessageTranslation {
+  messageId String
+  message   RoomMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  lang      String
+  text      String
+
+  @@id([messageId, lang])
+}
+
+/// "I don't want to see this person's messages." Per person, per room.
+model RoomBlock {
+  roomId    String
+  room      Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  blockerId String
+  blockedId String
+
+  @@id([blockerId, blockedId])
+  @@index([roomId])
+}
+
+/// Someone the owner removed. Keyed by a salted hash of their IP so they
+/// can't simply rejoin under a new name; the raw IP is never stored.
+model RoomBan {
+  roomId    String
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  ipHash    String
+  createdAt DateTime @default(now())
+
+  @@id([roomId, ipHash])
+}
+
+/// Abuse reports. Not tied to the room, so they survive it for review, and
+/// deleted after REPORT_RETENTION_DAYS (see src/config/rooms.ts).
+model Report {
+  id                    String   @id @default(cuid())
+  roomId                String
+  reporterName          String
+  reportedParticipantId String
+  reportedName          String
+  /// Copy of the reported message, if a message was reported.
+  messageText           String?
+  reason                String
+  createdAt             DateTime @default(now())
+
+  @@index([createdAt])
 }

@@ -14,13 +14,19 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   const userId = session?.user?.id;
   if (!userId) redirect(`/signin?callbackUrl=${encodeURIComponent("/dashboard")}`);
 
-  const [user, usage, params] = await Promise.all([
+  const now = new Date();
+  const [user, usage, rooms, params] = await Promise.all([
     db.user.findUniqueOrThrow({ where: { id: userId }, include: { subscription: { select: { interval: true, seats: true } } } }),
-    getUsageSummary(db, userId),
+    getUsageSummary(db, userId, now),
+    db.room.findMany({
+      where: { ownerId: userId, closedAt: null, expiresAt: { gt: now } },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, name: true, expiresAt: true, _count: { select: { participants: { where: { removedAt: null } } } } },
+    }),
     props.searchParams,
   ]);
 
-  const noticeKey = (["checkout", "billing"] as const).find((k) => typeof params[k] === "string");
+  const noticeKey = (["checkout", "billing", "rooms"] as const).find((k) => typeof params[k] === "string");
   const notice = noticeKey ? `${noticeKey}=${params[noticeKey] as string}` : undefined;
 
   return (
@@ -28,6 +34,8 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       <DashboardHeader email={user.email} />
       <Dashboard
         name={user.name}
+        email={user.email}
+        rooms={rooms.map((r) => ({ id: r.id, name: r.name, expiresAt: r.expiresAt, people: r._count.participants }))}
         usage={usage}
         subscription={user.subscription}
         hasBillingAccount={Boolean(user.stripeCustomerId)}

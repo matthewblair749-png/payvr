@@ -3,9 +3,9 @@
 **Everyone speaks your language.** Paste some text and read it in your own language, or open a room and chat
 with someone who speaks another one, each of you writing and reading your own.
 
-> Status: **Phase 2 of 4: accounts and payments.** Landing page and live demo (Phase 1), sign-up and
-> sign-in, the dashboard, Stripe subscriptions and server-side plan limits (Phase 2). Shared rooms
-> (Phase 3) and the browser extension (Phase 4) are not built yet.
+> Status: **Phase 3 of 4: shared rooms.** Landing page and live demo (Phase 1); accounts, Stripe
+> subscriptions and plan limits (Phase 2); realtime rooms where everyone writes and reads their own
+> language (Phase 3). The browser extension (Phase 4) is not built yet.
 
 This app lives in `babel/` inside the `payvr` repo. It is a standalone Next.js app with its own
 `package.json`; run every command below from this folder.
@@ -21,8 +21,11 @@ cp .env.example .env.local          # then fill in AUTH_SECRET (openssl rand -ba
 cp .env.local .env                  # the Prisma CLI reads .env
 createdb babel && createdb babel_test   # or point DATABASE_URL at any Postgres
 npm run db:migrate                  # create tables
-npm run dev                         # http://localhost:3000
+npm run dev:all                     # app on :3000 and the room server on :3001
 ```
+
+`npm run dev` starts only the web app; rooms need the room server too (`npm run dev:realtime`, or
+both at once with `dev:all`).
 
 **Signing in locally:** with `EMAIL_SERVER` empty, the magic link is printed in the server console and
 shown on the "Check your inbox" page. That shortcut only exists in development; production always
@@ -36,6 +39,8 @@ needs `EMAIL_SERVER`.
 | `npm run lint` / `typecheck` | ESLint / `tsc --noEmit` |
 | `npm run db:migrate` / `db:deploy` | Create a migration in dev / apply migrations in production |
 | `npm run stripe:listen` | Forward Stripe test webhooks to your local server |
+| `npm run dev:all` | Web app and room server together, for development |
+| `npm run realtime` | The room server on its own (production) |
 
 ## Environment variables
 
@@ -45,7 +50,9 @@ Secrets live in `.env.local` (and `.env` for the Prisma CLI). Both are git-ignor
 | --- | --- | --- |
 | `DATABASE_URL` | yes | Postgres connection string |
 | `TEST_DATABASE_URL` | for `test:db` | A separate database. Tests only add rows |
-| `APP_URL` | production | Public URL, used for Stripe return URLs and the same-origin check |
+| `APP_URL` | production | Public URL, used for Stripe return URLs, the same-origin check and the room server's CORS |
+| `NEXT_PUBLIC_REALTIME_URL` | for rooms | Where browsers reach the room server, e.g. `https://rooms.yourdomain` |
+| `REALTIME_PORT` | no | Port the room server listens on (default 3001) |
 | `AUTH_SECRET` | yes | `openssl rand -base64 32` |
 | `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | no | Google sign-in. The button only appears when both are set |
 | `EMAIL_SERVER` | production | SMTP URL for magic links |
@@ -109,6 +116,45 @@ stripe trigger checkout.session.completed   # or upgrade through /pricing with c
   with a banner on the dashboard. After that the account uses Free limits until the payment goes
   through. Nothing is deleted.
 
+## Rooms
+
+Signed-in users open a room from the dashboard and share its link (`/r/<id>`, 12 random characters).
+Guests join with a display name and a language, with no account. Everyone writes in their own
+language and reads everyone else's messages in theirs; tapping a message shows the original.
+
+**Architecture.** Next.js route handlers can't hold WebSocket connections, so rooms run on a small
+separate Node process (`src/realtime/main.ts`) next to the web app:
+
+- `src/features/rooms/server/hub.ts`: all room behaviour (presence, typing, translation fan-out,
+  blocking, removal, live-minute charging). It knows nothing about the transport.
+- `src/features/rooms/server/socketio.ts` and `client/socketio-transport.ts`: the Socket.IO adapter,
+  the only code that touches Socket.IO. Moving to a managed service (Ably, Pusher...) means writing
+  those two adapters against `HubConnection` and `RealtimeClient`; the hub and the UI stay as they are.
+- `src/features/rooms/protocol.ts`: every event and its Zod schema, shared by both sides.
+
+**Deploying:** run the web app and `npm run realtime` as two processes (or containers) behind HTTPS,
+and point `NEXT_PUBLIC_REALTIME_URL` at the room server. The room server keeps who's online in memory,
+so run **one** instance for now; more than one needs sticky routing by room id. Serverless hosts
+like Vercel can run the web app but not the room server.
+
+**How rooms behave**
+
+| | |
+| --- | --- |
+| Lifetime | `ROOMS.lifetimeHours` (24h) from opening, or until the host closes it. Then the room and every message, translation, block and ban in it are deleted. A sweep runs every 10 minutes. |
+| Room size | From the owner's plan (`roomSize`), checked under a lock so simultaneous joins can't overfill a room |
+| Live minutes | Each minute with two or more people online uses one minute of the owner's monthly `liveMinutesPerMonth`. When it runs out, sending pauses with a notice |
+| Translation | Each message is translated into every language someone online reads, with `noCache` so private text never enters the shared cache. Room translations live in their own table and die with the room. If translation fails, readers get the original with a note |
+| History | The last `ROOMS.historyLimit` messages, in the reader's language, on every (re)connect |
+| Reconnects | Socket.IO reconnects with backoff. Messages written offline wait in an outbox kept in the browser and send in order on reconnect; the server ignores duplicates by `clientId` |
+| Limits | Messages up to `ROOMS.maxMessageChars` characters; 8 messages per 10 seconds per person; 10 joins per minute per IP; 5 reports per 10 minutes per person; 10 open rooms per owner |
+| Block | Hides someone's messages and typing from the blocker only; they aren't told |
+| Report | Stores the reason and a copy of the reported message for `ROOMS.reportRetentionDays` (30) days. There is no review screen yet: reports are in the `Report` table |
+| Remove | Host only. The person is disconnected, can't reconnect, and their IP (stored only as a salted hash) is banned from that room |
+| Voice input | Plans with `voiceInput`. Uses the browser's speech recognition (Chrome, Edge, Safari; not Firefox), labelled as an early version. `client/speech.ts` defines a `SpeechToText` interface so a server-side engine can replace it |
+
+All of these settings live in `src/config/rooms.ts`.
+
 ## How translation works
 
 Everything goes through one function:
@@ -148,11 +194,13 @@ src/
     dashboard/            the signed-in dashboard
     landing/              landing page sections and demos
     pricing/              plan cards, billing toggle, FAQ
+    rooms/                realtime rooms: protocol, hub, transports, UI
     translation/          languages, phrasebook, translate(), providers, caches
     usage/                server-side plan-limit enforcement
+  realtime/main.ts        the room server process
   server/db.ts            Prisma client
 prisma/                   schema and migrations
-tests/                    Vitest: plan limits, webhooks, translation cache, entitlements, and more
+tests/                    Vitest: plan limits, webhooks, translation cache, rooms, entitlements, and more
 ```
 
 ## Design notes

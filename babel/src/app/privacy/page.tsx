@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ROOMS } from "@/config/rooms";
 import { SiteFooter } from "@/features/landing/site-footer";
 import { SiteHeader } from "@/features/landing/site-header";
 
@@ -24,7 +25,15 @@ const SECTIONS = [
   {
     title: "Rooms",
     body: [
-      "Messages in a room are kept while the room is open, so everyone can scroll back. When the room closes, its messages are deleted. Room messages are never added to the translation store above.",
+      `Messages in a room, and their translations, are kept while the room is open so everyone can scroll back. A room closes after ${ROOMS.lifetimeHours} hours, or sooner if the host closes it, and then everything in it is deleted. Room messages are never added to the translation store above.`,
+      "Guests don't need an account: we keep the name and language they pick for as long as the room is open. If the host removes someone, we keep a scrambled fingerprint of their internet address for that room only, so they can't rejoin it. We never store the address itself.",
+      `If someone reports a message, we keep that message and the report for up to ${ROOMS.reportRetentionDays} days so we can look into it, then delete them.`,
+    ],
+  },
+  {
+    title: "Voice input",
+    body: [
+      "Voice input in rooms uses your browser's built-in speech recognition. Babel never receives your audio, only the words that appear in the message box. Some browsers send the audio to their maker's servers to recognise it (Google for Chrome, Apple for Safari).",
     ],
   },
   {
