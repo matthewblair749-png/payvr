@@ -1,0 +1,213 @@
+@import "tailwindcss";
+
+/*
+ * Babel design tokens. Every color and spacing step lives here as a CSS
+ * variable; Tailwind utilities map onto them through @theme below.
+ * Spacing follows an 8px grid (--space-1 = 8px).
+ */
+:root {
+  /* Brand */
+  --ink: #2a1f4d;
+  --ink-deep: #0c1021;
+  --cream: #fff6ec;
+  --paper: #f3efe6;
+  --coral: #ff5a3c;
+  --coral-press: #ec4628;
+  --coral-text: #b3321a; /* coral that passes 4.5:1 on cream and the tints, for text */
+  --coral-tint: #ffe2d9;
+
+  /* Mascot */
+  --violet: #7b6cf6;
+  --violet-tint: #e7e3fd;
+  --sun: #ffc24b;
+  --sun-tint: #ffefc7;
+  --mascot-coral: #ff6b4a;
+  --cheek: #ff8fa3;
+
+  /* Text and lines on light backgrounds */
+  --text: var(--ink);
+  --text-muted: #5e5578; /* 6.9:1 on cream */
+  --line: rgb(42 31 77 / 0.14);
+  --line-strong: rgb(42 31 77 / 0.32);
+
+  /* Focus ring color; dark sections override it */
+  --focus: var(--ink);
+
+  /* 8px spacing grid */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 40px;
+  --space-6: 48px;
+  --space-8: 64px;
+  --space-10: 80px;
+  --space-12: 96px;
+  --space-16: 128px;
+
+  --radius-sm: 8px;
+  --radius: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+
+  /* Motion: short, springy, purposeful */
+  --ease-spring: cubic-bezier(0.34, 1.45, 0.64, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 150ms;
+  --dur: 220ms;
+  --dur-slow: 300ms;
+
+  /* Flat "sticker" shadow used on buttons and cards instead of blur */
+  --lift: 0 3px 0 var(--ink);
+  --lift-hover: 0 5px 0 var(--ink);
+  --lift-press: 0 1px 0 var(--ink);
+}
+
+/* Dark sections (ink background) flip text and focus colors */
+.on-dark {
+  --text: var(--cream);
+  --text-muted: #cfc8e6; /* 9:1 on ink */
+  --line: rgb(255 246 236 / 0.16);
+  --line-strong: rgb(255 246 236 / 0.4);
+  --focus: var(--sun);
+  --lift: 0 3px 0 var(--ink-deep);
+  --lift-hover: 0 5px 0 var(--ink-deep);
+  --lift-press: 0 1px 0 var(--ink-deep);
+  color: var(--text);
+}
+
+/* Light surfaces placed inside a dark section get the light tokens back */
+.on-light {
+  --text: var(--ink);
+  --text-muted: #5e5578;
+  --line: rgb(42 31 77 / 0.14);
+  --line-strong: rgb(42 31 77 / 0.32);
+  --focus: var(--ink);
+  color: var(--text);
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink-deep: var(--ink-deep);
+  --color-cream: var(--cream);
+  --color-paper: var(--paper);
+  --color-coral: var(--coral);
+  --color-coral-press: var(--coral-press);
+  --color-coral-text: var(--coral-text);
+  --color-coral-tint: var(--coral-tint);
+  --color-violet: var(--violet);
+  --color-violet-tint: var(--violet-tint);
+  --color-sun: var(--sun);
+  --color-sun-tint: var(--sun-tint);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --font-display: "Nunito Variable", ui-rounded, system-ui, sans-serif;
+  --font-sans: "Manrope Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  --ease-spring: var(--ease-spring);
+  --ease-out: var(--ease-out);
+}
+
+html {
+  background: var(--cream);
+  color: var(--text);
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+::selection {
+  background: var(--sun);
+  color: var(--ink);
+}
+
+/* One focus style everywhere: visible, thick, offset from the element */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--space-2);
+  top: -100px;
+  z-index: 50;
+  padding: var(--space-1) var(--space-2);
+  background: var(--ink);
+  color: var(--cream);
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+}
+.skip-link:focus {
+  top: var(--space-2);
+}
+
+/* Container: phone-first gutters on the 8px grid */
+.wrap {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: var(--space-2);
+}
+@media (min-width: 640px) {
+  .wrap {
+    padding-inline: var(--space-4);
+  }
+}
+
+/* Gentle hover/press for anything clickable that isn't a Button */
+.press {
+  transition:
+    transform var(--dur-fast) var(--ease-spring),
+    background-color var(--dur-fast) ease,
+    border-color var(--dur-fast) ease,
+    color var(--dur-fast) ease,
+    box-shadow var(--dur-fast) ease;
+}
+.press:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
