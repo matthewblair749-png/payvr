@@ -22,7 +22,7 @@ export async function getEntitlement(db: Db, userId: string, now = new Date()): 
 }
 
 export type Reservation =
-  | { ok: true; eventId: string; used: number; limit: number; resetsAt: Date }
+  | { ok: true; eventId: string; used: number; limit: number; resetsAt: Date; alreadyCounted?: boolean }
   | { ok: false; used: number; limit: number; resetsAt: Date };
 
 /**
@@ -36,6 +36,8 @@ export async function reserveUsage(
   kind: UsageKind,
   quantity = 1,
   now = new Date(),
+  /** Count this action only once: a repeat with the same ref is free. */
+  ref?: string,
 ): Promise<Reservation> {
   const { limit: limitKey, window } = KINDS[kind];
   const { start, resetsAt } = window(now);
@@ -52,9 +54,14 @@ export async function reserveUsage(
     });
     const used = total._sum.quantity ?? 0;
 
+    if (ref) {
+      const counted = await tx.usageEvent.findUnique({ where: { userId_kind_ref: { userId, kind, ref } } });
+      if (counted) return { ok: true, eventId: counted.id, used, limit, resetsAt, alreadyCounted: true };
+    }
+
     if (!withinLimit(used, limit, quantity)) return { ok: false, used, limit, resetsAt };
 
-    const event = await tx.usageEvent.create({ data: { userId, kind, quantity, createdAt: now } });
+    const event = await tx.usageEvent.create({ data: { userId, kind, quantity, ref, createdAt: now } });
     return { ok: true, eventId: event.id, used: used + quantity, limit, resetsAt };
   });
 }

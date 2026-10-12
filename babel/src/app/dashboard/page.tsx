@@ -15,13 +15,18 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   if (!userId) redirect(`/signin?callbackUrl=${encodeURIComponent("/dashboard")}`);
 
   const now = new Date();
-  const [user, usage, rooms, params] = await Promise.all([
+  const [user, usage, rooms, browsers, params] = await Promise.all([
     db.user.findUniqueOrThrow({ where: { id: userId }, include: { subscription: { select: { interval: true, seats: true } } } }),
     getUsageSummary(db, userId, now),
     db.room.findMany({
       where: { ownerId: userId, closedAt: null, expiresAt: { gt: now } },
       orderBy: { createdAt: "desc" },
       select: { id: true, name: true, expiresAt: true, _count: { select: { participants: { where: { removedAt: null } } } } },
+    }),
+    db.extensionToken.findMany({
+      where: { userId, revokedAt: null },
+      orderBy: { lastUsedAt: "desc" },
+      select: { id: true, label: true, lastUsedAt: true },
     }),
     props.searchParams,
   ]);
@@ -35,6 +40,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       <Dashboard
         name={user.name}
         email={user.email}
+        browsers={browsers}
         rooms={rooms.map((r) => ({ id: r.id, name: r.name, expiresAt: r.expiresAt, people: r._count.participants }))}
         usage={usage}
         subscription={user.subscription}

@@ -2,6 +2,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { annualTotal, effectiveMonthlyPrice, type BillingInterval } from "@/config/plans";
 import type { Entitlement } from "@/features/billing/entitlements";
 import { formatPrice } from "@/features/pricing/format";
+import { ExtensionPanel } from "@/features/extension/components/extension-panel";
 import { RoomsPanel } from "@/features/rooms/components/rooms-panel";
 import { DashboardTranslate } from "./dashboard-translate";
 import type { UsageSummary } from "@/features/usage/server";
@@ -13,6 +14,7 @@ export interface DashboardProps {
   name: string | null;
   email: string;
   rooms: { id: string; name: string; expiresAt: Date; people: number }[];
+  browsers: { id: string; label: string; lastUsedAt: Date }[];
   usage: UsageSummary;
   subscription: { interval: string; seats: number } | null;
   hasBillingAccount: boolean;
@@ -113,7 +115,7 @@ function PlanPanel({ usage, subscription, hasBillingAccount }: Pick<DashboardPro
   );
 }
 
-export function Dashboard({ name, email, rooms, usage, subscription, hasBillingAccount, notice }: DashboardProps) {
+export function Dashboard({ name, email, rooms, browsers, usage, subscription, hasBillingAccount, notice }: DashboardProps) {
   const { translations, liveMinutes, entitlement } = usage;
   const firstName = name?.split(" ")[0];
   return (
@@ -156,6 +158,8 @@ export function Dashboard({ name, email, rooms, usage, subscription, hasBillingA
         minutesLeft={Math.max(0, liveMinutes.limit - liveMinutes.used)}
         notice={notice?.startsWith("rooms=") ? notice.slice("rooms=".length) : undefined}
       />
+
+      <ExtensionPanel browsers={browsers} />
 
       <section aria-labelledby="translate-title" className="wrap mt-12 max-w-3xl">
         <h2 id="translate-title" className="text-3xl">

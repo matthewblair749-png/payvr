@@ -37,6 +37,13 @@ const SECTIONS = [
     ],
   },
   {
+    title: "The browser extension",
+    body: [
+      "The extension only reads a page when you click Translate or press its shortcut, and only the tab you're on. It sends that page's visible text to Babel to translate, and the results are stored the same way as other text you translate: filed under a fingerprint, not linked to you.",
+      "It never reads form fields, things you're typing, or code on the page. The link between your browser and your account can be removed from your dashboard at any time.",
+    ],
+  },
+  {
     title: "Your account",
     body: [
       "If you sign up, we keep your email address, your plan, and counts of how much of your allowance you've used. Those counts are numbers only, never what you translated.",

@@ -3,9 +3,9 @@
 **Everyone speaks your language.** Paste some text and read it in your own language, or open a room and chat
 with someone who speaks another one, each of you writing and reading your own.
 
-> Status: **Phase 3 of 4: shared rooms.** Landing page and live demo (Phase 1); accounts, Stripe
-> subscriptions and plan limits (Phase 2); realtime rooms where everyone writes and reads their own
-> language (Phase 3). The browser extension (Phase 4) is not built yet.
+> Status: **all 4 phases built.** Landing page and live demo (Phase 1); accounts, Stripe subscriptions
+> and plan limits (Phase 2); realtime rooms where everyone writes and reads their own language
+> (Phase 3); and the browser extension in [`extension/`](extension/README.md) (Phase 4).
 
 This app lives in `babel/` inside the `payvr` repo. It is a standalone Next.js app with its own
 `package.json`; run every command below from this folder.
@@ -155,6 +155,17 @@ like Vercel can run the web app but not the room server.
 
 All of these settings live in `src/config/rooms.ts`.
 
+## Browser extension
+
+The extension is a separate package in [`extension/`](extension/README.md), with its own build and
+tests. On the server side it uses:
+
+- `/extension/connect`: signed-in page that links a browser to the account (dashboard lists and
+  disconnects browsers)
+- `POST /api/extension/translate`: batch page translation, authenticated with the browser's token.
+  Each page view counts as one translation toward the daily limit, per language
+- `GET /api/extension/me`: account, plan and today's usage for the popup
+
 ## How translation works
 
 Everything goes through one function:
@@ -192,6 +203,7 @@ src/
     billing/              entitlements, Checkout/Portal, Stripe webhooks
     brand/                Logo, Mascot (inline SVG, eyes follow the cursor)
     dashboard/            the signed-in dashboard
+    extension/            server side of the browser extension (tokens, page API)
     landing/              landing page sections and demos
     pricing/              plan cards, billing toggle, FAQ
     rooms/                realtime rooms: protocol, hub, transports, UI
@@ -200,6 +212,7 @@ src/
   realtime/main.ts        the room server process
   server/db.ts            Prisma client
 prisma/                   schema and migrations
+extension/                the browser extension (separate package)
 tests/                    Vitest: plan limits, webhooks, translation cache, rooms, entitlements, and more
 ```
 

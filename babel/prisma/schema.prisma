@@ -31,6 +31,7 @@ model User {
   subscription     Subscription?
   usageEvents      UsageEvent[]
   rooms            Room[]
+  extensionTokens  ExtensionToken[]
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 }
@@ -144,8 +145,12 @@ model UsageEvent {
   /// "translation" (quantity 1) or "live_minutes" (quantity = minutes).
   kind      String
   quantity  Int      @default(1)
+  /// Optional dedupe key: a page translated by the extension is counted once
+  /// per page view and language, however many requests it takes.
+  ref       String?
   createdAt DateTime @default(now())
 
+  @@unique([userId, kind, ref])
   @@index([userId, kind, createdAt])
 }
 
@@ -261,4 +266,24 @@ model Report {
   createdAt             DateTime @default(now())
 
   @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Browser extension
+// ---------------------------------------------------------------------------
+
+/// Lets one browser's extension act for a user. Only a hash of the token is
+/// stored; the user can disconnect a browser from the dashboard.
+model ExtensionToken {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  /// e.g. "Chrome on macOS", so people can tell their browsers apart.
+  label      String
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime  @default(now())
+  revokedAt  DateTime?
+
+  @@index([userId])
 }
