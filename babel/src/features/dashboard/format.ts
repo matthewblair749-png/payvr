@@ -15,3 +15,12 @@ export function formatMinutes(minutes: number): string {
   const hours = Math.round((minutes / 60) * 10) / 10;
   return `${hours.toLocaleString("en-US")} hours`;
 }
+
+/**
+ * A starting display name from an email address: the part before the @,
+ * without any "+tag" (sam+work@example.com → "sam").
+ */
+export function nameFromEmail(email: string): string {
+  const local = email.split("@")[0] ?? "";
+  return local.split("+")[0] || local;
+}

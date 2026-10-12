@@ -7,7 +7,7 @@ import { RoomsPanel } from "@/features/rooms/components/rooms-panel";
 import { DashboardTranslate } from "./dashboard-translate";
 import type { UsageSummary } from "@/features/usage/server";
 import { BillingButton } from "./billing-button";
-import { formatDay, formatMinutes, untilPhrase } from "./format";
+import { formatDay, formatMinutes, nameFromEmail, untilPhrase } from "./format";
 import { UsageMeter } from "./usage-meter";
 
 export interface DashboardProps {
@@ -153,7 +153,7 @@ export function Dashboard({ name, email, rooms, browsers, usage, subscription, h
 
       <RoomsPanel
         rooms={rooms}
-        defaultName={firstName ?? email.split("@")[0]}
+        defaultName={firstName ?? nameFromEmail(email)}
         roomSize={entitlement.plan.limits.roomSize}
         minutesLeft={Math.max(0, liveMinutes.limit - liveMinutes.used)}
         notice={notice?.startsWith("rooms=") ? notice.slice("rooms=".length) : undefined}
