@@ -9,24 +9,33 @@ import { ReadSlider } from "./read-slider";
 
 export function Hero() {
   return (
-    <section aria-labelledby="hero-title" className="wrap grid items-end gap-10 pb-16 pt-6 sm:pt-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-16 lg:pb-24">
-      <div className="lg:pb-24">
-        <h1 id="hero-title" className="text-[2.75rem] sm:text-6xl lg:text-7xl">
-          Everyone speaks <span className="text-coral-text">your</span> language.
+    <section
+      aria-labelledby="hero-title"
+      className="wrap grid grid-cols-[minmax(0,1fr)] gap-6 pb-16 pt-6 sm:pt-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-16 lg:pb-24 lg:pt-16"
+    >
+      <div className="lg:pt-24">
+        <h1 id="hero-title" className="text-4xl sm:text-6xl">
+          Everyone speaks <span className="text-accent-text">your</span> language.
         </h1>
-        <p className="mt-6 max-w-xl text-lg text-muted sm:text-xl">
-          Paste some text and read it in your own language. Or open a room and chat with someone who speaks another
-          one. You each write the way you talk.
+        <p className="mt-4 max-w-md text-lg text-fg-2 sm:mt-6 sm:text-xl">
+          Paste anything and read it in your language. Or open a room and chat with someone who speaks another one.
         </p>
-        <div className="mt-8 flex flex-wrap items-center gap-4">
-          <ButtonLink href={SIGNUP_HREF} size="lg">
-            Try it free
-          </ButtonLink>
-          <p className="text-sm font-semibold text-muted">No card needed.</p>
-        </div>
+        <HeroCta className="mt-8 hidden lg:flex" />
       </div>
       <TranslateBox />
+      <HeroCta className="flex lg:hidden" />
     </section>
+  );
+}
+
+function HeroCta({ className }: { className?: string }) {
+  return (
+    <div className={`flex-wrap items-center gap-4 ${className ?? ""}`}>
+      <ButtonLink href={SIGNUP_HREF} size="lg">
+        Try it free
+      </ButtonLink>
+      <p className="text-sm font-semibold text-fg-2">Free plan. No card needed.</p>
+    </div>
   );
 }
 

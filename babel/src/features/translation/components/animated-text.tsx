@@ -1,38 +1,29 @@
-"use client";
-
-import { motion, useReducedMotion } from "framer-motion";
-
-/** Scripts written without spaces between words animate per character. */
+/** Scripts written without spaces between words resolve per character. */
 const NO_SPACES = new Set(["ja", "zh"]);
 
 /**
- * Reveals text word by word (or character by character for CJK) with a soft
- * rise. The whole reveal stays under ~450ms however long the text is.
+ * The translation "resolving" in: each word rises into place on the shared
+ * spring, staggered so the whole sentence lands in about 400ms however long
+ * it is. Pure CSS (see .word-in in globals.css), so it costs no JavaScript
+ * animation and turns into a plain fade under reduced motion.
  */
 export function AnimatedText({ text, lang }: { text: string; lang: string }) {
-  const reduce = useReducedMotion();
-  if (reduce) return <>{text}</>;
-
   const tokens = NO_SPACES.has(lang) ? Array.from(text) : text.split(/(\s+)/);
-  const step = Math.min(0.035, 0.45 / Math.max(tokens.length, 1));
+  const words = tokens.filter((t) => !/^\s+$/.test(t)).length || 1;
+  const stagger = `${Math.max(6, Math.min(22, Math.round(400 / words)))}ms`;
 
+  let index = 0;
   return (
-    <>
+    <span style={{ ["--stagger" as string]: stagger }}>
       {tokens.map((token, i) =>
         /^\s+$/.test(token) ? (
           token
         ) : (
-          <motion.span
-            key={i}
-            className="inline-block"
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * step, type: "spring", stiffness: 420, damping: 30 }}
-          >
+          <span key={i} className="word-in" style={{ ["--i" as string]: index++ }}>
             {token}
-          </motion.span>
+          </span>
         ),
       )}
-    </>
+    </span>
   );
 }
