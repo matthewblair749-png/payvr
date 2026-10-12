@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>babel</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="top">
+      <svg class="mark" viewBox="0 0 26 32" aria-hidden="true">
+        <rect width="7" height="32" fill="#0C1021" />
+        <path d="M7 0H12.5A6.5 6.5 0 0 1 12.5 13H7Z" fill="#FF5A3C" />
+        <path d="M7 15H17A8.5 8.5 0 0 1 17 32H7Z" fill="#0C1021" />
+      </svg>
+      <span class="wordmark">babel</span>
+    </header>
+
+    <main>
+      <p id="loading" class="muted" role="status">One moment…</p>
+
+      <section id="connect" hidden>
+        <h1>Read this page in your language.</h1>
+        <p class="muted">Connect the extension to your Babel account to start. It only reads a page when you ask it to.</p>
+        <button id="connect-button" class="primary" type="button">Connect your account</button>
+      </section>
+
+      <section id="ready" hidden>
+        <label for="language" class="label">Read it in</label>
+        <select id="language"></select>
+        <button id="translate-button" class="primary" type="button">Translate this page</button>
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+        <p class="hint">Shortcut: <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd></p>
+        <footer class="account">
+          <p id="usage" class="muted"></p>
+          <p class="muted"><span id="email"></span> · <button id="disconnect" class="link" type="button">Disconnect</button></p>
+        </footer>
+      </section>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

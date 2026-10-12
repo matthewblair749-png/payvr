@@ -1,0 +1,289 @@
+// babel data model.
+//
+// Privacy: room messages (and their translations) live only as long as the
+// room; deleting a room cascades to all of them. The translation cache stores
+// finished translations keyed by a hash, never linked to a user. UsageEvent
+// stores counts only, never text.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Accounts (field names follow @auth/prisma-adapter)
+// ---------------------------------------------------------------------------
+
+model User {
+  id               String        @id @default(cuid())
+  name             String?
+  email            String        @unique
+  emailVerified    DateTime?
+  image            String?
+  /// Stripe customer (cus_...), created the first time someone upgrades.
+  stripeCustomerId String?       @unique
+  accounts         Account[]
+  sessions         Session[]
+  subscription     Subscription?
+  usageEvents      UsageEvent[]
+  rooms            Room[]
+  extensionTokens  ExtensionToken[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+// ---------------------------------------------------------------------------
+// Billing
+// ---------------------------------------------------------------------------
+
+/// One paid subscription per user, mirrored from Stripe by the webhook.
+/// What a user can actually do is worked out in features/billing/entitlements.ts.
+model Subscription {
+  id                   String    @id @default(cuid())
+  userId               String    @unique
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeSubscriptionId String    @unique
+  stripeCustomerId     String
+  /// PlanId from src/config/plans.ts ("plus", "pro", "teams").
+  plan                 String
+  /// "monthly" or "annual".
+  interval             String
+  /// Seats paid for (Teams). 1 for everyone else.
+  seats                Int       @default(1)
+  /// Stripe status: active, trialing, past_due, unpaid, canceled, incomplete, ...
+  status               String
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+  /// Set when a payment fails; cleared when the subscription is active again.
+  paymentFailedAt      DateTime?
+  /// The plan keeps working until this moment after a failed payment.
+  graceEndsAt          DateTime?
+  /// Creation time of the last Stripe event applied. Older events are ignored,
+  /// so out-of-order webhook delivery can't roll the state back.
+  stripeEventAt        DateTime
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([stripeCustomerId])
+}
+
+/// Stripe events already handled. Makes the webhook idempotent.
+model StripeEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now())
+
+  @@index([processedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Translation and usage
+// ---------------------------------------------------------------------------
+
+/// Finished translations, so the same text is never translated twice.
+/// `key` is a SHA-256 of provider, languages, tone and source text; the
+/// source text itself is not stored.
+model TranslationCache {
+  key        String   @id
+  text       String
+  fromLang   String
+  provider   String
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime @default(now())
+
+  @@index([lastUsedAt])
+}
+
+/// One row per counted action. Counts only, never content.
+model UsageEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// "translation" (quantity 1) or "live_minutes" (quantity = minutes).
+  kind      String
+  quantity  Int      @default(1)
+  /// Optional dedupe key: a page translated by the extension is counted once
+  /// per page view and language, however many requests it takes.
+  ref       String?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, kind, ref])
+  @@index([userId, kind, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Rooms
+// ---------------------------------------------------------------------------
+
+/// A shared conversation. Everything below cascades from it, so closing or
+/// expiring a room deletes its messages, translations, blocks and bans.
+model Room {
+  id           String            @id
+  ownerId      String
+  owner        User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name         String
+  createdAt    DateTime          @default(now())
+  expiresAt    DateTime
+  /// Set when the owner closes the room or the month's live minutes run out
+  /// for good; a closed room is deleted by the cleanup job.
+  closedAt     DateTime?
+  participants RoomParticipant[]
+  messages     RoomMessage[]
+  blocks       RoomBlock[]
+  bans         RoomBan[]
+
+  @@index([ownerId])
+  @@index([expiresAt])
+}
+
+model RoomParticipant {
+  id          String    @id @default(cuid())
+  roomId      String
+  room        Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  /// Set for the owner (signed in). Guests have no account.
+  userId      String?
+  displayName String
+  /// LanguageCode this person reads and writes in.
+  language    String
+  /// "owner" or "guest".
+  role        String
+  /// SHA-256 of the secret the browser presents to connect. The secret itself is never stored.
+  tokenHash   String
+  /// Salted hash of the IP they joined from, used to ban removed guests. Never the raw IP.
+  ipHash      String?
+  joinedAt    DateTime  @default(now())
+  lastSeenAt  DateTime  @default(now())
+  removedAt   DateTime?
+
+  @@index([roomId])
+}
+
+model RoomMessage {
+  id            String                   @id @default(cuid())
+  roomId        String
+  room          Room                     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  participantId String
+  /// Name at the time of sending, so history reads right after someone leaves.
+  senderName    String
+  text          String
+  lang          String
+  /// Random id from the sender's browser. Makes resending after a reconnect safe.
+  clientId      String
+  createdAt     DateTime                 @default(now())
+  translations  RoomMessageTranslation[]
+
+  @@unique([roomId, clientId])
+  @@index([roomId, createdAt])
+}
+
+/// Room-scoped translations. Deliberately separate from TranslationCache so
+/// private messages disappear with the room.
+model RoomMessageTranslation {
+  messageId String
+  message   RoomMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  lang      String
+  text      String
+
+  @@id([messageId, lang])
+}
+
+/// "I don't want to see this person's messages." Per person, per room.
+model RoomBlock {
+  roomId    String
+  room      Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  blockerId String
+  blockedId String
+
+  @@id([blockerId, blockedId])
+  @@index([roomId])
+}
+
+/// Someone the owner removed. Keyed by a salted hash of their IP so they
+/// can't simply rejoin under a new name; the raw IP is never stored.
+model RoomBan {
+  roomId    String
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  ipHash    String
+  createdAt DateTime @default(now())
+
+  @@id([roomId, ipHash])
+}
+
+/// Abuse reports. Not tied to the room, so they survive it for review, and
+/// deleted after REPORT_RETENTION_DAYS (see src/config/rooms.ts).
+model Report {
+  id                    String   @id @default(cuid())
+  roomId                String
+  reporterName          String
+  reportedParticipantId String
+  reportedName          String
+  /// Copy of the reported message, if a message was reported.
+  messageText           String?
+  reason                String
+  createdAt             DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Browser extension
+// ---------------------------------------------------------------------------
+
+/// Lets one browser's extension act for a user. Only a hash of the token is
+/// stored; the user can disconnect a browser from the dashboard.
+model ExtensionToken {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  /// e.g. "Chrome on macOS", so people can tell their browsers apart.
+  label      String
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime  @default(now())
+  revokedAt  DateTime?
+
+  @@index([userId])
+}
