@@ -11,6 +11,7 @@ import Animated, {
 
 import { useApp } from '@/store/app-store';
 import { runTapHandler } from '@/store/tap-intent';
+import { BRAND_BLUE } from '@/theme/colors';
 import { useTheme } from '@/theme/theme-provider';
 import { MIN_TAP } from '@/theme/typography';
 import { haptics } from '@/utils/haptics';
@@ -32,13 +33,15 @@ const TABS: Record<string, { label: string; icon: IconName }> = {
 export function TabBar({ state, navigation, insets }: BottomTabBarProps) {
   const { colors } = useTheme();
   const { setDraft } = useApp();
+  // On Home the bar takes the blue of the screen above it, so the two read as one surface.
+  const onBrand = state.routes[state.index]?.name === 'home';
 
   const item = (routeName: string) => {
     const index = state.routes.findIndex((r) => r.name === routeName);
     const route = state.routes[index];
     const focused = state.index === index;
     const meta = TABS[routeName];
-    const color = focused ? colors.accent : colors.textSecondary;
+    const color = onBrand ? (focused ? '#FFFFFF' : 'rgba(255,255,255,0.78)') : focused ? colors.accent : colors.textSecondary;
     return (
       <PressableScale
         key={routeName}
@@ -65,7 +68,11 @@ export function TabBar({ state, navigation, insets }: BottomTabBarProps) {
     <View
       style={[
         styles.bar,
-        { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 10) },
+        {
+          backgroundColor: onBrand ? BRAND_BLUE : colors.background,
+          borderTopColor: onBrand ? 'transparent' : colors.border,
+          paddingBottom: Math.max(insets.bottom, 10),
+        },
       ]}>
       {item('home')}
       {item('activity')}
@@ -82,15 +89,17 @@ export function TabBar({ state, navigation, insets }: BottomTabBarProps) {
           }}
           style={({ pressed }) => [
             styles.tap,
-            {
-              backgroundColor: colors.primary,
-              borderColor: colors.background,
-              shadowColor: colors.primary,
-            },
+            onBrand
+              ? { backgroundColor: '#FFFFFF', borderColor: BRAND_BLUE, shadowColor: '#000000' }
+              : { backgroundColor: colors.primary, borderColor: colors.background, shadowColor: colors.primary },
           ]}>
-          <PayvrLogo size={34} color={colors.onPrimary} cutColor={colors.primary} />
+          {onBrand ? (
+            <PayvrLogo size={34} color={BRAND_BLUE} cutColor="#FFFFFF" />
+          ) : (
+            <PayvrLogo size={34} color={colors.onPrimary} cutColor={colors.primary} />
+          )}
         </PressableScale>
-        <Text variant="caption" color="textSecondary" style={styles.tapLabel}>
+        <Text variant="caption" style={[styles.tapLabel, { color: onBrand ? 'rgba(255,255,255,0.78)' : colors.textSecondary }]}>
           Tap
         </Text>
       </View>

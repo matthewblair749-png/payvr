@@ -10,11 +10,11 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { setStatusBarStyle } from 'expo-status-bar';
 
 import { Avatar } from '@/components/avatar';
 import { ChatButton } from '@/components/chat-button';
-import { Icon } from '@/components/icon';
-import { IconButton } from '@/components/icon-button';
+import { Icon, type IconName } from '@/components/icon';
 import { Keypad } from '@/components/keypad';
 import { PressableScale } from '@/components/pressable-scale';
 import { Text } from '@/components/text';
@@ -24,6 +24,7 @@ import { useAccount } from '@/store/account';
 import { describe, useApp } from '@/store/app-store';
 import { useCards } from '@/store/cards-store';
 import { setTapHandler } from '@/store/tap-intent';
+import { BRAND_BLUE } from '@/theme/colors';
 import { useTheme } from '@/theme/theme-provider';
 import { Fonts, MIN_TAP } from '@/theme/typography';
 import { haptics } from '@/utils/haptics';
@@ -36,7 +37,6 @@ import { EASE, smooth } from '@/utils/motion';
  */
 export default function Home() {
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
   const { me, balanceCents, transactions, sentTodayCents, setDraft, userById } = useApp();
   const { dailyLimitCents } = useAccount();
   // With a card connected, amounts above the balance are fine: the card pays.
@@ -118,30 +118,27 @@ export default function Home() {
     ),
   );
 
-  const size = amount.length > 8 ? 64 : amount.length > 6 ? 76 : 92;
+  const size = amount.length > 8 ? 72 : amount.length > 6 ? 88 : 108;
   const error = cents > 0 && sendError;
 
   return (
-    <View style={[styles.fill, { backgroundColor: colors.background, paddingTop: insets.top + 6 }]}>
+    <View style={[styles.fill, { backgroundColor: BRAND_BLUE, paddingTop: insets.top + 6 }]}>
+      <LightStatusBar />
       <View style={styles.top}>
+        <View style={styles.topLeft}>
+          <ChatButton onBrand />
+          <RoundButton icon="qr" label="Scan or show a QR code" onPress={() => router.push('/qr')} />
+        </View>
         <PressableScale
-          scaleTo={0.97}
+          scaleTo={0.94}
           accessibilityRole="button"
           accessibilityLabel={`${greeting}, ${first}. Your profile`}
           onPress={() => router.navigate('/profile')}
-          style={styles.hello}>
-          <Avatar name={me.name} uri={me.avatarUrl} size={40} />
-          <View>
-            <Text variant="caption" color="textSecondary">
-              {greeting}
-            </Text>
-            <Text variant="bodyMedium">{first}</Text>
+          style={styles.avatarTap}>
+          <View style={styles.avatarRing}>
+            <Avatar name={me.name} uri={me.avatarUrl} size={38} />
           </View>
         </PressableScale>
-        <View style={styles.topRight}>
-          <ChatButton />
-          <IconButton icon="qr" label="Scan or show a QR code" onPress={() => router.push('/qr')} />
-        </View>
       </View>
 
       {request ? (
@@ -152,19 +149,19 @@ export default function Home() {
             accessibilityRole="button"
             accessibilityLabel={`${requester?.name ?? 'Someone'} requested ${formatShort(request.amountCents)}${request.note ? ` for ${request.note}` : ''}. Open`}
             onPress={() => router.push({ pathname: '/request/[id]', params: { id: request.id } })}
-            style={[styles.request, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            style={styles.request}>
             <Avatar name={requester?.name ?? '?'} uri={requester?.avatarUrl} size={36} />
             <View style={styles.flex}>
-              <Text variant="bodyMedium" numberOfLines={1}>
+              <Text variant="bodyMedium" numberOfLines={1} style={styles.white}>
                 {requester?.name.split(' ')[0] ?? 'Someone'} requested {formatShort(request.amountCents)}
               </Text>
-              <Text variant="caption" color="textSecondary" numberOfLines={1}>
+              <Text variant="caption" numberOfLines={1} style={styles.soft}>
                 {request.note || 'Payment request'}
                 {pending.length > 1 ? ` · +${pending.length - 1} more` : ''}
               </Text>
             </View>
-            <View style={[styles.payChip, { backgroundColor: colors.primary }]}>
-              <Text variant="caption" style={{ color: colors.onPrimary }}>
+            <View style={styles.payChip}>
+              <Text variant="caption" style={styles.blueText}>
                 Pay
               </Text>
             </View>
@@ -185,17 +182,21 @@ export default function Home() {
               fontFamily: Fonts.bold,
               fontSize: size,
               lineHeight: size * 1.08,
-              letterSpacing: -size * 0.045,
+              letterSpacing: -size * 0.05,
               fontVariant: ['tabular-nums'],
-              color: error ? colors.error : cents === 0 ? colors.textSecondary : colors.text,
+              color: '#FFFFFF',
+              opacity: cents === 0 ? 0.55 : 1,
             }}>
             {displayTyped(amount)}
           </Text>
         </Animated.View>
         {hint || error ? (
-          <Text variant="small" color="error" style={styles.hint} accessibilityLiveRegion="polite">
-            {hint ?? error}
-          </Text>
+          <View style={styles.warn} accessibilityLiveRegion="polite">
+            <Icon name="close" size={14} color="#FFFFFF" strokeWidth={3} />
+            <Text variant="small" style={styles.white}>
+              {hint ?? error}
+            </Text>
+          </View>
         ) : (
           <PressableScale
             scaleTo={0.96}
@@ -203,12 +204,12 @@ export default function Home() {
             accessibilityRole="button"
             accessibilityLabel={`Pay with ${payWith}. Opens your wallet`}
             onPress={() => router.navigate('/wallet')}
-            style={[styles.source, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Icon name={defaultSource === 'balance' ? 'wallet' : 'card'} size={16} color={colors.accent} />
-            <Text variant="caption" color="textSecondary">
+            style={styles.source}>
+            <Icon name={defaultSource === 'balance' ? 'wallet' : 'card'} size={16} color="#FFFFFF" />
+            <Text variant="caption" style={styles.white}>
               {payWith}
             </Text>
-            <Icon name="chevronRight" size={14} color={colors.textSecondary} />
+            <Icon name="chevronRight" size={14} color="#FFFFFF" />
           </PressableScale>
         )}
         {cents === 0 ? (
@@ -224,14 +225,16 @@ export default function Home() {
                   setHint(null);
                   setAmount(String(c / 100));
                 }}
-                style={[styles.quickChip, { borderColor: colors.border }]}>
-                <Text variant="bodyMedium">{formatShort(c)}</Text>
+                style={styles.quickChip}>
+                <Text variant="bodyMedium" style={styles.white}>
+                  {formatShort(c)}
+                </Text>
               </PressableScale>
             ))}
           </View>
         ) : (
           <View style={styles.quickSpace}>
-            <Text variant="caption" color="textSecondary" align="center">
+            <Text variant="caption" align="center" style={styles.soft}>
               Hold phones together to send · or tap Pay
             </Text>
           </View>
@@ -239,7 +242,7 @@ export default function Home() {
       </View>
 
       <View style={styles.pad}>
-        <Keypad onKey={press} />
+        <Keypad onKey={press} color="#FFFFFF" pressedColor="rgba(255,255,255,0.14)" />
       </View>
 
       <View style={styles.actions}>
@@ -247,6 +250,33 @@ export default function Home() {
         <PillButton label="Pay" primary onPress={() => pickPerson('send')} />
       </View>
     </View>
+  );
+}
+
+/** White status-bar text while Home (blue) is on screen; the theme's style everywhere else. */
+function LightStatusBar() {
+  const { scheme } = useTheme();
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle('light');
+      return () => setStatusBarStyle(scheme === 'dark' ? 'light' : 'dark');
+    }, [scheme]),
+  );
+  return null;
+}
+
+/** A white glyph in a see-through white circle, like Cash App's top buttons. */
+function RoundButton({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
+  return (
+    <PressableScale
+      scaleTo={0.9}
+      haptic="tap"
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={({ pressed }) => [styles.round, { opacity: pressed ? 0.75 : 1 }]}>
+      <Icon name={icon} size={22} color="#FFFFFF" />
+    </PressableScale>
   );
 }
 
@@ -269,33 +299,36 @@ function shakeNo(shake: SharedValue<number>) {
   );
 }
 
+/** Request: see-through white pill. Pay: solid black pill, the strongest thing on the screen. */
 function PillButton({ label, onPress, primary }: { label: string; onPress: () => void; primary?: boolean }) {
-  const { colors } = useTheme();
   return (
     <PressableScale
       scaleTo={0.95}
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      style={[
-        styles.pill,
-        primary
-          ? { backgroundColor: colors.primary, borderColor: colors.primary }
-          : { backgroundColor: 'transparent', borderColor: colors.border, borderWidth: 1.5 },
-      ]}>
-      <Text variant="button" style={primary ? { color: colors.onPrimary } : undefined}>
+      style={[styles.pill, primary ? styles.pillPay : styles.pillSoft]}>
+      <Text variant="button" style={styles.white}>
         {label}
       </Text>
     </PressableScale>
   );
 }
 
+// Colors on the blue Home screen (white on #2150FF is 5.9:1; 85% white still passes AA for small text).
+const SEE_THROUGH = 'rgba(255,255,255,0.18)';
+
 const styles = StyleSheet.create({
   fill: { flex: 1 },
+  white: { color: '#FFFFFF' },
+  soft: { color: 'rgba(255,255,255,0.85)' },
+  blueText: { color: BRAND_BLUE },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, minHeight: 52 },
-  topRight: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  topLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  round: { width: MIN_TAP, height: MIN_TAP, borderRadius: MIN_TAP / 2, backgroundColor: SEE_THROUGH, alignItems: 'center', justifyContent: 'center' },
+  avatarTap: { minWidth: MIN_TAP, minHeight: MIN_TAP, alignItems: 'center', justifyContent: 'center' },
+  avatarRing: { borderRadius: 22, borderWidth: 2, borderColor: 'rgba(255,255,255,0.9)', padding: 1 },
   flex: { flex: 1, minWidth: 0 },
-  hello: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: MIN_TAP },
   requestWrap: { paddingHorizontal: 16, marginTop: 6 },
   request: {
     flexDirection: 'row',
@@ -305,9 +338,17 @@ const styles = StyleSheet.create({
     paddingLeft: 12,
     paddingRight: 10,
     borderRadius: 20,
-    borderWidth: StyleSheet.hairlineWidth,
+    backgroundColor: SEE_THROUGH,
   },
-  payChip: { minHeight: 36, minWidth: 56, paddingHorizontal: 14, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+  payChip: {
+    minHeight: 36,
+    minWidth: 56,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+  },
   requestSpace: { height: 66 },
   source: {
     flexDirection: 'row',
@@ -316,7 +357,17 @@ const styles = StyleSheet.create({
     minHeight: MIN_TAP,
     paddingHorizontal: 14,
     borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
+    backgroundColor: SEE_THROUGH,
+    marginTop: 6,
+  },
+  warn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minHeight: MIN_TAP,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: 'rgba(10,10,10,0.35)',
     marginTop: 6,
   },
   quick: { flexDirection: 'row', gap: 8, marginTop: 16 },
@@ -325,13 +376,12 @@ const styles = StyleSheet.create({
     minWidth: 64,
     paddingHorizontal: 14,
     borderRadius: 999,
-    borderWidth: 1,
+    backgroundColor: SEE_THROUGH,
     alignItems: 'center',
     justifyContent: 'center',
   },
   quickSpace: { height: MIN_TAP + 16, justifyContent: 'center' },
   display: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 4, minHeight: 130 },
-  hint: { minHeight: 20 },
   pad: { paddingHorizontal: 20 },
   actions: {
     flexDirection: 'row',
@@ -342,12 +392,7 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     gap: 12,
   },
-  pill: {
-    flex: 1,
-    height: 56,
-    borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  pill: { flex: 1, height: 56, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+  pillSoft: { backgroundColor: SEE_THROUGH },
+  pillPay: { backgroundColor: '#0A0A0A' },
 });

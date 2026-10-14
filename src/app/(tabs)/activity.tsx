@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import Animated from 'react-native-reanimated';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
@@ -202,6 +203,64 @@ export default function Activity() {
 
 type Month = { label: string; inCents: number; outCents: number };
 
+/**
+ * The month at a glance on a soft gradient card: money in as the big number, money out
+ * beneath it, and the two everyday actions as pills.
+ */
+function MonthHero({ month }: { month: Month }) {
+  const { colors, scheme } = useTheme();
+  const dark = scheme === 'dark';
+  const [from, to] = dark ? ['#16245F', '#1A1230'] : ['#DCE5FF', '#EFE4FF'];
+  const net = month.inCents - month.outCents;
+  return (
+    <View
+      style={styles.hero}
+      accessible
+      accessibilityLabel={`${month.label}: ${formatCents(month.inCents)} in, ${formatCents(month.outCents)} out`}>
+      <Svg style={StyleSheet.absoluteFill} preserveAspectRatio="none" viewBox="0 0 100 100">
+        <Defs>
+          <LinearGradient id="monthHero" x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0" stopColor={from} />
+            <Stop offset="1" stopColor={to} />
+          </LinearGradient>
+        </Defs>
+        <Rect x="0" y="0" width="100" height="100" fill="url(#monthHero)" />
+      </Svg>
+      <Text variant="small" color="textSecondary">
+        Money in · {month.label}
+      </Text>
+      <Text style={[styles.heroNum, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>
+        {formatCents(month.inCents)}
+      </Text>
+      <Text variant="small" color="textSecondary">
+        {formatCents(month.outCents)} out · {net >= 0 ? `${formatCents(net)} ahead` : `${formatCents(-net)} more out than in`}
+      </Text>
+      <View style={styles.heroActions}>
+        <PressableScale
+          scaleTo={0.96}
+          haptic="tap"
+          accessibilityRole="button"
+          accessibilityLabel="Send money"
+          onPress={() => router.push({ pathname: '/amount', params: { mode: 'send' } })}
+          style={[styles.heroPill, { backgroundColor: dark ? '#FFFFFF' : '#0A0A0A' }]}>
+          <Text variant="bodyMedium" style={{ color: dark ? '#0A0A0A' : '#FFFFFF' }}>
+            Send
+          </Text>
+        </PressableScale>
+        <PressableScale
+          scaleTo={0.96}
+          haptic="tap"
+          accessibilityRole="button"
+          accessibilityLabel="Request money"
+          onPress={() => router.push({ pathname: '/amount', params: { mode: 'request' } })}
+          style={[styles.heroPill, styles.heroPillSoft, { borderColor: colors.text }]}>
+          <Text variant="bodyMedium">Request</Text>
+        </PressableScale>
+      </View>
+    </View>
+  );
+}
+
 /** Your own payments and requests, newest first, with filters and search. */
 function MyActivity({
   list,
@@ -230,25 +289,7 @@ function MyActivity({
       showsVerticalScrollIndicator={false}
       ListHeaderComponent={
         <View style={styles.top}>
-          <View style={[styles.summary, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.stat}>
-              <Text variant="caption" color="textSecondary">
-                In · {month.label}
-              </Text>
-              <Text variant="heading" color="successText" style={styles.num}>
-                +{formatCents(month.inCents)}
-              </Text>
-            </View>
-            <View style={[styles.divider, { backgroundColor: colors.border }]} />
-            <View style={styles.stat}>
-              <Text variant="caption" color="textSecondary">
-                Out · {month.label}
-              </Text>
-              <Text variant="heading" style={styles.num}>
-                −{formatCents(month.outCents)}
-              </Text>
-            </View>
-          </View>
+          <MonthHero month={month} />
           <View style={[styles.search, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Icon name="search" size={18} color={colors.textSecondary} />
             <TextInput
@@ -327,7 +368,11 @@ const styles = StyleSheet.create({
   face: { alignItems: 'center', gap: 6, width: 64 },
   faceRing: { borderWidth: 2, borderRadius: 32, padding: 2 },
   footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 20 },
-  summary: { flexDirection: 'row', alignItems: 'center', borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, paddingVertical: 14 },
+  hero: { borderRadius: 26, overflow: 'hidden', padding: 20, gap: 2 },
+  heroNum: { fontFamily: Fonts.bold, fontSize: 44, lineHeight: 52, letterSpacing: -1.5, fontVariant: ['tabular-nums'] },
+  heroActions: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  heroPill: { minHeight: MIN_TAP, paddingHorizontal: 22, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+  heroPillSoft: { borderWidth: 1.5 },
   stat: { flex: 1, paddingHorizontal: 16, gap: 2 },
   divider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch' },
   num: { fontVariant: ['tabular-nums'] },

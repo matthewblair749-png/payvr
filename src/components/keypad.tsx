@@ -15,10 +15,19 @@ const ROWS = [
   ['.', '0', 'back'],
 ];
 
-type Props = { onKey: (key: string) => void; /** Hide the decimal key (PIN entry). */ integer?: boolean };
+type Props = {
+  onKey: (key: string) => void;
+  /** Hide the decimal key (PIN entry). */
+  integer?: boolean;
+  /** Digit color (defaults to the theme's text color), e.g. white on the blue Home screen. */
+  color?: string;
+  /** Background behind a key while pressed. */
+  pressedColor?: string;
+};
 
-export function Keypad({ onKey, integer }: Props) {
+export function Keypad({ onKey, integer, color, pressedColor }: Props) {
   const { colors } = useTheme();
+  const ink = color ?? colors.text;
   return (
     <View style={styles.grid}>
       {ROWS.map((row, i) => (
@@ -39,14 +48,14 @@ export function Keypad({ onKey, integer }: Props) {
                 style={({ pressed }) => [
                   styles.key,
                   {
-                    backgroundColor: pressed ? colors.surface : 'transparent',
+                    backgroundColor: pressed ? (pressedColor ?? colors.surface) : 'transparent',
                     opacity: hidden ? 0 : 1,
                   },
                 ]}>
                 {k === 'back' ? (
-                  <Icon name="delete" size={26} color={colors.text} />
+                  <Icon name="delete" size={26} color={ink} />
                 ) : (
-                  <Text style={[styles.label, { color: colors.text }]}>{k}</Text>
+                  <Text style={[styles.label, { color: ink }]}>{k}</Text>
                 )}
               </PressableScale>
             );
